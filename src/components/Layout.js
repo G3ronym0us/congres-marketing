@@ -154,7 +154,7 @@ export default function Main() {
                     Robinson Castillo charris
                   </h2>
                   <p className="mb-8 font-semibold leading-relaxed text-black">
-                    Marketing mediático: 'cómo hacer que los hechos de la    campaña se hagan noticia’
+                    Marketing mediático: Cómo hacer que los hechos de la campaña se hagan noticia
                   </p>
                 </div>
                 <div className="inline-block lg:hidden lg:w-full lg:max-w-xl">
