@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import logo from '../../public/images/logo-congress.png';
+import Link from 'next/link';
 
 export default function Header() {
 
@@ -50,12 +51,12 @@ export default function Header() {
         </div>
         <div className="flex items-center">
           <div className="hidden py-1 text-right xl:inline-block">
-            <a
+            <Link
               className="bg-blue mt-2 inline-flex items-center px-8 py-3 text-lg font-semibold tracking-tighter text-white"
-              href="/"
+              href="tickets/buy"
             >
               Comprar Entradas
-            </a>
+            </Link>
           </div>
           <button className="pr-12 pl-4">
             <svg
