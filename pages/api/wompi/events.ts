@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import excuteQuery from "../db";
+import { stringify } from "querystring";
 
 type Data = {
   success: boolean;
@@ -19,17 +20,12 @@ export default async function handler(
   try {
     const data = req.body;
 
-    await Promise.all(
-      data.tickets.map(async (ticket: Ticket) => {
-        const query = `INSERT INTO tickets (name, document, type, reference) 
-        VALUES(?, ?, ?, ?)`;
-        const result = await excuteQuery({
-          query,
-          values: [ticket.name, ticket.document, ticket.type, data.reference],
-        });
-        console.log(result);
-      })
-    );
+    const query = `INSERT INTO events (reference, body) 
+        VALUES(?, ?)`;
+    const result = await excuteQuery({
+      query,
+      values: [data.transaction.reference, JSON.stringify(data)],
+    });
 
     res.status(200).json({ success: true });
   } catch (error) {

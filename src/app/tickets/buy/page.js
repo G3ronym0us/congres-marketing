@@ -1,20 +1,20 @@
 "use client"
 
+import Header from '@/components/Header';
 import InputText from '@/components/form/InputText';
+import { randomBytes } from 'crypto';
 import Script from 'next/script';
 import { Input } from 'postcss';
 import { useEffect, useState } from 'react';
 
 export default function BuyTickets() {
 
-    const [checkout, setCheckout] = useState(null);
     const [name, setName] = useState('');
     const [document, setDocument] = useState('');
     const [role, setRole] = useState(null);
     const [tickets, setTickets] = useState([]);
     const [selectedOption, setSelectedOption] = useState('diamond');
     const [amountTotal, setAmountTotal] = useState(0);
-
 
     const roles = [
         'Asesor político',
@@ -42,17 +42,31 @@ export default function BuyTickets() {
     }, [tickets])
 
     const buy = async () => {
-        await setCheckout(new WidgetCheckout({
+
+        const reference = await generateRandomString(20);
+        const data = { tickets, reference };
+        const apiUrl = 'http://localhost:3000/api/ticket/save';
+
+        postData(apiUrl, data)
+            .then((response) => {
+                console.log('Respuesta:', response);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                return;
+            });
+
+        const checkout = await new WidgetCheckout({
             currency: 'COP',
             amountInCents: amountTotal * 100,
-            reference: 'AD002901221',
+            reference: reference,
             publicKey: 'pub_test_rbHh9GcFhH28AUuNSWt9ztnKHZqUmu4r',
-            redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
+            // redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
             taxInCents: { // Opcional
                 vat: 1900,
                 consumption: 800
             },
-        }))
+        });
 
         checkout.open(function (result) {
             var transaction = result.transaction
@@ -95,8 +109,31 @@ export default function BuyTickets() {
         return formattedValue.replace(/,/g, '.');
     };
 
+    async function generateRandomString(length) {
+        const bytes = await randomBytes(Math.ceil(length / 2));
+        return bytes.toString('hex').slice(0, length);
+    }
+
+    async function postData(url, data) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error('Error en la solicitud POST');
+        }
+
+        const responseData = await response.json();
+        return responseData;
+    }
+
     return (
         <>
+            <Header></Header>
             <div className='grid grid-cols-2'>
                 <div className='mx-20 py-6'>
                     <Script type="text/javascript" src="https://checkout.wompi.co/widget.js" />
@@ -156,30 +193,50 @@ export default function BuyTickets() {
 
                 </div>
                 <div className='mx-20 py-6'>
-                    <div>Boletos: {tickets.length}</div>
-                    <div>
-                        {tickets.map((ticket, index) => {
-                            return (
-                                <div key={index}>
-                                    <p>Nombre: {ticket.name}</p>
-                                    <p>Documento: {ticket.document}</p>
-                                    <p>Role: {ticket.role}</p>
-                                    <p>Tipo: {ticket.type}</p>
-                                </div>
-                            )
-                        })}
+                    <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
+                        Boletos: {tickets.length}
                     </div>
-                    <div>Total: $ {numberWithDots(amountTotal)}</div>
                     <div>
-                        <button
-                            className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white"
-                            onClick={buy}
-                        >
-                            Comprar
-                        </button>
+
+                        {
+                            tickets.length < 1 ?
+                                (
+                                    <div className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-100'>
+                                        Aun no se han creado boletos
+                                    </div>
+                                ) :
+                                (tickets.map((ticket, index) => {
+                                    return (
+                                        <div
+                                            className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-100'
+                                            key={index}
+                                        >
+                                            <p><span className='text-bold'>Nombre:</span> {ticket.name}</p>
+                                            <p><span className='text-bold'>Documento:</span> {ticket.document}</p>
+                                            <p><span className='text-bold'>Role:</span> {ticket.role}</p>
+                                            <p><span className='text-bold'>Tipo:</span> {ticket.type}</p>
+                                        </div>
+                                    )
+                                }))
+                        }
                     </div>
+                    <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
+                        Total: $ {numberWithDots(amountTotal)}
+                    </div>
+
+                    {tickets.length > 0 && (
+                        <div className='w-full text-center'>
+                            <button
+                                className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white"
+                                onClick={buy}
+                            >
+                                Comprar
+                            </button>
+                        </div>
+                    )}
+
                 </div>
-            </div>
+            </div >
 
         </>
     );
