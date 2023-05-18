@@ -24,7 +24,7 @@ export default async function handler(
         VALUES(?, ?)`;
     const result = await excuteQuery({
       query,
-      values: [data.data.transaction.reference, JSON.stringify(data)],
+      values: ['data.data.transaction.reference', JSON.stringify(data)],
     });
 
     res.status(200).json({ success: true });
