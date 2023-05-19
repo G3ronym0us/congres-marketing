@@ -143,7 +143,7 @@ export default function BuyTickets() {
 
         const reference = await generateRandomString(20);
         const data = { tickets, reference };
-        const apiUrl = 'http://localhost:3000/api/ticket/save';
+        const apiUrl = process.env.NEXT_PUBLIC_URL + 'api/ticket/save';
 
         postData(apiUrl, data)
             .then((response) => {
