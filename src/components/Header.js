@@ -31,7 +31,7 @@ export default function Header() {
         <div className="mt-4 inline-block pb-4 pl-8">
           <div className='inline'>
             <a href="/" className="align-middle text-3xl font-bold text-black">
-              <Image src={logo} width={250} className='inline' />
+              <Image src={logo} width={250} className='inline' alt=''/>
             </a>
           </div>
           <div className="hidden pl-14 align-middle xl:inline-block">

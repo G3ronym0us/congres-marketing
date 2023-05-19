@@ -100,7 +100,7 @@ export default function BuyTickets() {
             start: 101,
             interval: 1,
             spacing: 2,
-            size: 4,
+            size: 3,
             seats: [
                 { letter: 'T', quantity: 124 },
                 { letter: 'S', quantity: 124 },
@@ -316,7 +316,7 @@ export default function BuyTickets() {
                                                         seatElements.push(
                                                             <span
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} cursor-pointer`}
+                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} min-w-2 max-w-2 cursor-pointer`}
                                                                 key={i}>
                                                             </span>
                                                         )
@@ -326,7 +326,7 @@ export default function BuyTickets() {
                                                         seatElements.push(
                                                             <span
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} cursor-pointer`}
+                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} min-w-2 max-w-2 cursor-pointer`}
                                                                 key={i}>
                                                             </span>
                                                         )
