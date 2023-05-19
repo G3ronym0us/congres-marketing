@@ -310,7 +310,7 @@ export default function BuyTickets() {
                                     <div className={`text-xs text-center`}>
                                         {
                                             locality.seats.map((row, index) => {
-                                                const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer ${'w-' + locality.size + ' h-' + locality.size + ' mr-' + locality.spacing}`;
+                                                const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-3 h-3 mr-1`;
                                                 const seatElements = []
                                                 if (locality.inverse) {
                                                     for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
