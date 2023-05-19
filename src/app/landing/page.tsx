@@ -1,14 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import angelBeccassino from "../../../public/images/angel-beccassino.jpg";
-import cristian from "../../../public/images/cristian-baracaldo.jpg";
-import darmi from "../../../public/images/darmi-fuentes.jpg";
-import jamer from "../../../public/images/jamer-chica.jpg";
-import jorgeSalim from "../../../public/images/jorge-salim.jpg";
-import jorgeSandoval from "../../../public/images/jorge-sandoval.jpg";
-import robison from "../../../public/images/robison-castillo.jpg";
-import victor from "../../../public/images/víctor-vargas.jpg";
 import Navbar from "@/components/navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -452,9 +444,12 @@ export default function Landing() {
             <div className="flex flex-wrap mb-12">
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={angelBeccassino}
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/angel-beccassino.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -488,9 +483,9 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={jorgeSalim}
+                    src={process.env.NEXT_PUBLIC_URL + "images/jorge-salim.jpg"}
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -518,9 +513,11 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={darmi}
+                    src={
+                      process.env.NEXT_PUBLIC_URL + "images/darmi-fuentes.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -554,9 +551,12 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={angelBeccassino}
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/robison-castillo.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -601,9 +601,9 @@ export default function Landing() {
             <div className="flex flex-wrap">
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={jamer}
+                    src={process.env.NEXT_PUBLIC_URL + "images/jamer-chica.jpg"}
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -637,9 +637,12 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={angelBeccassino}
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/angel-beccassino.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -673,9 +676,12 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={angelBeccassino}
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/angel-beccassino.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
@@ -709,9 +715,12 @@ export default function Landing() {
               </div>
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
-                  <Image
+                  <img
                     alt="..."
-                    src={cristian}
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/cristian-baracaldo.jpg"
+                    }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
