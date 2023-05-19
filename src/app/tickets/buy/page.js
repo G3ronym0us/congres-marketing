@@ -314,21 +314,21 @@ export default function BuyTickets() {
                                                 if (locality.inverse) {
                                                     for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
                                                         seatElements.push(
-                                                            <span
+                                                            <div
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full mr-${String(locality.spacing)} uppercase bg-blue-500 w-${String(locality.size)} h-${String(locality.size)} min-w-2 max-w-2 cursor-pointer`}
+                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} min-w-2 max-w-2 cursor-pointer`}
                                                                 key={i}>
-                                                            </span>
+                                                            </div>
                                                         )
                                                     }
                                                 } else {
                                                     for (let i = locality.start; i <= row.quantity; i += locality.interval) {
                                                         seatElements.push(
-                                                            <span
+                                                            <div
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full mr-${String(locality.spacing)} uppercase bg-blue-500 w-${String(locality.size)} h-${String(locality.size)} min-w-2 max-w-2 cursor-pointer`}
+                                                                className={`inline-block rounded-full mr-${locality.spacing} uppercase bg-blue-500 w-${locality.size} h-${locality.size} min-w-2 max-w-2 cursor-pointer`}
                                                                 key={i}>
-                                                            </span>
+                                                            </div>
                                                         )
                                                     }
                                                 }
