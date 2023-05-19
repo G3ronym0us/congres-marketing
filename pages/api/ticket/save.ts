@@ -23,10 +23,19 @@ export default async function handler(
 
     await Promise.all(
       data.tickets.map(async (ticket: Ticket) => {
-        const query = 'INSERT INTO tickets (name, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?)';
+        const query =
+          "INSERT INTO tickets (name, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?)";
         const result = await excuteQuery({
           query,
-          values: [ticket.name, ticket.document, ticket.type, data.reference, ticket.role, ticket.seatNumber, ticket.seatRow],
+          values: [
+            ticket.name,
+            ticket.document,
+            ticket.type,
+            data.reference,
+            ticket.role,
+            ticket.seatNumber,
+            ticket.seatRow,
+          ],
         });
         console.log(result);
       })
@@ -35,5 +44,6 @@ export default async function handler(
     res.status(200).json({ success: true });
   } catch (error) {
     console.log(error);
+    return error;
   }
 }

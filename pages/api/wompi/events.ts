@@ -29,7 +29,7 @@ export default async function handler(
 
     const query2 = `UPDATE tickets SET status = ? WHERE reference = ?`;
     const result2 = await excuteQuery({
-      query,
+      query: query2,
       values: [data.data.transaction.status, data.data.transaction.reference],
     });
 
