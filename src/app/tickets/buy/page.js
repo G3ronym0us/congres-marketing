@@ -310,13 +310,14 @@ export default function BuyTickets() {
                                     <div className={`text-xs text-center`}>
                                         {
                                             locality.seats.map((row, index) => {
+                                                const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer ${'w-' + locality.size + ' h-' + locality.size + ' mr-' + locality.spacing}`;
                                                 const seatElements = []
                                                 if (locality.inverse) {
                                                     for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
                                                         seatElements.push(
                                                             <div
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer ${'w-' + locality.size + ' h-' + locality.size + ' mr-' + locality.spacing}`}
+                                                                className={classCustom}
                                                                 key={i}>
                                                             </div>
                                                         )
@@ -326,7 +327,7 @@ export default function BuyTickets() {
                                                         seatElements.push(
                                                             <div
                                                                 onClick={() => handleSeat(row.letter, i)}
-                                                                className={`inline-block rounded-full  uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer ${'w-' + locality.size + ' h-' + locality.size + ' mr-' + locality.spacing}`}
+                                                                className={classCustom}
                                                                 key={i}>
                                                             </div>
                                                         )
