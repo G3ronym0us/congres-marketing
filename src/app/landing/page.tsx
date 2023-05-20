@@ -15,6 +15,8 @@ import {
   faRocket,
   faUserFriends,
 } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
+import Footer from "@/components/Footer";
 
 export default function Landing() {
   return (
@@ -30,8 +32,7 @@ export default function Landing() {
           <div
             className="absolute top-0 w-full h-full bg-center bg-cover"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1267&q=80')",
+              backgroundImage: `url('${process.env.NEXT_PUBLIC_URL}images/bground.jpg')`,
             }}
           >
             <span
@@ -52,13 +53,8 @@ export default function Landing() {
                     marketing político en Colombia, con el fin de orientar a
                     candidatos, asesores, investigadores y estudiantes
                     universitarios, y partidos políticos interesados en conocer
-                    de las últimas tendencias en estrategia y comunicación
-                    política para ganar elecciones.
-                  </p>
-                  <p className="mt-4 text-lg text-justify text-gray-300">
-                    Este evento se realizará el 14 y 15 de julio en la ciudad de
-                    Bucaramanga y en él se certificará a los asistentes su
-                    partición en el evento.
+                    las últimas tendencias en estrategia y comunicación política
+                    para ganar elecciones.
                   </p>
                 </div>
               </div>
@@ -88,85 +84,51 @@ export default function Landing() {
         <section className="pb-20 bg-gray-300 -mt-24">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap">
-              <div className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center">
+              <a
+                href="#contacts"
+                className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center"
+              >
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
                   <div className="px-4 py-5 flex-auto">
                     <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-red-400">
                       <FontAwesomeIcon icon={faAward} />
                     </div>
-                    <h6 className="text-xl font-semibold">
-                      Estudiantes Universitarios
-                    </h6>
+                    <h6 className="text-xl font-semibold">CONTACTO</h6>
                   </div>
                 </div>
-              </div>
+              </a>
 
-              <div className="w-full md:w-4/12 px-4 text-center">
+              <Link
+                href={process.env.NEXT_PUBLIC_URL + "tickets/buy"}
+                className="w-full md:w-4/12 px-4 text-center"
+              >
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
                   <div className="px-4 py-5 flex-auto">
                     <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-blue-400">
                       <FontAwesomeIcon icon={faRetweet} />
                     </div>
                     <h6 className="text-xl font-semibold">
-                      Investigadores Universitarios
+                      COMPRA TUS ENTRADAS
                     </h6>
                   </div>
                 </div>
-              </div>
+              </Link>
 
-              <div className="pt-6 w-full md:w-4/12 px-4 text-center">
+              <a
+                href="#conferences"
+                className="pt-6 w-full md:w-4/12 px-4 text-center"
+              >
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
                   <div className="px-4 py-5 flex-auto">
                     <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-green-400">
                       <FontAwesomeIcon icon={faFingerprint} />
                     </div>
                     <h6 className="text-xl font-semibold">
-                      Candidatos a cargos de elección popular
+                      CONFERENCISTAS INVITADOS
                     </h6>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap">
-              <div className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="px-4 py-5 flex-auto">
-                    <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-red-400">
-                      <FontAwesomeIcon icon={faAward} />
-                    </div>
-                    <h6 className="text-xl font-semibold">
-                      Profesionales de la comunicación política
-                    </h6>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="px-4 py-5 flex-auto">
-                    <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-blue-400">
-                      <FontAwesomeIcon icon={faRetweet} />
-                    </div>
-                    <h6 className="text-xl font-semibold">
-                      Asesores Políticos
-                    </h6>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 w-full md:w-4/12 px-4 text-center">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="px-4 py-5 flex-auto">
-                    <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-green-400">
-                      <FontAwesomeIcon icon={faFingerprint} />
-                    </div>
-                    <h6 className="text-xl font-semibold">
-                      Partidos políticos
-                    </h6>
-                  </div>
-                </div>
-              </div>
+              </a>
             </div>
 
             <div className="flex flex-wrap items-center mt-32">
@@ -175,14 +137,23 @@ export default function Landing() {
                   <FontAwesomeIcon icon={faUserFriends} />
                 </div>
                 <h3 className="text-3xl mb-2 font-semibold leading-normal">
-                  ¿CÓMO ESTÁ DESARROLLADA LA AGENDA DEL EVENTO?
+                  AGENDA DEL EVENTO
                 </h3>
                 <p className="text-lg font-light text-justify leading-relaxed mt-4 mb-4 text-gray-700">
-                  En el evento participarán 10 conferencistas y en los dos días
-                  intervendrán 3 en la jornada de la mañana y 2 en la jornada de
-                  la tarde. En la jornada de la tarde se organizará un debate
-                  entre los 5 conferencistas asistentes en la fecha sobre un
-                  tema de trascendencia nacional.
+                  En el Congreso Nacional de Marketing Político participarán 10
+                  conferencistas nacionales e internacionales en temas
+                  relacionados sobre la construcción y ejecución de una campaña
+                  ganadora. Cada día contaremos con la intervención de 5
+                  conferencistas, y se contará con espacios de descanso en cada
+                  jornada y una hora libre para almuerzo.
+                </p>
+                <p className="text-lg font-light text-justify leading-relaxed mt-4 mb-4 text-gray-700">
+                  En la jornada de la tarde se organizará un debate entre los 5
+                  conferencistas correspondientes al día en un tema de
+                  trascendencia nacional.
+                </p>
+                <p className="text-lg font-light text-justify leading-relaxed mt-4 mb-4 text-gray-700">
+                  ¡No puedes dejar de participar!
                 </p>
               </div>
 
@@ -209,14 +180,14 @@ export default function Landing() {
                         className="text-pink-600 fill-current"
                       ></polygon>
                     </svg>
-                    <h4 className="text-xl font-bold text-white">
+                    {/* <h4 className="text-xl font-bold text-white">
                       Top Notch Services
                     </h4>
                     <p className="text-md font-light mt-2 text-white">
                       The Arctic Ocean freezes every winter and much of the
                       sea-ice then thaws every summer, and that process will
                       continue whatever happens.
-                    </p>
+                    </p> */}
                   </blockquote>
                 </div>
               </div>
@@ -270,7 +241,7 @@ export default function Landing() {
                       <div className="flex items-center">
                         <div>
                           <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-pink-600 bg-pink-200 mr-3">
-                            <FontAwesomeIcon icon={faFingerprint} />
+                            <FontAwesomeIcon icon={faPaperPlane} />
                           </span>
                         </div>
                         <div>
@@ -284,7 +255,7 @@ export default function Landing() {
                       <div className="flex items-center">
                         <div>
                           <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-pink-600 bg-pink-200 mr-3">
-                            <FontAwesomeIcon icon={faRetweet} />
+                            <FontAwesomeIcon icon={faPaperPlane} />
                           </span>
                         </div>
                         <div>
@@ -303,7 +274,7 @@ export default function Landing() {
                           </span>
                         </div>
                         <div>
-                          <h4 className="text-gray-600">El día ‘D’</h4>
+                          <h4 className="text-gray-600">El día ‘E’</h4>
                         </div>
                       </div>
                     </li>
@@ -431,7 +402,10 @@ export default function Landing() {
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap justify-center text-center mb-24">
               <div className="w-full lg:w-6/12 px-4">
-                <h2 className="text-4xl font-semibold text-nowrap">
+                <h2
+                  className="text-4xl font-semibold text-nowrap"
+                  id="conferences"
+                >
                   CONFERENCISTAS PARTICIPANTES
                 </h2>
                 {/* <p className="text-lg leading-relaxed m-4 text-gray-600">
@@ -447,6 +421,45 @@ export default function Landing() {
                   <img
                     alt="..."
                     src={
+                      process.env.NEXT_PUBLIC_URL + "images/victor-vargas.jpg"
+                    }
+                    className="shadow-lg rounded-full max-w-full mx-auto"
+                    style={{ maxWidth: "120px" }}
+                  />
+                  <div className="pt-6 text-center">
+                    <h5 className="text-xl font-bold">Víctor Vargas Vega</h5>
+                    <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
+                      ‘Neuropolítica: Influyendo masas’
+                    </p>
+                    <div className="mt-6">
+                      <button
+                        className="bg-blue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-twitter"></i>
+                      </button>
+                      <button
+                        className="bg-blue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-facebook-f"></i>
+                      </button>
+                      <button
+                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-dribbble"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
+                <div className="px-6">
+                  <img
+                    alt="..."
+                    src={
                       process.env.NEXT_PUBLIC_URL +
                       "images/angel-beccassino.jpg"
                     }
@@ -456,7 +469,7 @@ export default function Landing() {
                   <div className="pt-6 text-center">
                     <h5 className="text-xl font-bold">Ángel Beccassino</h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      La construcción de una candidatura ganadora
+                      ‘La construcción de una candidatura ganadora’
                     </p>
                     <div className="mt-6">
                       <button
@@ -492,7 +505,7 @@ export default function Landing() {
                   <div className="pt-6 text-center">
                     <h5 className="text-xl font-bold">Jorge Salim Eljach</h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      Cómo conformar la empresa política de campaña
+                      ‘10 reglas infalibles para ganar la elección’
                     </p>
                     <div className="mt-6">
                       <button
@@ -524,57 +537,9 @@ export default function Landing() {
                   <div className="pt-6 text-center">
                     <h5 className="text-xl font-bold">Darmi Fuentes</h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      El poder de las ideas
+                      ‘El poder de las ideas en una campaña política’
                     </p>
                     <div className="mt-6">
-                      <button
-                        className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-google"></i>
-                      </button>
-                      <button
-                        className="bg-blue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </button>
-                      <button
-                        className="bg-gray-800 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-instagram"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img
-                    alt="..."
-                    src={
-                      process.env.NEXT_PUBLIC_URL +
-                      "images/robison-castillo.jpg"
-                    }
-                    className="shadow-lg rounded-full max-w-full mx-auto"
-                    style={{ maxWidth: "120px" }}
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">
-                      Robinson Castillo Charris
-                    </h5>
-                    <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      Marketing mediático: Cómo hacer que los hechos de la
-                      campaña se hagan noticia
-                    </p>
-                    <div className="mt-6">
-                      <button
-                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-dribbble"></i>
-                      </button>
                       <button
                         className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -603,6 +568,46 @@ export default function Landing() {
                 <div className="px-6">
                   <img
                     alt="..."
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/jorge-sandoval.jpg"
+                    }
+                    className="shadow-lg rounded-full max-w-full mx-auto"
+                    style={{ maxWidth: "120px" }}
+                  />
+                  <div className="pt-6 text-center">
+                    <h5 className="text-xl font-bold">Jorge Sandoval</h5>
+                    <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
+                      ‘Fotografía del candidato: Lo que más se ve y menos se
+                      cuida’
+                    </p>
+                    <div className="mt-6">
+                      <button
+                        className="bg-blue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-twitter"></i>
+                      </button>
+                      <button
+                        className="bg-blue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-facebook-f"></i>
+                      </button>
+                      <button
+                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-dribbble"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
+                <div className="px-6">
+                  <img
+                    alt="..."
                     src={process.env.NEXT_PUBLIC_URL + "images/jamer-chica.jpg"}
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
@@ -610,7 +615,7 @@ export default function Landing() {
                   <div className="pt-6 text-center">
                     <h5 className="text-xl font-bold">Jamer Chica</h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      El secreto de la victoria electoral
+                      ‘El secreto de la victoria electoral’
                     </p>
                     <div className="mt-6">
                       <button
@@ -641,17 +646,32 @@ export default function Landing() {
                     alt="..."
                     src={
                       process.env.NEXT_PUBLIC_URL +
-                      "images/angel-beccassino.jpg"
+                      "images/robison-castillo.jpg"
                     }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
                   />
                   <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">Yesid Guinand</h5>
+                    <h5 className="text-xl font-bold">
+                      Robinson Castillo Charris
+                    </h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      La táctica en la estrategia política
+                      ‘Marketing Mediático: Cómo hacer que los hechos de la
+                      campaña se hagan noticia’
                     </p>
                     <div className="mt-6">
+                      <button
+                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-dribbble"></i>
+                      </button>
+                      <button
+                        className="bg-red-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <i className="fab fa-google"></i>
+                      </button>
                       <button
                         className="bg-blue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -659,60 +679,16 @@ export default function Landing() {
                         <i className="fab fa-twitter"></i>
                       </button>
                       <button
-                        className="bg-blue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        className="bg-gray-800 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
                       >
-                        <i className="fab fa-facebook-f"></i>
-                      </button>
-                      <button
-                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-dribbble"></i>
+                        <i className="fab fa-instagram"></i>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
-                <div className="px-6">
-                  <img
-                    alt="..."
-                    src={
-                      process.env.NEXT_PUBLIC_URL +
-                      "images/angel-beccassino.jpg"
-                    }
-                    className="shadow-lg rounded-full max-w-full mx-auto"
-                    style={{ maxWidth: "120px" }}
-                  />
-                  <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">Angie González</h5>
-                    <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      El relato político
-                    </p>
-                    <div className="mt-6">
-                      <button
-                        className="bg-blue-400 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </button>
-                      <button
-                        className="bg-blue-600 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-facebook-f"></i>
-                      </button>
-                      <button
-                        className="bg-pink-500 text-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
-                        type="button"
-                      >
-                        <i className="fab fa-dribbble"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
               <div className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4">
                 <div className="px-6">
                   <img
@@ -725,10 +701,10 @@ export default function Landing() {
                     style={{ maxWidth: "120px" }}
                   />
                   <div className="pt-6 text-center">
-                    <h5 className="text-xl font-bold">Cristian Castellanos</h5>
+                    <h5 className="text-xl font-bold">Cristian Baracaldo</h5>
                     <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
-                      Las redes sociales como herramienta de comunicación
-                      política
+                      ‘Cómo crear contenido digital estratégico y expansión de
+                      pauta para ganar campañas’
                     </p>
                     <div className="mt-6">
                       <button
@@ -778,7 +754,7 @@ export default function Landing() {
             </svg>
           </div>
 
-          <div className="container mx-auto px-4 lg:pt-24 lg:pb-64">
+          {/* <div className="container mx-auto px-4 lg:pt-24 lg:pb-64">
             <div className="flex flex-wrap text-center justify-center">
               <div className="w-full lg:w-6/12 px-4">
                 <h2 className="text-4xl font-semibold text-white">
@@ -827,11 +803,11 @@ export default function Landing() {
                   Some quick example text to build on the card title and make up
                   the bulk of the cards content.
                 </p>
-              </div>
-            </div>
-          </div>
+              </div> */}
+            {/* </div> */}
+          {/* </div> */}
         </section>
-        <section className="relative block py-24 lg:pt-0 bg-gray-900">
+        {/* <section className="relative block py-24 lg:pt-0 bg-gray-900">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap justify-center lg:-mt-64 -mt-48">
               <div className="w-full lg:w-6/12 px-4">
@@ -902,9 +878,9 @@ export default function Landing() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
       </main>
-      {/* <Footer /> */}
+      <Footer />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header';
 import InputText from '@/components/form/InputText';
+import Navbar from '@/components/navbar';
 import { randomBytes } from 'crypto';
 import Script from 'next/script';
 import { Input } from 'postcss';
@@ -20,6 +21,11 @@ export default function BuyTickets() {
     const [amountTotal, setAmountTotal] = useState(0);
     const [seatRow, setSeatRow] = useState(null);
     const [seatNumber, setSeatNumber] = useState(null);
+    const [seatsUseds, setSeatsUseds] = useState([]);
+
+    useEffect(() => {
+        getSeatsUseds();
+    }, [])
 
     const localities = [
         {
@@ -158,7 +164,7 @@ export default function BuyTickets() {
             currency: 'COP',
             amountInCents: amountTotal * 100,
             reference: reference,
-            publicKey: 'pub_test_rbHh9GcFhH28AUuNSWt9ztnKHZqUmu4r',
+            publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY,
             // redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
             taxInCents: { // Opcional
                 vat: 1900,
@@ -234,7 +240,7 @@ export default function BuyTickets() {
         return responseData;
     }
 
-    const handleLocality = (localityName) => {
+    const handleLocality = async (localityName) => {
         const localitySelected = localities.find((loc) => loc.name === localityName)
         setLocality(localitySelected)
     }
@@ -244,9 +250,26 @@ export default function BuyTickets() {
         setSeatNumber(number);
     }
 
+    const getSeatsUseds = async () => {
+        const url = process.env.NEXT_PUBLIC_URL + 'api/ticket/all'
+        await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(res => res.json())
+            .then((response) => {
+                setSeatsUseds(response.result)
+            }).
+            catch((error) => {
+                console.log(error);
+            });
+
+    }
+
     return (
         <>
-            <Header></Header>
+            <Navbar></Navbar>
             <div className='grid grid-cols-2'>
                 {
                     !locality ?
@@ -311,26 +334,50 @@ export default function BuyTickets() {
                                         {
                                             locality.seats.map((row, index) => {
                                                 const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-3 h-3 mr-1`;
+                                                const classCustomUsed = `inline-block rounded-full uppercase bg-red-500 min-w-2 max-w-2 w-3 h-3 mr-1`;
                                                 const seatElements = []
                                                 if (locality.inverse) {
                                                     for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
-                                                        seatElements.push(
-                                                            <div
-                                                                onClick={() => handleSeat(row.letter, i)}
-                                                                className={classCustom}
-                                                                key={i}>
-                                                            </div>
-                                                        )
+                                                        const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
+                                                        if (used) {
+
+                                                            seatElements.push(
+                                                                <div
+                                                                    className={classCustomUsed}
+                                                                    key={i}>
+                                                                </div>
+                                                            )
+                                                        } else {
+                                                            seatElements.push(
+                                                                <div
+                                                                    onClick={() => handleSeat(row.letter, i)}
+                                                                    className={classCustom}
+                                                                    key={i}>
+                                                                </div>
+                                                            )
+
+                                                        }
                                                     }
                                                 } else {
                                                     for (let i = locality.start; i <= row.quantity; i += locality.interval) {
-                                                        seatElements.push(
-                                                            <div
-                                                                onClick={() => handleSeat(row.letter, i)}
-                                                                className={classCustom}
-                                                                key={i}>
-                                                            </div>
-                                                        )
+                                                        const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
+                                                        if (used) {
+                                                            seatElements.push(
+                                                                <div
+                                                                    className={classCustomUsed}
+                                                                    key={i}>
+                                                                </div>
+                                                            )
+                                                        } else {
+                                                            seatElements.push(
+                                                                <div
+                                                                    onClick={() => handleSeat(row.letter, i)}
+                                                                    className={classCustom}
+                                                                    key={i}>
+                                                                </div>
+                                                            )
+                                                        }
+
                                                     }
                                                 }
 
