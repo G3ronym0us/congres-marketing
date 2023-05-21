@@ -7,6 +7,8 @@ type Data = {
 
 type Ticket = {
   name: string;
+  lastname: string;
+  email: string;
   document: string;
   type: string;
   role: string;
@@ -24,11 +26,13 @@ export default async function handler(
     await Promise.all(
       data.tickets.map(async (ticket: Ticket) => {
         const query =
-          "INSERT INTO tickets (name, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?)";
+          "INSERT INTO tickets (name, lastname, email, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const result = await excuteQuery({
           query,
           values: [
             ticket.name,
+            ticket.lastname,
+            ticket.email,
             ticket.document,
             ticket.type,
             data.reference,

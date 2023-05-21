@@ -1,19 +1,21 @@
 "use client"
 
-import Header from '@/components/Header';
 import InputText from '@/components/form/InputText';
 import Navbar from '@/components/navbar';
 import { randomBytes } from 'crypto';
 import Script from 'next/script';
-import { Input } from 'postcss';
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleArrowLeft, faCirclePlus, faMoneyBill1Wave } from '@fortawesome/free-solid-svg-icons';
 
 export default function BuyTickets() {
 
 
     const [locality, setLocality] = useState(null);
-    const [seat, setSeat] = useState(null);
+    const [pay, setPay] = useState(false);
     const [name, setName] = useState('');
+    const [lastname, setLastname] = useState('');
+    const [email, setEmail] = useState('');
     const [document, setDocument] = useState('');
     const [role, setRole] = useState(null);
     const [tickets, setTickets] = useState([]);
@@ -184,6 +186,8 @@ export default function BuyTickets() {
         const type = ticketsType.find((type) => type.value === selectedOption)
         const ticket = {
             name,
+            lastname,
+            email,
             document,
             role,
             type: locality.name,
@@ -192,6 +196,7 @@ export default function BuyTickets() {
             amount: locality.amount,
         }
         setTickets([...tickets, ticket])
+        setPay(true);
         clearForm();
     };
 
@@ -269,225 +274,266 @@ export default function BuyTickets() {
 
     return (
         <>
-            <Navbar></Navbar>
-            <div className='grid grid-cols-2'>
+            <Navbar />
+            <div className='grid lg:grid-cols-1 bg-gray-100 w-full' style={{ height: '100%' }}>
                 {
-                    !locality ?
-                        (
-                            <div className='mx-20 py-6'>
-                                <div>Seleccione la localidad</div>
-                                <div className='w-full grid grid-cols-5' >
-                                    <div
-                                        onClick={() => handleLocality('General')}
-                                        className='bg-blue-500 p-12 my-2 col-start-2 rounded col-span-3 text-blue-500 hover:bg-blue-200 hover:text-black'
-                                    >
-                                        <div className="text-center text-3xl font-bold">General</div>
-                                        <div className="text-2xl">$ 150.000</div>
-                                    </div>
-                                    <div></div>
-                                    <div
-                                        onClick={() => handleLocality('Platea Izquierda')}
-                                        className='bg-blue-500 px-1 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
-                                    >
-                                        <div className="text-center font-bold">Platea Izquierda</div>
-                                        <div className="text-center">$ 250.000</div>
-                                    </div>
-                                    <div className='col-span-3 grid grid-cols-1'>
-                                        <div
-                                            onClick={() => handleLocality('Oro')}
-                                            className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
-                                        >
-                                            <div className="text-center text-3xl font-bold">Oro</div>
-                                            <div className="text-2xl">$ 320.000</div>
-                                        </div>
-                                        <div
-                                            onClick={() => handleLocality('Diamante')}
-                                            className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
-                                        >
-                                            <div className="text-center text-3xl font-bold">Diamante</div>
-                                            <div className="text-2xl">$ 390.000</div>
-                                        </div>
-                                    </div>
-                                    <div
-                                        onClick={() => handleLocality('Platea Derecha')}
-                                        className='bg-blue-500 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
-                                    >
-                                        <div className="text-center font-bold">Platea Derecha</div>
-                                        <div className="text-center">$ 250.000</div>
-                                    </div>
-                                    <div className='col-span-3 col-start-2 bg-black p-6 rounded-xl text-white'>Escenario</div>
-                                </div>
+                    pay ? (
+                        <div div className='mx-20 py-6 hidden lg:block'>
+                            <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
+                                Boletos: {tickets.length}
                             </div>
-                        )
-                        :
-                        !(seatRow && seatNumber) ?
-                            (
-                                <div className='mx-3'>
-                                    <span
-                                        onClick={() => setLocality(null)}
-                                        className='inline-block text-white p-2 mb-4 uppercase bg-red-500 cursor-pointer'
+                            <div>
+
+                                {
+                                    tickets.length < 1 ?
+                                        (
+                                            <div className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-100'>
+                                                Aun no se han creado boletos
+                                            </div>
+                                        ) :
+                                        (tickets.map((ticket, index) => {
+                                            return (
+                                                <div
+                                                    className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-50'
+                                                    key={index}
+                                                >
+                                                    <p><span className='font-bold'>Nombre:</span> {ticket.lastname + ', ' + ticket.name}</p>
+                                                    <p><span className='font-bold'>Email:</span> {ticket.email}</p>
+                                                    <p><span className='font-bold'>Documento:</span> {ticket.document}</p>
+                                                    <p><span className='font-bold'>Role:</span> {ticket.role}</p>
+                                                    <p><span className='font-bold'>Zona:</span> {ticket.type}</p>
+                                                    <p><span className='font-bold'>Asiento:</span> {ticket.seatRow + ticket.seatNumber}</p>
+                                                </div>
+                                            )
+                                        }))
+                                }
+                            </div>
+                            <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
+                                Total: $ {numberWithDots(amountTotal)}
+                            </div>
+
+                            {tickets.length > 0 && (
+                                <div className='w-full text-center'>
+                                    <button
+                                        onClick={() => setPay(false)}
+                                        className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
                                     >
-                                        volver
-                                    </span>
-                                    <div className='my-4'>Seleccione su asiento</div>
-                                    <div className={`text-xs text-center`}>
-                                        {
-                                            locality.seats.map((row, index) => {
-                                                const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-3 h-3 mr-1`;
-                                                const classCustomUsed = `inline-block rounded-full uppercase bg-red-500 min-w-2 max-w-2 w-3 h-3 mr-1`;
-                                                const seatElements = []
-                                                if (locality.inverse) {
-                                                    for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
-                                                        const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
-                                                        if (used) {
+                                        <FontAwesomeIcon icon={faCirclePlus} className='mr-2' />
+                                        Comprar mas entradas
+                                    </button>
+                                    <button
+                                        className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
+                                        onClick={buy}
+                                    >
+                                        <FontAwesomeIcon icon={faMoneyBill1Wave} className='mr-2' />
+                                        Pagar Entradas
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
-                                                            seatElements.push(
-                                                                <div
-                                                                    className={classCustomUsed}
-                                                                    key={i}>
-                                                                </div>
-                                                            )
-                                                        } else {
-                                                            seatElements.push(
-                                                                <div
-                                                                    onClick={() => handleSeat(row.letter, i)}
-                                                                    className={classCustom}
-                                                                    key={i}>
-                                                                </div>
-                                                            )
+                    ) :
 
-                                                        }
-                                                    }
-                                                } else {
-                                                    for (let i = locality.start; i <= row.quantity; i += locality.interval) {
-                                                        const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
-                                                        if (used) {
-                                                            seatElements.push(
-                                                                <div
-                                                                    className={classCustomUsed}
-                                                                    key={i}>
-                                                                </div>
-                                                            )
-                                                        } else {
-                                                            seatElements.push(
-                                                                <div
-                                                                    onClick={() => handleSeat(row.letter, i)}
-                                                                    className={classCustom}
-                                                                    key={i}>
-                                                                </div>
-                                                            )
-                                                        }
-
-                                                    }
-                                                }
-
-                                                return (
-                                                    <div key={index} className={`my-2  ${locality.style}`}>
-                                                        {seatElements}
-                                                    </div>
-                                                );
-                                            })
-                                        }
+                        !locality ?
+                            (
+                                <div className='lg:mx-60 mx-4 py-6'>
+                                    <div className='w-full text-center text-3xl text-blue-500 py-6 font-bold'>Seleccione la localidad</div>
+                                    <div className='w-full grid grid-cols-5' >
+                                        <div
+                                            onClick={() => handleLocality('General')}
+                                            className='bg-blue-500 p-12 my-2 col-start-2 rounded col-span-3 text-blue-500 hover:bg-blue-200 hover:text-black'
+                                        >
+                                            <div className="text-center text-3xl font-bold">General</div>
+                                            <div className="text-2xl">$ 150.000</div>
+                                        </div>
+                                        <div></div>
+                                        <div
+                                            onClick={() => handleLocality('Platea Izquierda')}
+                                            className='bg-blue-500 px-1 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                        >
+                                            <div className="text-center font-bold">Platea Izquierda</div>
+                                            <div className="text-center">$ 250.000</div>
+                                        </div>
+                                        <div className='col-span-3 grid grid-cols-1'>
+                                            <div
+                                                onClick={() => handleLocality('Oro')}
+                                                className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                            >
+                                                <div className="text-center text-3xl font-bold">Oro</div>
+                                                <div className="text-2xl">$ 320.000</div>
+                                            </div>
+                                            <div
+                                                onClick={() => handleLocality('Diamante')}
+                                                className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                            >
+                                                <div className="text-center text-3xl font-bold">Diamante</div>
+                                                <div className="text-2xl">$ 380.000</div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            onClick={() => handleLocality('Platea Derecha')}
+                                            className='bg-blue-500 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                        >
+                                            <div className="text-center font-bold">Platea Derecha</div>
+                                            <div className="text-center">$ 250.000</div>
+                                        </div>
+                                        <div className='col-span-3 col-start-2 bg-black p-6 rounded-xl text-white'>Escenario</div>
                                     </div>
                                 </div>
                             )
-                            : (
-                                <div className='mx-20 py-6'>
-                                    <Script type="text/javascript" src="https://checkout.wompi.co/widget.js" />
-                                    <span
-                                        onClick={() => setSeatNumber(null)}
-                                        className='inline-block text-white p-2 mb-4 uppercase bg-red-500 cursor-pointer'
-                                    >
-                                        volver
-                                    </span>
-                                    <form className='grid grid-cols-1' onSubmit={handleSubmit}>
-                                        <div className='grid grid-cols-1 mb-4'>
-                                            <label className=''>Nombre</label>
-                                            <InputText value={name} onChange={(e) => setName(e.target.value)} />
+                            :
+                            !(seatRow && seatNumber) ?
+                                (
+                                    <div className='lg:mx-20 mx-6 py-6 w-full overflow-hidden'>
+                                        <span
+                                            onClick={() => setLocality(null)}
+                                            className='inline-block text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg'
+                                        >
+                                            <FontAwesomeIcon icon={faCircleArrowLeft} className='mr-2' />
+                                            Volver
+                                        </span>
+                                        <div className='w-full text-center text-2xl text-blue-500 py-6 font-bold'>Seleccione su Asiento</div>
+                                        <div className={`text-xs text-center pt-32 pb-20 overflow-scroll overflow-hidden w-screen lg:w-full `} style={{ touchAction: 'manipulation' }}>
+                                            {
+                                                locality.seats.map((row, index) => {
+                                                    const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-4 h-4 mr-2`;
+                                                    const classCustomUsed = `inline-block rounded-full uppercase bg-red-500 min-w-2 max-w-2 w-4 h-4 mr-2`;
+                                                    const seatElements = []
+                                                    if (locality.inverse) {
+                                                        for (let i = row.quantity; i >= locality.start; i -= locality.interval) {
+                                                            const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
+                                                            if (used) {
+
+                                                                seatElements.push(
+                                                                    <div
+                                                                        className={classCustomUsed}
+                                                                        key={i}>
+                                                                    </div>
+                                                                )
+                                                            } else {
+                                                                seatElements.push(
+                                                                    <div
+                                                                        onClick={() => handleSeat(row.letter, i)}
+                                                                        className={classCustom}
+                                                                        key={i}>
+                                                                    </div>
+                                                                )
+
+                                                            }
+                                                        }
+                                                    } else {
+                                                        for (let i = locality.start; i <= row.quantity; i += locality.interval) {
+                                                            const used = seatsUseds.find(seat => seat.type == locality.name && seat.row == row.letter && seat.number == i)
+                                                            if (used) {
+                                                                seatElements.push(
+                                                                    <div
+                                                                        className={classCustomUsed}
+                                                                        key={i}>
+                                                                    </div>
+                                                                )
+                                                            } else {
+                                                                seatElements.push(
+                                                                    <div
+                                                                        onClick={() => handleSeat(row.letter, i)}
+                                                                        className={classCustom}
+                                                                        key={i}>
+                                                                    </div>
+                                                                )
+                                                            }
+
+                                                        }
+                                                    }
+
+                                                    return (
+                                                        <div key={index} className={`my-2`} style={{ whiteSpace: 'nowrap' }} >
+                                                            <div key={index} className={`justify-center  ${locality.style}`}>
+                                                                {seatElements}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            }
                                         </div>
+                                    </div>
+                                )
+                                : (
+                                    <div className='lg:mx-20 mx-6 py-6 lg:mx-20'>
+                                        <Script type="text/javascript" src="https://checkout.wompi.co/widget.js" />
+                                        <span
+                                            onClick={() => setSeatNumber(null)}
+                                            className='inline-block text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg'
+                                        >
+                                            <FontAwesomeIcon icon={faCircleArrowLeft} className='mr-2' />
+                                            Volver
+                                        </span>
+                                        <form className='grid grid-cols-1' onSubmit={handleSubmit}>
+                                            <div className='grid grid-cols-1 mb-4'>
+                                                <label className=''>Nombres</label>
+                                                <InputText value={name} onChange={(e) => setName(e.target.value)} />
+                                            </div>
 
-                                        <div className='grid grid-cols-1 mb-4'>
-                                            <label>Documento:</label>
-                                            <InputText value={document} onChange={(e) => setDocument(e.target.value)} />
-                                        </div>
+                                            <div className='grid grid-cols-1 mb-4'>
+                                                <label className=''>Apellidos</label>
+                                                <InputText value={lastname} onChange={(e) => setLastname(e.target.value)} />
+                                            </div>
 
-                                        <div className='grid grid-cols-1 mb-4'>
-                                            <label>Role:</label>
-                                            <select
-                                                className="bg-gray-200 rounded-lg px-4 py-2 text-black"
-                                                value={role}
-                                                onChange={(e) => setRole(e.target.value)}
-                                            >
-                                                {
-                                                    roles.map((role, index) => <option key={index}>{role}</option>)
-                                                }
-                                            </select>
-                                        </div>
+                                            <div className='grid grid-cols-1 mb-4'>
+                                                <label className=''>Correo</label>
+                                                <InputText value={email} onChange={(e) => setEmail(e.target.value)} />
+                                            </div>
 
-                                        <div className='text-center'>
-                                            <button
-                                                type='submit'
-                                                className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white"
-                                            >
-                                                Agregar Boleto
-                                            </button>
-                                        </div>
+                                            <div className='grid grid-cols-1 mb-4'>
+                                                <label>Documento:</label>
+                                                <InputText value={document} onChange={(e) => setDocument(e.target.value)} />
+                                            </div>
 
-                                    </form>
+                                            <div className='grid grid-cols-1 mb-4'>
+                                                <label>Rol:</label>
+                                                <select
+                                                    className="bg-gray-200 rounded-lg px-4 py-2 text-black"
+                                                    value={role}
+                                                    onChange={(e) => setRole(e.target.value)}
+                                                >
+                                                    {
+                                                        roles.map((role, index) => <option key={index}>{role}</option>)
+                                                    }
+                                                </select>
+                                            </div>
 
-                                </div>
-                            )
+                                            <div className='text-center'>
+                                                <button
+                                                    type='submit'
+                                                    className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white"
+                                                >
+                                                    Agregar Boleto
+                                                </button>
+                                            </div>
+
+                                        </form>
+
+                                    </div>
+                                )
 
 
                 }
 
-                <div className='mx-20 py-6'>
-                    <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
-                        Boletos: {tickets.length}
-                    </div>
-                    <div>
-
+                <div className="lg:hidden">
+                    <div className="sticky bottom-0 left-0 right-0 bg-gray-800 text-white p-4 text-center">
+                        <div className='inline-block'>
+                            <p>Boletos: {tickets.length}</p>
+                        </div>
                         {
-                            tickets.length < 1 ?
-                                (
-                                    <div className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-100'>
-                                        Aun no se han creado boletos
-                                    </div>
-                                ) :
-                                (tickets.map((ticket, index) => {
-                                    return (
-                                        <div
-                                            className='py-2 px-6 border border-black-600 my-2 rounded bg-gray-100'
-                                            key={index}
-                                        >
-                                            <p><span className='text-bold'>Nombre:</span> {ticket.name}</p>
-                                            <p><span className='text-bold'>Documento:</span> {ticket.document}</p>
-                                            <p><span className='text-bold'>Role:</span> {ticket.role}</p>
-                                            <p><span className='text-bold'>Zona:</span> {ticket.type}</p>
-                                            <p><span className='text-bold'>Asiento:</span> {ticket.seatRow + ticket.seatNumber}</p>
-                                        </div>
-                                    )
-                                }))
+                            tickets.length > 0 && (
+                                <div className='ml-6 inline-block'>
+                                    <button className='py-2 px-4 rounded m-1 bg-blue-500'>Pagar</button>
+                                </div>
+                            )
                         }
                     </div>
-                    <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
-                        Total: $ {numberWithDots(amountTotal)}
-                    </div>
-
-                    {tickets.length > 0 && (
-                        <div className='w-full text-center'>
-                            <button
-                                className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white"
-                                onClick={buy}
-                            >
-                                Comprar
-                            </button>
-                        </div>
-                    )}
-
                 </div>
-            </div >
 
+
+            </div >
         </>
     );
 }
