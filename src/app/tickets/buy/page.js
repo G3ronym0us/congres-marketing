@@ -525,7 +525,7 @@ export default function BuyTickets() {
                         {
                             tickets.length > 0 && (
                                 <div className='ml-6 inline-block'>
-                                    <button className='py-2 px-4 rounded m-1 bg-blue-500'>Pagar</button>
+                                    <button onClick={buy} className='py-2 px-4 rounded m-1 bg-blue-500'>Pagar</button>
                                 </div>
                             )
                         }
