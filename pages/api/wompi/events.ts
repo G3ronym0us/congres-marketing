@@ -40,9 +40,9 @@ export default async function handler(
     if (data.data.transaction.status == "APPROVED") {
       const query = `SELECT * FROM tickets WHERE reference = ?`;
       const result = await excuteQuery({
-        query: query2,
-        values: [data.data.transaction.status, data.data.transaction.reference],
-      });
+        query: query,
+        values: [data.data.transaction.reference],
+      });      
 
       if (Array.isArray(result)) {
         result.map(async (user) => {
@@ -137,7 +137,7 @@ export default async function handler(
             y: 260, // Posición vertical del texto en la página
             size: 34, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
-            color: rgb(255, 255, 255), // Color del texto (en este caso, negro)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
           page.drawText(lastname, {
@@ -145,7 +145,7 @@ export default async function handler(
             y: 310, // Posición vertical del texto en la página
             size: 24, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
-            color: rgb(255, 255, 255), // Color del texto (en este caso, negro)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
           page.drawText(`LOCALIDAD: ${type}`, {
@@ -153,7 +153,7 @@ export default async function handler(
             y: 391, // Posición vertical del texto en la página
             size: 10, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
-            color: rgb(255, 255, 255), // Color del texto (en este caso, negro)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
           const pdfBytes = await pdfDoc.save();
@@ -196,6 +196,9 @@ export default async function handler(
             }
           });
         });
+      }else{
+        console.error("No es un aarray:");
+        res.status(500).send({ success: false });
       }
     }
   } catch (error) {
