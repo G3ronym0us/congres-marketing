@@ -93,7 +93,7 @@ export default function Landing() {
                     <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-red-400">
                       <FontAwesomeIcon icon={faAward} />
                     </div>
-                    <h6 className="text-xl font-semibold">CONTACTO</h6>
+                    <h6 className="text-xl font-semibold ">CONTACTO</h6>
                   </div>
                 </div>
               </a>
@@ -123,7 +123,7 @@ export default function Landing() {
                     <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-green-400">
                       <FontAwesomeIcon icon={faFingerprint} />
                     </div>
-                    <h6 className="text-xl font-semibold">
+                    <h6 className="text-xl font-semibold text-black">
                       CONFERENCISTAS INVITADOS
                     </h6>
                   </div>
@@ -569,8 +569,7 @@ export default function Landing() {
                   <img
                     alt="..."
                     src={
-                      process.env.NEXT_PUBLIC_URL +
-                      "images/jorge-sandoval.jpg"
+                      process.env.NEXT_PUBLIC_URL + "images/jorge-sandoval.jpg"
                     }
                     className="shadow-lg rounded-full max-w-full mx-auto"
                     style={{ maxWidth: "120px" }}
@@ -804,7 +803,7 @@ export default function Landing() {
                   the bulk of the cards content.
                 </p>
               </div> */}
-            {/* </div> */}
+          {/* </div> */}
           {/* </div> */}
         </section>
         {/* <section className="relative block py-24 lg:pt-0 bg-gray-900">

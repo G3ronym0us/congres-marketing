@@ -278,7 +278,7 @@ export default function BuyTickets() {
             <div className='grid lg:grid-cols-1 bg-gray-100 w-full' style={{ height: '100%' }}>
                 {
                     pay ? (
-                        <div div className='mx-20 py-6 hidden lg:block'>
+                        <div div className='mx-20 py-6'>
                             <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
                                 Boletos: {tickets.length}
                             </div>
@@ -468,27 +468,27 @@ export default function BuyTickets() {
                                         </span>
                                         <form className='grid grid-cols-1' onSubmit={handleSubmit}>
                                             <div className='grid grid-cols-1 mb-4'>
-                                                <label className=''>Nombres</label>
+                                                <label className='text-black'>Nombres</label>
                                                 <InputText value={name} onChange={(e) => setName(e.target.value)} />
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
-                                                <label className=''>Apellidos</label>
+                                                <label className='text-black'>Apellidos</label>
                                                 <InputText value={lastname} onChange={(e) => setLastname(e.target.value)} />
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
-                                                <label className=''>Correo</label>
+                                                <label className='text-black'>Correo</label>
                                                 <InputText value={email} onChange={(e) => setEmail(e.target.value)} />
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
-                                                <label>Documento:</label>
+                                                <label className='text-black'>Documento:</label>
                                                 <InputText value={document} onChange={(e) => setDocument(e.target.value)} />
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
-                                                <label>Rol:</label>
+                                                <label className='text-black'>Rol:</label>
                                                 <select
                                                     className="bg-gray-200 rounded-lg px-4 py-2 text-black"
                                                     value={role}
