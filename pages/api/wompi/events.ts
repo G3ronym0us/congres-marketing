@@ -82,7 +82,7 @@ export default async function handler(
           }
 
           const imgeTextBuffer = await imageTextResponse.arrayBuffer();
-          const imageText = await pdfDoc.embedPng(imageBuffer);
+          const imageText = await pdfDoc.embedPng(imgeTextBuffer);
           page.drawImage(imageText, {
             x: 0,
             y: 0,
