@@ -223,7 +223,7 @@ export default function Landing() {
                   alt="..."
                   className="max-w-full rounded-lg shadow-lg"
                   src={
-                    process.env.NEXT_PUBLIC_URL + "images/paneles.jpg"
+                    process.env.NEXT_PUBLIC_URL + "images/paneles.jpeg"
                   }                />
               </div>
               <div className="w-full md:w-5/12 ml-auto mr-auto px-4">
