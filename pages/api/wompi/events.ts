@@ -3,7 +3,7 @@ import excuteQuery from "../db";
 import { PDFDocument, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
-import fonkit from '@pdf-lib/fontkit';
+import fonkit from "@pdf-lib/fontkit";
 
 type Data = {
   success: boolean;
@@ -180,8 +180,20 @@ export default async function handler(
           const mailOptions = {
             from: "info@cnmpcolombia.com",
             to: email,
-            subject: "Adjunto: PDF con imagen y código QR",
-            text: "Adjunto encontrarás el PDF con la imagen y el código QR.",
+            subject: "Confirmación de Participación CNMP",
+            text: `
+            ¡Enhorabuena!
+            Haz asegurado tu cupo para participar del Congreso Nacioal de Marketing Político - Colombia 2023.
+            
+            Recuerda asistir puntual a las conferencias y actividades programadas, y seguir las instrucciones de nuestro personal logístico.
+            
+            Lugar: Auditorio mayor Carlos Gómez Albarracín UNAB, Bucaramanga, Colombia.
+            
+            Fecha: 14 y 15 de julio de 2023.
+            
+            Si requieres información, escríbenos a cnmmcolombia@gmail.com o a nuestro WhatsApp 3160557600
+            
+            ¡Te esperamos!`,
             attachments: [
               {
                 filename: "image_with_qr.pdf",
