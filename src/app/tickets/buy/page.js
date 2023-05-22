@@ -180,6 +180,9 @@ export default function BuyTickets() {
             var transaction = result.transaction
             console.log('Transaction ID: ', transaction.id)
             console.log('Transaction object: ', transaction)
+            clearForm();
+            setTickets([]);
+            setPay(false);
         })
     };
 
