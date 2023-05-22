@@ -21,7 +21,7 @@ export default function Navbar(props: any) {
               (props.transparent ? "text-white" : "text-gray-800") +
               " text-sm font-bold leading-relaxed inline-block mr-4 py-2 whitespace-nowrap uppercase"
             }
-            href="http://cnmpcolombia.com/"
+            href="https://cnmpcolombia.com/"
           >
             <Image src={logo} width={250} className="inline" alt="" />
           </Link>

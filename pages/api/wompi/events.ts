@@ -24,12 +24,12 @@ export default async function handler(
   try {
     const data = req.body;
 
-    const query = `INSERT INTO events (reference, body) 
-        VALUES(?, ?)`;
-    const result = await excuteQuery({
-      query,
-      values: [data.data.transaction.reference, JSON.stringify(data)],
-    });
+    // const query = `INSERT INTO events (reference, body) 
+    //     VALUES(?, ?)`;
+    // const result = await excuteQuery({
+    //   query,
+    //   values: [data.data.transaction.reference, JSON.stringify(data)],
+    // });
 
     const query2 = `UPDATE tickets SET status = ? WHERE reference = ?`;
     const result2 = await excuteQuery({

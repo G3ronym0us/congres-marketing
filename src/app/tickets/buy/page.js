@@ -17,7 +17,7 @@ export default function BuyTickets() {
     const [lastname, setLastname] = useState('');
     const [email, setEmail] = useState('');
     const [document, setDocument] = useState('');
-    const [role, setRole] = useState(null);
+    const [role, setRole] = useState('Asesor político');
     const [tickets, setTickets] = useState([]);
     const [selectedOption, setSelectedOption] = useState('diamond');
     const [amountTotal, setAmountTotal] = useState(0);
