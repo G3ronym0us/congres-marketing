@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import excuteQuery from "../db";
-import { stringify } from "querystring";
 import { PDFDocument, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
-import { isArray } from "util";
+import fonkit from '@pdf-lib/fontkit';
 
 type Data = {
   success: boolean;
@@ -24,7 +23,7 @@ export default async function handler(
   try {
     const data = req.body;
 
-    // const query = `INSERT INTO events (reference, body) 
+    // const query = `INSERT INTO events (reference, body)
     //     VALUES(?, ?)`;
     // const result = await excuteQuery({
     //   query,
@@ -42,7 +41,7 @@ export default async function handler(
       const result = await excuteQuery({
         query: query,
         values: [data.data.transaction.reference],
-      });      
+      });
 
       if (Array.isArray(result)) {
         result.map(async (user) => {
@@ -53,7 +52,13 @@ export default async function handler(
           const type = "type" in user ? user.type : null;
 
           const pdfDoc = await PDFDocument.create();
+          pdfDoc.registerFontkit(fonkit);
           const page = pdfDoc.addPage();
+
+          const fontBytes = await fetch(
+            process.env.NEXT_PUBLIC_URL + "fonts/Garet-Heavy.ttf"
+          ).then((res) => res.arrayBuffer());
+          const customFont = await pdfDoc.embedFont(fontBytes);
 
           // Agrega la imagen
           const imageUrl =
@@ -134,17 +139,17 @@ export default async function handler(
 
           page.drawText(name, {
             x: 77, // Posición horizontal del texto en la página
-            y: 582, // Posición vertical del texto en la página
-            size: 34, // Tamaño de fuente del texto
-            font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
+            y: 572, // Posición vertical del texto en la página
+            size: 38, // Tamaño de fuente del texto
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
           page.drawText(lastname, {
             x: 77, // Posición horizontal del texto en la página
             y: 532, // Posición vertical del texto en la página
-            size: 24, // Tamaño de fuente del texto
-            font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
+            size: 28, // Tamaño de fuente del texto
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
@@ -152,7 +157,7 @@ export default async function handler(
             x: 105, // Posición horizontal del texto en la página
             y: 451, // Posición vertical del texto en la página
             size: 10, // Tamaño de fuente del texto
-            font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
@@ -163,12 +168,12 @@ export default async function handler(
           const transporter = nodemailer.createTransport({
             // Configura los detalles del servicio de correo electrónico que usarás
             // Aquí se muestra un ejemplo usando Gmail. Asegúrate de proporcionar tus propias credenciales y detalles del servidor SMTP.
-            host: "smtp.hostinger.com",
-            port: 465,
-            secure: true,
+            host: "smtp-relay.sendinblue.com",
+            port: 587,
+            secure: false,
             auth: {
-              user: "info@cnmpcolombia.com",
-              pass: "C0ngr3ssYesid**",
+              user: "cnmpcolombia@gmail.com",
+              pass: "MGaQ7gtTZkIUAsrw",
             },
           });
 
@@ -196,7 +201,7 @@ export default async function handler(
             }
           });
         });
-      }else{
+      } else {
         console.error("No es un aarray:");
         res.status(500).send({ success: false });
       }

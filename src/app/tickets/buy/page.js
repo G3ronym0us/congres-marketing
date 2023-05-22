@@ -6,13 +6,15 @@ import { randomBytes } from 'crypto';
 import Script from 'next/script';
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleArrowLeft, faCirclePlus, faMoneyBill1Wave } from '@fortawesome/free-solid-svg-icons';
+import { faCircleArrowLeft, faCirclePlus, faDeleteLeft, faEdit, faMoneyBill1Wave, faRemove } from '@fortawesome/free-solid-svg-icons';
+import validator from 'validator';
 
 export default function BuyTickets() {
 
 
     const [locality, setLocality] = useState(null);
     const [pay, setPay] = useState(false);
+    const [errors, setErrors] = useState({});
     const [name, setName] = useState('');
     const [lastname, setLastname] = useState('');
     const [email, setEmail] = useState('');
@@ -183,29 +185,44 @@ export default function BuyTickets() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const type = ticketsType.find((type) => type.value === selectedOption)
-        const ticket = {
-            name,
-            lastname,
-            email,
-            document,
-            role,
-            type: locality.name,
-            seatNumber,
-            seatRow,
-            amount: locality.amount,
+
+        const newErrors = {};
+
+        if (name.trim() === '') newErrors.name = 'Los nombres son requeridos';
+        if (lastname.trim() === '') newErrors.lastname = 'Los apellidos son requeridos';
+        if (!validator.isEmail(email)) newErrors.email = 'El email no es valido';
+        if (document.trim() === '') newErrors.document = 'El documento no es valido';
+        if (role.trim() === '') newErrors.role = 'El rol no es valido';
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length === 0) {
+            const type = ticketsType.find((type) => type.value === selectedOption)
+            const ticket = {
+                name,
+                lastname,
+                email,
+                document,
+                role,
+                type: locality.name,
+                seatNumber,
+                seatRow,
+                amount: locality.amount,
+            }
+            setTickets([...tickets, ticket])
+            setPay(true);
+            clearForm();
         }
-        setTickets([...tickets, ticket])
-        setPay(true);
-        clearForm();
     };
 
     const clearForm = () => {
         setName('');
+        setLastname('');
+        setEmail('');
         setDocument('');
-        setRole(null);
-        setSeatNumber(null),
-            setSeatRow(null);
+        setRole('Asesor político');
+        setSeatNumber(null);
+        setSeatRow(null);
         setLocality(null);
     }
 
@@ -272,6 +289,39 @@ export default function BuyTickets() {
 
     }
 
+    const editSeat = (ticket) => {
+        setLocality(null);
+        setSeatRow(null);
+        setSeatNumber(null);
+        setName(ticket.name);
+        setLastname(ticket.lastname);
+        setEmail(ticket.email);
+        setDocument(ticket.document);
+        setRole(ticket.role);
+        const indexTicket = tickets.indexOf(ticket);
+        tickets.splice(indexTicket, 1);
+        setPay(false);
+    }
+
+    const editInformation = (ticket) => {
+        setLocality(ticket.type);
+        setSeatRow(ticket.seatRow);
+        setSeatNumber(ticket.seatNumber);
+        setName(ticket.name);
+        setLastname(ticket.lastname);
+        setEmail(ticket.email);
+        setDocument(ticket.document);
+        setRole(ticket.role);
+        const indexTicket = tickets.indexOf(ticket);
+        tickets.splice(indexTicket, 1);
+        setPay(false);
+    }
+
+    const deleteTicket = (ticket) => {
+        const ticketsFiltered = tickets.filter(t => t.document != ticket.document);
+        setTickets(ticketsFiltered);
+    }
+
     return (
         <>
             <Navbar />
@@ -303,6 +353,29 @@ export default function BuyTickets() {
                                                     <p><span className='font-bold'>Role:</span> {ticket.role}</p>
                                                     <p><span className='font-bold'>Zona:</span> {ticket.type}</p>
                                                     <p><span className='font-bold'>Asiento:</span> {ticket.seatRow + ticket.seatNumber}</p>
+                                                    <div>
+                                                        <button
+                                                            onClick={() => editSeat(ticket)}
+                                                            className='p-1 mr-4 my-1 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg'
+                                                        >
+                                                            <FontAwesomeIcon icon={faEdit} className='pr-2'/>
+                                                            Editar Asiento
+                                                        </button>
+                                                        <button
+                                                            onClick={() => editInformation(ticket)}
+                                                            className='p-1 mr-4 my-1 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg'
+                                                        >
+                                                            <FontAwesomeIcon icon={faEdit} className='pr-2'/>
+                                                            Editar Información
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteTicket(ticket)}
+                                                            className='p-1 mr-4 my-1 text-red-500 hover:bg-red-500 hover:text-white rounded-lg'
+                                                        >
+                                                            <FontAwesomeIcon icon={faRemove} className='pr-2'/>
+                                                            Eliminar Boleto
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )
                                         }))
@@ -312,15 +385,16 @@ export default function BuyTickets() {
                                 Total: $ {numberWithDots(amountTotal)}
                             </div>
 
-                            {tickets.length > 0 && (
-                                <div className='w-full text-center'>
-                                    <button
-                                        onClick={() => setPay(false)}
-                                        className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                    >
-                                        <FontAwesomeIcon icon={faCirclePlus} className='mr-2' />
-                                        Comprar mas entradas
-                                    </button>
+
+                            <div className='w-full text-center'>
+                                <button
+                                    onClick={() => setPay(false)}
+                                    className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
+                                >
+                                    <FontAwesomeIcon icon={faCirclePlus} className='mr-2' />
+                                    Comprar mas entradas
+                                </button>
+                                {tickets.length > 0 && (
                                     <button
                                         className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
                                         onClick={buy}
@@ -328,8 +402,9 @@ export default function BuyTickets() {
                                         <FontAwesomeIcon icon={faMoneyBill1Wave} className='mr-2' />
                                         Pagar Entradas
                                     </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
+
                         </div>
 
                     ) :
@@ -474,28 +549,41 @@ export default function BuyTickets() {
                                         <form className='grid grid-cols-1' onSubmit={handleSubmit}>
                                             <div className='grid grid-cols-1 mb-4'>
                                                 <label className='text-black'>Nombres</label>
-                                                <InputText value={name} onChange={(e) => setName(e.target.value)} />
+                                                <InputText value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
+                                                {errors.name && (
+                                                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                                )}
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
                                                 <label className='text-black'>Apellidos</label>
-                                                <InputText value={lastname} onChange={(e) => setLastname(e.target.value)} />
+                                                <InputText value={lastname} error={errors.lastname} onChange={(e) => setLastname(e.target.value)} />
+                                                {errors.lastname && (
+                                                    <p className="text-red-500 text-sm mt-1">{errors.lastname}</p>
+                                                )}
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
                                                 <label className='text-black'>Correo</label>
-                                                <InputText value={email} onChange={(e) => setEmail(e.target.value)} />
+                                                <InputText value={email} error={errors.email} onChange={(e) => setEmail(e.target.value)} />
+                                                {errors.email && (
+                                                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                                                )}
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
                                                 <label className='text-black'>Documento:</label>
-                                                <InputText value={document} onChange={(e) => setDocument(e.target.value)} />
+                                                <InputText value={document} error={errors.document} onChange={(e) => setDocument(e.target.value)} />
+                                                {errors.document && (
+                                                    <p className="text-red-500 text-sm mt-1">{errors.document}</p>
+                                                )}
                                             </div>
 
                                             <div className='grid grid-cols-1 mb-4'>
                                                 <label className='text-black'>Rol:</label>
                                                 <select
-                                                    className="bg-gray-200 rounded-lg px-4 py-2 text-black"
+                                                    className={`bg-gray-200 rounded-lg px-4 py-2 text-black ${errors.role ? "border-red-500" : "border-gray-300"
+                                                        }`}
                                                     value={role}
                                                     onChange={(e) => setRole(e.target.value)}
                                                 >
@@ -503,6 +591,9 @@ export default function BuyTickets() {
                                                         roles.map((role, index) => <option key={index}>{role}</option>)
                                                     }
                                                 </select>
+                                                {errors.role && (
+                                                    <p className="text-red-500 text-sm mt-1">{errors.role}</p>
+                                                )}
                                             </div>
 
                                             <div className='text-center'>
