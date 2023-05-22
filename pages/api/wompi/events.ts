@@ -115,7 +115,7 @@ export default async function handler(
           const imageIcon = await pdfDoc.embedPng(iconBuffer);
           page.drawImage(imageIcon, {
             x: 77,
-            y: 389,
+            y: 453,
             width: 18,
             height: 18,
           });
@@ -134,7 +134,7 @@ export default async function handler(
 
           page.drawText(name, {
             x: 77, // Posición horizontal del texto en la página
-            y: 260, // Posición vertical del texto en la página
+            y: 582, // Posición vertical del texto en la página
             size: 34, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
@@ -142,7 +142,7 @@ export default async function handler(
 
           page.drawText(lastname, {
             x: 77, // Posición horizontal del texto en la página
-            y: 310, // Posición vertical del texto en la página
+            y: 532, // Posición vertical del texto en la página
             size: 24, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
@@ -150,7 +150,7 @@ export default async function handler(
 
           page.drawText(`LOCALIDAD: ${type}`, {
             x: 105, // Posición horizontal del texto en la página
-            y: 391, // Posición vertical del texto en la página
+            y: 451, // Posición vertical del texto en la página
             size: 10, // Tamaño de fuente del texto
             font: await pdfDoc.embedFont("Helvetica"), // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)

@@ -341,30 +341,34 @@ export default function BuyTickets() {
                                     <div className='w-full grid grid-cols-5' >
                                         <div
                                             onClick={() => handleLocality('General')}
-                                            className='bg-blue-500 p-12 my-2 col-start-2 rounded col-span-3 text-blue-500 hover:bg-blue-200 hover:text-black'
+                                            className=' p-12 my-2 col-start-2 rounded col-span-3 text-black-500 '
+                                            style={{ backgroundColor: '#5F91EB' }}
                                         >
                                             <div className="text-center text-3xl font-bold">General</div>
-                                            <div className="text-2xl">$ 150.000</div>
+                                            <div className="text-lg">$ 150.000</div>
                                         </div>
                                         <div></div>
                                         <div
                                             onClick={() => handleLocality('Platea Izquierda')}
-                                            className='bg-blue-500 px-1 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                            className=' px-1 py-6 m-2 rounded-lg text-black-500 '
+                                            style={{ backgroundColor: '#FFC300' }}
                                         >
-                                            <div className="text-center font-bold">Platea Izquierda</div>
-                                            <div className="text-center">$ 250.000</div>
+                                            <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">Platea Izquierda</div>
+                                            <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">$ 250.000</div>
                                         </div>
                                         <div className='col-span-3 grid grid-cols-1'>
                                             <div
                                                 onClick={() => handleLocality('Oro')}
-                                                className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                                className='p-6 m-2 rounded-lg text-black-500 '
+                                                style={{ backgroundColor: '#04FF00' }}
                                             >
                                                 <div className="text-center text-3xl font-bold">Oro</div>
                                                 <div className="text-2xl">$ 320.000</div>
                                             </div>
                                             <div
                                                 onClick={() => handleLocality('Diamante')}
-                                                className='bg-blue-500 p-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                                className=' p-6 m-2 rounded-lg text-black-500'
+                                                style={{ backgroundColor: '#F600FF' }}
                                             >
                                                 <div className="text-center text-3xl font-bold">Diamante</div>
                                                 <div className="text-2xl">$ 380.000</div>
@@ -372,10 +376,11 @@ export default function BuyTickets() {
                                         </div>
                                         <div
                                             onClick={() => handleLocality('Platea Derecha')}
-                                            className='bg-blue-500 py-6 m-2 rounded-lg text-blue-500 hover:bg-blue-200 hover:text-black'
+                                            className=' py-6 m-2 rounded-lg text-black-500 '
+                                            style={{ backgroundColor: '#FFC300' }}
                                         >
-                                            <div className="text-center font-bold">Platea Derecha</div>
-                                            <div className="text-center">$ 250.000</div>
+                                            <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">Platea Derecha</div>
+                                            <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">$ 250.000</div>
                                         </div>
                                         <div className='col-span-3 col-start-2 bg-black p-6 rounded-xl text-white'>Escenario</div>
                                     </div>
