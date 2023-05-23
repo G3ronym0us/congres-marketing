@@ -78,8 +78,27 @@ export default async function handler(
             height: page.getHeight(),
           });
 
-          const imageTextUrl =
-            process.env.NEXT_PUBLIC_URL + "images/pdf-text.png";
+          let imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+          switch (type) {
+            case "Diamante":
+              imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-diamante.png";
+              break;
+            case "Oro":
+              imageTextUrl =
+                process.env.NEXT_PUBLIC_URL + "images/pdf-text-oro.png";
+              break;
+              case "Platea Derecha":
+              imageTextUrl =
+                process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
+              break;
+              case "Platea Izquierda":
+              imageTextUrl =
+                process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
+              break;
+            default:
+              imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+              break;
+          }
 
           const imageTextResponse = await fetch(imageTextUrl);
           if (!imageTextResponse.ok) {
@@ -93,36 +112,6 @@ export default async function handler(
             y: 0,
             width: page.getWidth(),
             height: page.getHeight(),
-          });
-
-          // Add Icon
-
-          let iconURL = process.env.NEXT_PUBLIC_URL + "images/silla.png";
-          switch (type) {
-            case "Diamante":
-              iconURL = process.env.NEXT_PUBLIC_URL + "images/diamante.png";
-              break;
-            case "Oro":
-              iconURL =
-                process.env.NEXT_PUBLIC_URL + "images/lingotes-de-oro.png";
-              break;
-            default:
-              iconURL = process.env.NEXT_PUBLIC_URL + "images/silla.png";
-              break;
-          }
-
-          const iconResponse = await fetch(iconURL);
-          if (!iconResponse.ok) {
-            throw new Error("Failed to fetch the image");
-          }
-
-          const iconBuffer = await iconResponse.arrayBuffer();
-          const imageIcon = await pdfDoc.embedPng(iconBuffer);
-          page.drawImage(imageIcon, {
-            x: 77,
-            y: 453,
-            width: 18,
-            height: 18,
           });
 
           // Agrega el código QR

@@ -13,6 +13,7 @@ import {
   faPoll,
   faRetweet,
   faRocket,
+  faTicket,
   faUserFriends,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
@@ -83,10 +84,31 @@ export default function Landing() {
 
         <section className="pb-20 bg-gray-300 -mt-24">
           <div className="container mx-auto px-4">
-            <div className="flex flex-wrap">
+            <div className="flex flex-wrap text-black">
+              <Link
+                href={process.env.NEXT_PUBLIC_URL + "tickets/buy"}
+                className="w-full md:w-4/12 px-4 text-center lg:order-2"
+              >
+                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
+                  <div className="px-4 py-5 flex-auto">
+                    <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-blue-400">
+                      <svg className="animate-bounce w-6 h-6">
+                        <FontAwesomeIcon icon={faTicket} />
+                      </svg>
+                    </div>
+                    <h6 className="text-xl font-semibold">
+                      COMPRA TUS ENTRADAS
+                      <span className="relative flex h-7 w-7">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-5 w-5 bg-sky-500"></span>
+                      </span>
+                    </h6>
+                  </div>
+                </div>
+              </Link>
               <a
                 href="#contacts"
-                className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center"
+                className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center lg:order-1"
               >
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
                   <div className="px-4 py-5 flex-auto">
@@ -98,25 +120,9 @@ export default function Landing() {
                 </div>
               </a>
 
-              <Link
-                href={process.env.NEXT_PUBLIC_URL + "tickets/buy"}
-                className="w-full md:w-4/12 px-4 text-center"
-              >
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
-                  <div className="px-4 py-5 flex-auto">
-                    <div className="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 mb-5 shadow-lg rounded-full bg-blue-400">
-                      <FontAwesomeIcon icon={faRetweet} />
-                    </div>
-                    <h6 className="text-xl font-semibold">
-                      COMPRA TUS ENTRADAS
-                    </h6>
-                  </div>
-                </div>
-              </Link>
-
               <a
                 href="#conferences"
-                className="pt-6 w-full md:w-4/12 px-4 text-center"
+                className="pt-6 w-full md:w-4/12 px-4 text-center lg:order-3"
               >
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-8 shadow-lg rounded-lg">
                   <div className="px-4 py-5 flex-auto">
@@ -222,9 +228,8 @@ export default function Landing() {
                 <img
                   alt="..."
                   className="max-w-full rounded-lg shadow-lg"
-                  src={
-                    process.env.NEXT_PUBLIC_URL + "images/paneles.jpeg"
-                  }                />
+                  src={process.env.NEXT_PUBLIC_URL + "images/paneles.jpeg"}
+                />
               </div>
               <div className="w-full md:w-5/12 ml-auto mr-auto px-4">
                 <div className="md:pr-12">
