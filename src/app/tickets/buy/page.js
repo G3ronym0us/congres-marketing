@@ -34,7 +34,7 @@ export default function BuyTickets() {
     const localities = [
         {
             name: 'Diamante',
-            amount: 10000,
+            amount: 380000,
             start: 101,
             interval: 1,
             spacing: 1,
