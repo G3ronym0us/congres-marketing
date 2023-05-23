@@ -142,6 +142,14 @@ export default async function handler(
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
+          page.drawText(document, {
+            x: 77, // Posición horizontal del texto en la página
+            y: 504, // Posición vertical del texto en la página
+            size: 28, // Tamaño de fuente del texto
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+          });
+
           const pdfBytes = await pdfDoc.save();
           const pdfBuffer = Buffer.from(pdfBytes);
 

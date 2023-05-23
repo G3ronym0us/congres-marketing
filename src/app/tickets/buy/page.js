@@ -26,6 +26,7 @@ export default function BuyTickets() {
     const [seatRow, setSeatRow] = useState(null);
     const [seatNumber, setSeatNumber] = useState(null);
     const [seatsUseds, setSeatsUseds] = useState([]);
+    const [ticketEdit, setTicketEdit] = useState(null);
 
     useEffect(() => {
         getSeatsUseds();
@@ -43,7 +44,7 @@ export default function BuyTickets() {
                 { letter: 'D', quantity: 134 },
                 { letter: 'C', quantity: 134 },
                 { letter: 'B', quantity: 138 },
-                { letter: 'A', quantity: 141 }
+                { letter: 'A', quantity: 140 }
             ]
         },
         {
@@ -57,9 +58,9 @@ export default function BuyTickets() {
                 { letter: 'J', quantity: 138 },
                 { letter: 'K', quantity: 137 },
                 { letter: 'H', quantity: 134 },
-                { letter: 'G', quantity: 133 },
+                { letter: 'G', quantity: 132 },
                 { letter: 'F', quantity: 134 },
-                { letter: 'E', quantity: 133 }
+                { letter: 'E', quantity: 132 }
             ]
         },
         {
@@ -200,19 +201,39 @@ export default function BuyTickets() {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            const type = ticketsType.find((type) => type.value === selectedOption)
-            const ticket = {
-                name,
-                lastname,
-                email,
-                document,
-                role,
-                type: locality.name,
-                seatNumber,
-                seatRow,
-                amount: locality.amount,
+            if (ticketEdit) {
+                setTickets(() => {
+                    return tickets.map(ticket => {
+                        if (ticket.document == ticketEdit) {
+                            return {
+                                name: name ? name : ticket.name,
+                                lastname: lastname ? lastname : ticket.lastname,
+                                email: email ? email : ticket.email,
+                                document: document ? document : ticket.document,
+                                role: role ? role : ticket.role,
+                                type: locality ? locality.name : ticket.type,
+                                seatNumber: seatNumber ? seatNumber : ticket.seatNumber,
+                                seatRow: seatRow ? seatRow : ticket.seatRow,
+                                amount: locality ? locality.amount : ticket.amount,
+                            }
+                        }
+                        return ticket;
+                    })
+                })
+            } else {
+                const ticket = {
+                    name,
+                    lastname,
+                    email,
+                    document,
+                    role,
+                    type: locality.name,
+                    seatNumber,
+                    seatRow,
+                    amount: locality.amount,
+                }
+                setTickets([...tickets, ticket])
             }
-            setTickets([...tickets, ticket])
             setPay(true);
             clearForm();
         }
@@ -227,6 +248,7 @@ export default function BuyTickets() {
         setSeatNumber(null);
         setSeatRow(null);
         setLocality(null);
+        setTicketEdit(null)
     }
 
     const handleOptionChange = (value) => {
@@ -293,6 +315,7 @@ export default function BuyTickets() {
     }
 
     const editSeat = (ticket) => {
+        setTicketEdit(ticket.document);
         setLocality(null);
         setSeatRow(null);
         setSeatNumber(null);
@@ -301,13 +324,13 @@ export default function BuyTickets() {
         setEmail(ticket.email);
         setDocument(ticket.document);
         setRole(ticket.role);
-        const indexTicket = tickets.indexOf(ticket);
-        tickets.splice(indexTicket, 1);
         setPay(false);
     }
 
     const editInformation = (ticket) => {
-        setLocality(ticket.type);
+        const locality = localities.find((locality) => locality.name === ticket.type)
+        setTicketEdit(ticket.document);
+        setLocality(locality);
         setSeatRow(ticket.seatRow);
         setSeatNumber(ticket.seatNumber);
         setName(ticket.name);
@@ -315,8 +338,6 @@ export default function BuyTickets() {
         setEmail(ticket.email);
         setDocument(ticket.document);
         setRole(ticket.role);
-        const indexTicket = tickets.indexOf(ticket);
-        tickets.splice(indexTicket, 1);
         setPay(false);
     }
 
@@ -361,21 +382,21 @@ export default function BuyTickets() {
                                                             onClick={() => editSeat(ticket)}
                                                             className='p-1 mr-4 my-1 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg'
                                                         >
-                                                            <FontAwesomeIcon icon={faEdit} className='pr-2'/>
+                                                            <FontAwesomeIcon icon={faEdit} className='pr-2' />
                                                             Editar Asiento
                                                         </button>
                                                         <button
                                                             onClick={() => editInformation(ticket)}
                                                             className='p-1 mr-4 my-1 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg'
                                                         >
-                                                            <FontAwesomeIcon icon={faEdit} className='pr-2'/>
+                                                            <FontAwesomeIcon icon={faEdit} className='pr-2' />
                                                             Editar Información
                                                         </button>
                                                         <button
                                                             onClick={() => deleteTicket(ticket)}
                                                             className='p-1 mr-4 my-1 text-red-500 hover:bg-red-500 hover:text-white rounded-lg'
                                                         >
-                                                            <FontAwesomeIcon icon={faRemove} className='pr-2'/>
+                                                            <FontAwesomeIcon icon={faRemove} className='pr-2' />
                                                             Eliminar Boleto
                                                         </button>
                                                     </div>
@@ -385,7 +406,15 @@ export default function BuyTickets() {
                                 }
                             </div>
                             <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
-                                Total: $ {numberWithDots(amountTotal)}
+                                <div className='line-through'>
+                                    Total: $ {numberWithDots(amountTotal)}
+                                </div>
+                                <div>
+                                    {"Descuento (-15%): $ " + numberWithDots(amountTotal * -0.15)}
+                                </div>
+                                <div>
+                                    {"Total a Pagar: $ " + numberWithDots(amountTotal * 0.85)}
+                                </div>
                             </div>
 
 
