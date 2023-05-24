@@ -79,7 +79,7 @@ export default function Profile() {
                         <FontAwesomeIcon icon={faUniversity} className="mr-2" />
                         SUBTEMAS
                       </div>
-                      <div className="block">
+                      <div className="block text-gray-500">
                         <ul className="mb-6">
                           <li>
                             <FontAwesomeIcon
@@ -120,7 +120,7 @@ export default function Profile() {
                 </div>
                 <div className="mt-10 py-10 border-t border-gray-300 text-center">
                   <div className="flex flex-wrap justify-center">
-                    <div className="w-full lg:w-9/12 px-4">
+                    <div className="w-full lg:w-9/12 px-4 text-gray-500">
                       <div className="text-justify mb-4">
                         Estratega electoral con más de 200 campañas y 90% de
                         éxitos. Asesor de gobierno, imagen pública y reputación.
@@ -140,7 +140,7 @@ export default function Profile() {
                         <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
                         Formación
                       </div>
-                      <ul className="mb-6 text-justify">
+                      <ul className="mb-6 text-justify text-gray-500">
                         <li>
                           <FontAwesomeIcon
                             icon={faUniversity}

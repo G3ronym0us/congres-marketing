@@ -145,7 +145,7 @@ export default function Profile() {
                         <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
                         HOJA DE VIDA{" "}
                       </div>
-                      <ul className="mb-6 text-justify">
+                      <ul className="mb-6 text-justify text-gray-500">
                         <li>
                           <FontAwesomeIcon icon={faLifeRing} className="mr-2" />
                           Comunicador Social-Periodista de la Universidad

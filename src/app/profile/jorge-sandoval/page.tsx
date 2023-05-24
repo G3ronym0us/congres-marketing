@@ -145,13 +145,13 @@ export default function Profile() {
                         <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
                         HOJA DE VIDA{" "}
                       </div>
-                      <div className="text-justify mb-4">
+                      <div className="text-justify mb-4 text-gray-500">
                         &nbsp;Fotografo político con más de 20 años de experiencia en
                         cargos ejecutivos, Direcciones de Comunicación Social de
                         diversos órdenes de Gobiernos, Partidos Políticos y
                         campañas electorales.
                       </div>
-                      <div className="text-justify mb-4">
+                      <div className="text-justify mb-4 text-gray-500">
                         &nbsp;Se integró a un Prestigiado estudio Fotográfico
                         especializado en Fotografía Política como Director
                         Asociado, donde por 15 años trabajó en sesiones

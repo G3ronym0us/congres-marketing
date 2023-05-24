@@ -82,7 +82,7 @@ export default function Profile() {
                         <FontAwesomeIcon icon={faUniversity} className="mr-2" />
                         SUBTEMAS
                       </div>
-                      <div className="block">
+                      <div className="block text-gray-500">
                         <ul className="mb-6">
                           <li>
                             <FontAwesomeIcon
@@ -144,7 +144,7 @@ export default function Profile() {
                         <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
                         FORMACIÓN ACADEMICA
                       </div>
-                      <ul className="mb-6 text-justify">
+                      <ul className="mb-6 text-justify text-gray-500">
                         <li>
                           <FontAwesomeIcon
                             icon={faUniversity}
@@ -193,7 +193,7 @@ export default function Profile() {
                         EXPERIENCIA LABORAL
                       </div>
 
-                      <ul className="mb-6 text-justify">
+                      <ul className="mb-6 text-justify text-gray-500">
                         <li>
                           <FontAwesomeIcon
                             icon={faUniversity}
