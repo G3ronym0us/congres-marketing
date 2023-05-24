@@ -62,13 +62,13 @@ export default function Profile() {
                         alt="..."
                         src={
                           process.env.NEXT_PUBLIC_URL +
-                          "images/robison-castillo.jpg"
+                          "images/cristian-baracaldo.jpg"
                         }
                         className="shadow-lg rounded-full max-w-full mx-auto"
                         style={{ maxWidth: "120px" }}
                       />
                       <h3 className="text-4xl font-semibold leading-normal mb-2 text-gray-800 mb-2">
-                        Cristian Castellanos Baracaldo
+                        Cristian Baracaldo
                       </h3>
                       <div className="text-sm leading-normal mt-0 mb-2 text-gray-500 font-bold uppercase">
                         <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-500"></i>{" "}
