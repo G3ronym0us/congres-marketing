@@ -601,7 +601,7 @@ export default function Landing() {
               </a>
             </div>
 
-            <div className="flex flex-wrap">
+            <div className="flex flex-wrap mb-12">
               <a
                 href={process.env.NEXT_PUBLIC_URL + "profile/jorge-sandoval"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
@@ -975,6 +975,75 @@ export default function Landing() {
                           />
                         </svg>
                       </a>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div className="flex flex-wrap">
+            <a
+                href={process.env.NEXT_PUBLIC_URL + "profile/adelina-covo"}
+                className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
+              >
+                <div className="px-6">
+                  <img
+                    alt="..."
+                    src={
+                      process.env.NEXT_PUBLIC_URL +
+                      "images/adelina-covo.jpg"
+                    }
+                    className="shadow-lg rounded-full max-w-full mx-auto"
+                    style={{ maxWidth: "120px" }}
+                  />
+                  <div className="pt-6 text-center">
+                    <h5 className="text-xl font-bold">
+                      Adelina Covo
+                    </h5>
+                    <p className="mt-1 text-sm text-gray-500 uppercase font-semibold">
+                      ‘Cómo blindar una elección’
+                    </p>
+                    <div className="mt-6">
+                      <a
+                        href="https://www.facebook.com/adelina_covo"
+                        className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
+                        type="button"
+                      >
+                        <svg
+                          className="w-8 h-8"
+                          viewBox="0 0 48 48"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M48 24C48 10.7438 37.2562 0 24 0C10.7438 0 0 10.7438 0 24C0 35.9813 8.775 45.9094 20.25 47.7094V30.9375H14.1562V24H20.25V18.7125C20.25 12.6984 23.8313 9.375 29.3156 9.375C31.9406 9.375 34.6875 9.84375 34.6875 9.84375V15.75H31.6594C28.6781 15.75 27.75 17.6016 27.75 19.5V24H34.4062L33.3422 30.9375H27.75V47.7094C39.225 45.9094 48 35.9813 48 24Z"
+                            fill="#1877F2"
+                          />
+                          <path
+                            d="M33.3422 30.9375L34.4062 24H27.75V19.5C27.75 17.6016 28.6781 15.75 31.6594 15.75H34.6875V9.84375C34.6875 9.84375 31.9406 9.375 29.3156 9.375C23.8313 9.375 20.25 12.6984 20.25 18.7125V24H14.1562V30.9375H20.25V47.7094C21.4734 47.9016 22.725 48 24 48C25.275 48 26.5266 47.9016 27.75 47.7094V30.9375H33.3422Z"
+                            fill="white"
+                          />
+                        </svg>
+                      </a>
+                      {/* <a
+                        className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
+                        href="https://twitter.com/robincastillo"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 48 48"
+                          className="w-8 w-8"
+                        >
+                          <path
+                            fill="#03a9f4"
+                            d="M24,4C12.954,4,4,12.954,4,24s8.954,20,20,20s20-8.954,20-20S35.046,4,24,4z"
+                          />
+                          <path
+                            fill="#fff"
+                            d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
+                          />
+                        </svg>
+                      </a> */}
                     </div>
                   </div>
                 </div>
