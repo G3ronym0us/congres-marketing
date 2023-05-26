@@ -27,8 +27,6 @@ export default function BuyTickets() {
     const [seatNumber, setSeatNumber] = useState(null);
     const [seatsUseds, setSeatsUseds] = useState([]);
     const [ticketEdit, setTicketEdit] = useState(null);
-    const [useCode, setUseCode] = useState(false);
-    const [code, setCode] = useState(null);
 
     useEffect(() => {
         getSeatsUseds();
@@ -151,26 +149,6 @@ export default function BuyTickets() {
     useEffect(() => {
         setAmountTotal(tickets.reduce((total, ticket) => total + ticket.amount, 0))
     }, [tickets])
-
-    const buyWithCode = async () => {
-
-        const newErrors = {};
-        const data = { tickets, code };
-        const apiUrl = process.env.NEXT_PUBLIC_URL + 'api/ticket/save_code';
-
-        postData(apiUrl, data)
-            .then((response) => {
-                clearForm();
-                setTickets([]);
-                setPay(false);
-                setUseCode(false)
-                setErrors(newErrors);
-            })
-            .catch((error) => {
-                newErrors.code = "El codigo no es valido!";
-                setErrors(newErrors);
-            });
-    }
 
     const buy = async () => {
 
@@ -441,74 +419,22 @@ export default function BuyTickets() {
 
 
                             <div className='w-full text-center'>
-                                {
-
-                                    !useCode ?
-                                        (
-                                            <>
-                                                <button
-                                                    onClick={() => setPay(false)}
-                                                    className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                                >
-                                                    <FontAwesomeIcon icon={faCirclePlus} className='mr-2' />
-                                                    Comprar mas entradas
-                                                </button>
-                                                {tickets.length > 0 && (
-                                                    <>
-                                                        <button
-                                                            className="bg-blue mt-2 inline-flex items-center px-8 py-2 mr-6 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                                            onClick={buy}
-                                                        >
-                                                            <FontAwesomeIcon icon={faMoneyBill1Wave} className='mr-2' />
-                                                            Pagar Entradas
-                                                        </button>
-                                                        <button
-                                                            className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                                            onClick={() => setUseCode(true)}
-                                                        >
-                                                            <FontAwesomeIcon icon={faMoneyBill1Wave} className='mr-2' />
-                                                            Usar Codigo
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </>
-                                        )
-                                        : tickets.length > 0 && (
-                                            <>
-                                                <div>
-                                                    <input
-                                                        type="text"
-                                                        className={`bg-white shadow-lg rounded-lg px-4 mr-6 py-2 text-black ${errors.code ? "border-red-500" : "border-gray-300"
-                                                            }`}
-                                                        value={code} onChange={(e) => setCode(e.target.value)}
-                                                    />
-
-                                                    <button
-                                                        className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                                        onClick={buyWithCode}
-                                                    >
-                                                        <FontAwesomeIcon icon={faSave} className='mr-2' />
-                                                        Validar
-                                                    </button>
-                                                    <button
-                                                        className="bg-red-500 mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                                                        onClick={() => setUseCode(false)}
-                                                    >
-                                                        <FontAwesomeIcon icon={faCancel} className='mr-2' />
-                                                        Cancelar
-                                                    </button>
-                                                </div>
-                                                <div>
-                                                    {errors.code && (
-                                                        <p className="text-red-500 text-sm mt-2">{errors.code}</p>
-                                                    )}
-                                                </div>
-                                            </>
-
-
-                                        )
-
-                                }
+                                <button
+                                    onClick={() => setPay(false)}
+                                    className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
+                                >
+                                    <FontAwesomeIcon icon={faCirclePlus} className='mr-2' />
+                                    Comprar mas entradas
+                                </button>
+                                {tickets.length > 0 && (
+                                    <button
+                                        className="bg-blue mt-2 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
+                                        onClick={buy}
+                                    >
+                                        <FontAwesomeIcon icon={faMoneyBill1Wave} className='mr-2' />
+                                        Pagar Entradas
+                                    </button>
+                                )}
 
 
                             </div>

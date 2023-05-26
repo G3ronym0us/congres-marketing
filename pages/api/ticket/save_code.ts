@@ -1,5 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import excuteQuery from "../db";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import QRCode from "qrcode";
+import nodemailer from "nodemailer";
 
 type Data = {
   success: boolean;
@@ -23,31 +27,173 @@ export default async function handler(
   try {
     const data = req.body;
 
-    if(data.code != 'Pt6HjLhoM3'){
-        res.status(401).json({ success: false });
-        return;
+    if (data.code != "Pt6HjLhoM3") {
+      res.status(401).json({ success: false });
+      return;
     }
 
     await Promise.all(
       data.tickets.map(async (ticket: Ticket) => {
         const query =
-          "INSERT INTO tickets (name, lastname, email, document, type, reference, role, number, `row`, status) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+          "INSERT INTO tickets (document, type, reference, number, `row`, status) VALUES(?, ?, ?, ?, ?, ?)";
         const result = await excuteQuery({
           query,
           values: [
-            ticket.name,
-            ticket.lastname,
-            ticket.email,
             ticket.document,
             ticket.type,
             data.code,
-            ticket.role,
             ticket.seatNumber,
             ticket.seatRow,
-            'APPROVED'
+            "APPROVED",
           ],
         });
         console.log(result);
+
+        const pdfDoc = await PDFDocument.create();
+        pdfDoc.registerFontkit(fontkit);
+        const page = pdfDoc.addPage();
+
+        const fontBytes = await fetch(
+          process.env.NEXT_PUBLIC_URL + "fonts/Garet-Heavy.ttf"
+        ).then((res) => res.arrayBuffer());
+        const customFont = await pdfDoc.embedFont(fontBytes);
+
+        // Agrega la imagen
+        const imageUrl =
+          process.env.NEXT_PUBLIC_URL + "images/pdf-img-template.png";
+
+        const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) {
+          throw new Error("Failed to fetch the image");
+        }
+
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const image = await pdfDoc.embedPng(imageBuffer);
+        page.drawImage(image, {
+          x: 0,
+          y: 0,
+          width: page.getWidth(),
+          height: page.getHeight(),
+        });
+
+        let imageTextUrl =
+          process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+        switch (ticket.type) {
+          case "Diamante":
+            imageTextUrl =
+              process.env.NEXT_PUBLIC_URL + "images/pdf-text-diamante.png";
+            break;
+          case "Oro":
+            imageTextUrl =
+              process.env.NEXT_PUBLIC_URL + "images/pdf-text-oro.png";
+            break;
+          case "Platea Derecha":
+            imageTextUrl =
+              process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
+            break;
+          case "Platea Izquierda":
+            imageTextUrl =
+              process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
+            break;
+          default:
+            imageTextUrl =
+              process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+            break;
+        }
+
+        const imageTextResponse = await fetch(imageTextUrl);
+        if (!imageTextResponse.ok) {
+          throw new Error("Failed to fetch the image");
+        }
+
+        const imgeTextBuffer = await imageTextResponse.arrayBuffer();
+        const imageText = await pdfDoc.embedPng(imgeTextBuffer);
+        page.drawImage(imageText, {
+          x: 0,
+          y: 0,
+          width: page.getWidth(),
+          height: page.getHeight(),
+        });
+
+        // Agrega el código QR
+        const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + ticket.document;
+        const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
+        const qrCodeImage = await pdfDoc.embedPng(qrCodeDataUrl);
+        console.log(page.getWidth(), page.getHeight());
+        page.drawImage(qrCodeImage, {
+          x: 383,
+          y: 66,
+          width: 150,
+          height: 150,
+        });
+
+        page.drawText(ticket.document, {
+          x: 77, // Posición horizontal del texto en la página
+          y: 504, // Posición vertical del texto en la página
+          size: 28, // Tamaño de fuente del texto
+          font: customFont, // Fuente del texto (puedes cargar otras fuentes)
+          color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+        });
+
+        page.drawText(`${ticket.seatRow} ${ticket.seatNumber}`, {
+          x: 85, // Posición horizontal del texto en la página
+          y: 435, // Posición vertical del texto en la página
+          size: 14, // Tamaño de fuente del texto
+          font: customFont, // Fuente del texto (puedes cargar otras fuentes)
+          color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        const pdfBuffer = Buffer.from(pdfBytes);
+
+        // Configura el transportador de nodemailer
+        const transporter = nodemailer.createTransport({
+          // Configura los detalles del servicio de correo electrónico que usarás
+          // Aquí se muestra un ejemplo usando Gmail. Asegúrate de proporcionar tus propias credenciales y detalles del servidor SMTP.
+          host: "smtp-relay.sendinblue.com",
+          port: 587,
+          secure: false,
+          auth: {
+            user: "cnmpcolombia@gmail.com",
+            pass: "MGaQ7gtTZkIUAsrw",
+          },
+        });
+
+        const mailOptions = {
+          from: "info@cnmpcolombia.com",
+          to: 'diohandres1703@gmail.com',
+          subject: "Confirmación de Participación CNMP",
+          text: `
+              ¡Enhorabuena!
+              Haz asegurado tu cupo para participar del Congreso Nacioal de Marketing Político - Colombia 2023.
+              
+              Recuerda asistir puntual a las conferencias y actividades programadas, y seguir las instrucciones de nuestro personal logístico.
+              
+              Lugar: Auditorio mayor Carlos Gómez Albarracín UNAB, Bucaramanga, Colombia.
+              
+              Fecha: 14 y 15 de julio de 2023.
+              
+              Si requieres información, escríbenos a cnmmcolombia@gmail.com o a nuestro WhatsApp 3160557600
+              
+              ¡Te esperamos!`,
+          attachments: [
+            {
+              filename: "image_with_qr.pdf",
+              content: pdfBuffer,
+            },
+          ],
+        };
+
+        // Envía el correo electrónico
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error("Error al enviar el correo electrónico:", error);
+            res.status(500).send({ success: false });
+          } else {
+            console.log("Correo electrónico enviado:", info.response);
+            res.status(200).send({ success: true });
+          }
+        });
       })
     );
 

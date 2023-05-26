@@ -3,7 +3,7 @@ import excuteQuery from "../db";
 import { PDFDocument, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
-import fonkit from "@pdf-lib/fontkit";
+import fontkit from "@pdf-lib/fontkit";
 
 type Data = {
   success: boolean;
@@ -54,7 +54,7 @@ export default async function handler(
           const row = "row" in user ? user.row : null;
 
           const pdfDoc = await PDFDocument.create();
-          pdfDoc.registerFontkit(fonkit);
+          pdfDoc.registerFontkit(fontkit);
           const page = pdfDoc.addPage();
 
           const fontBytes = await fetch(
@@ -80,25 +80,28 @@ export default async function handler(
             height: page.getHeight(),
           });
 
-          let imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+          let imageTextUrl =
+            process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
           switch (type) {
             case "Diamante":
-              imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-diamante.png";
+              imageTextUrl =
+                process.env.NEXT_PUBLIC_URL + "images/pdf-text-diamante.png";
               break;
             case "Oro":
               imageTextUrl =
                 process.env.NEXT_PUBLIC_URL + "images/pdf-text-oro.png";
               break;
-              case "Platea Derecha":
+            case "Platea Derecha":
               imageTextUrl =
                 process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
               break;
-              case "Platea Izquierda":
+            case "Platea Izquierda":
               imageTextUrl =
                 process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
               break;
             default:
-              imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
+              imageTextUrl =
+                process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
               break;
           }
 
