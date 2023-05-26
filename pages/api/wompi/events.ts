@@ -50,6 +50,8 @@ export default async function handler(
           const lastname = "lastname" in user ? user.lastname : null;
           const email = "email" in user ? user.email : null;
           const type = "type" in user ? user.type : null;
+          const number = "number" in user ? user.number : null;
+          const row = "row" in user ? user.row : null;
 
           const pdfDoc = await PDFDocument.create();
           pdfDoc.registerFontkit(fonkit);
@@ -146,6 +148,14 @@ export default async function handler(
             x: 77, // Posición horizontal del texto en la página
             y: 504, // Posición vertical del texto en la página
             size: 28, // Tamaño de fuente del texto
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+          });
+
+          page.drawText(`${row} ${number}`, {
+            x: 77, // Posición horizontal del texto en la página
+            y: 532, // Posición vertical del texto en la página
+            size: 14, // Tamaño de fuente del texto
             font: customFont, // Fuente del texto (puedes cargar otras fuentes)
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
