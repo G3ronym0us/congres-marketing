@@ -89,7 +89,7 @@ export default async function handler(
             break;
           case "Platea Derecha":
             imageTextUrl =
-              process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
+              process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
             break;
           case "Platea Izquierda":
             imageTextUrl =
