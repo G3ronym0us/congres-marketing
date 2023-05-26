@@ -161,7 +161,7 @@ export default async function handler(
 
         const mailOptions = {
           from: "info@cnmpcolombia.com",
-          to: 'diohandres1703@gmail.com',
+          to: 'yesidguinand2012@gmail.com',
           subject: "Confirmación de Participación CNMP",
           text: `
               ¡Enhorabuena!
@@ -178,7 +178,7 @@ export default async function handler(
               ¡Te esperamos!`,
           attachments: [
             {
-              filename: "image_with_qr.pdf",
+              filename: "QR-"+ ticket.document +".pdf",
               content: pdfBuffer,
             },
           ],
