@@ -74,7 +74,7 @@ export default function Footer() {
                 <ul className="list-unstyled">
                   <li>
                     <span className="text-gray-700 hover:text-gray-900 font-semibold block pb-2 text-sm">
-                      Correo: cnmpcolombiamail.com
+                      Correo: cnmpcolombia@gmail.com
                     </span>
                   </li>
                   <li>

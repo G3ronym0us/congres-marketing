@@ -18,6 +18,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import Footer from "@/components/Footer";
+import CarouselComponent from "@/components/Carousel";
 
 export default function Landing() {
   return (
@@ -200,11 +201,12 @@ export default function Landing() {
           <div className="container mx-auto px-4">
             <div className="items-center flex flex-wrap">
               <div className="w-full md:w-4/12 ml-auto mr-auto px-4">
-                <img
+                {/* <img
                   alt="..."
                   className="max-w-full rounded-lg shadow-lg"
                   src={process.env.NEXT_PUBLIC_URL + "images/paneles.jpeg"}
-                />
+                /> */}
+                <CarouselComponent />
               </div>
               <div className="w-full md:w-5/12 ml-auto mr-auto px-4">
                 <div className="md:pr-12">
