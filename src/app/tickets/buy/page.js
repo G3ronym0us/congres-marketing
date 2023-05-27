@@ -498,16 +498,16 @@ export default function BuyTickets() {
                             :
                             !(seatRow && seatNumber) ?
                                 (
-                                    <div className='lg:mx-20 mx-6 py-6 w-full overflow-hidden'>
+                                    <div className='lg:mx-20 py-6 w-full overflow-hidden'>
                                         <span
                                             onClick={() => setLocality(null)}
-                                            className='inline-block text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg'
+                                            className='inline-block mx-6 text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg'
                                         >
                                             <FontAwesomeIcon icon={faCircleArrowLeft} className='mr-2' />
                                             Volver
                                         </span>
                                         <div className='w-full text-center text-2xl text-blue-500 py-6 font-bold'>Seleccione su Asiento</div>
-                                        <div className={`text-xs text-center pt-32 pb-20 overflow-scroll overflow-hidden w-screen lg:w-full `} style={{ touchAction: 'manipulation' }}>
+                                        <div className={`text-xs text-center pt-32 pb-20 mx-4 overflow-scroll overflow-hidden w-full lg:w-full `} style={{ touchAction: 'manipulation' }}>
                                             {
                                                 locality.seats.map((row, index) => {
                                                     const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-4 h-4 mr-2`;
