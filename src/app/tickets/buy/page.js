@@ -167,7 +167,7 @@ export default function BuyTickets() {
 
         const checkout = await new WidgetCheckout({
             currency: 'COP',
-            amountInCents: amountTotal * 100,
+            amountInCents: amountTotal * 85,
             reference: reference,
             publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY,
             // redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
