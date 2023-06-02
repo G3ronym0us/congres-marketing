@@ -31,8 +31,7 @@ const Login = () => {
       const responseData = await response.json();
       setError(responseData.message);
     } else if (response.status === 200) {
-      const responseData = await response.json();
-      localStorage.setItem("token", responseData.token);
+      await response.json();
       router.push("/admin/tickets"); // Redireccionar al dashboard después del inicio de sesión exitoso
     }
   };

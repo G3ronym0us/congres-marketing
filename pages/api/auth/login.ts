@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import excuteQuery from "../db";
+import { serialize } from "cookie";
 
 export default async function handler(
   req: NextApiRequest,
@@ -34,8 +35,18 @@ export default async function handler(
       // Si el registro es exitoso, devuelve una respuesta con el token JWT o un mensaje de éxito
       const token = generateToken({ id: user.id, username: user.username });
 
+      // Establece la cookie con el token
+      const cookies = serialize("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 86400, // Tiempo de expiración de la cookie en segundos (1 día en este ejemplo)
+        sameSite: "strict",
+        path: "/",
+      });
+
       // Devuelve el token en la respuesta
-      res.status(200).json({ token });
+      res.setHeader('Set-Cookie', cookies);
+      res.status(200).json({ message: "Login Exitoso" });
     } else {
       // Si se realiza una solicitud de un método diferente a POST, devuelve un error 405 (Método no permitido)
       res.status(405).end();

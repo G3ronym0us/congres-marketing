@@ -22,8 +22,7 @@ type Ticket = {
 const Tickets = () => {
   const router = useRouter();
 
-  const [token, setToken] = React.useState(localStorage.getItem("token"));
-  if (!token) router.push("/admin/auth");
+  const [token, setToken] = React.useState('');
 
   const [searchTerm, setSearchTerm] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
