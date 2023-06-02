@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import excuteQuery from "../db";
-import { authenticateMiddleware } from "../../utils/authMiddleware";
+import { authenticateMiddleware } from "@/utils/authMiddleware";
 
 interface AuthenticatedRequest extends NextApiRequest {
   user: any; // Define la estructura de tu objeto de usuario
@@ -40,4 +40,3 @@ const protectedRouteHandler = async (
 const protectedRoute = authenticateMiddleware(protectedRouteHandler);
 
 export default protectedRoute;
-
