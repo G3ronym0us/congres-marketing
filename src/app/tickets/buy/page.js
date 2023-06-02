@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCancel, faCircleArrowLeft, faCirclePlus, faDeleteLeft, faEdit, faMoneyBill1Wave, faRemove, faSave } from '@fortawesome/free-solid-svg-icons';
 import validator from 'validator';
+import Tooltip from '../../../components/Tooltip.js';
 
 export default function BuyTickets() {
 
@@ -17,6 +18,7 @@ export default function BuyTickets() {
     const [errors, setErrors] = useState({});
     const [name, setName] = useState('');
     const [lastname, setLastname] = useState('');
+    const [seatAux, setSeatAux] = useState('');
     const [email, setEmail] = useState('');
     const [document, setDocument] = useState('');
     const [role, setRole] = useState('Asesor político');
@@ -506,7 +508,10 @@ export default function BuyTickets() {
                                             <FontAwesomeIcon icon={faCircleArrowLeft} className='mr-2' />
                                             Volver
                                         </span>
-                                        <div className='w-full text-center text-2xl text-blue-500 py-6 font-bold'>Seleccione su Asiento</div>
+                                        <div className='w-full text-center text-2xl text-blue-500 py-6 font-bold'>Seleccione su Asiento </div>
+                                        <div className='w-full flex justify-center'>
+                                            <div className='bg-white p-2 rounded-lg drop-shadow-lg text-blue-500 font-bold text-center' style={{ width: '100px' }}>{seatAux} </div>
+                                        </div>
                                         <div className={`text-xs text-center pt-32 pb-20 mx-4 overflow-scroll overflow-hidden w-full lg:w-full `} style={{ touchAction: 'manipulation' }}>
                                             {
                                                 locality.seats.map((row, index) => {
@@ -527,9 +532,11 @@ export default function BuyTickets() {
                                                             } else {
                                                                 seatElements.push(
                                                                     <div
+                                                                        onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
                                                                         onClick={() => handleSeat(row.letter, i)}
                                                                         className={classCustom}
-                                                                        key={i}>
+                                                                        key={i}
+                                                                    >
                                                                     </div>
                                                                 )
 
@@ -541,16 +548,20 @@ export default function BuyTickets() {
                                                             if (used) {
                                                                 seatElements.push(
                                                                     <div
+                                                                        onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
                                                                         className={classCustomUsed}
                                                                         key={i}>
                                                                     </div>
                                                                 )
                                                             } else {
                                                                 seatElements.push(
+
                                                                     <div
                                                                         onClick={() => handleSeat(row.letter, i)}
                                                                         className={classCustom}
-                                                                        key={i}>
+                                                                        onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
+                                                                        key={i}
+                                                                    >
                                                                     </div>
                                                                 )
                                                             }
@@ -559,8 +570,8 @@ export default function BuyTickets() {
                                                     }
 
                                                     return (
-                                                        <div key={index} className={`my-2`} style={{ whiteSpace: 'nowrap' }} >
-                                                            <div key={index} className={`justify-center  ${locality.style}`}>
+                                                        <div key={index} className={`my-2`} style={{ whiteSpace: 'nowrap', transformStyle: 'flat' }} >
+                                                            <div key={index} className={`justify-center z-0 ${locality.style}`}>
                                                                 {seatElements}
                                                             </div>
                                                         </div>

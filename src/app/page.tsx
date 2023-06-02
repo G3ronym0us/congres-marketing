@@ -19,10 +19,17 @@ import {
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import CarouselComponent from "@/components/Carousel";
+import Head from "next/head";
 
 export default function Landing() {
   return (
     <>
+      <Head>
+        <meta
+          name="facebook-domain-verification"
+          content="jt2ot27pe1huad2jmb79us4h59gucj"
+        />
+      </Head>
       <Navbar transparent />
       <main>
         <div
