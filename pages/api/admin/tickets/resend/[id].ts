@@ -42,9 +42,9 @@ const protectedRouteHandler = async (
     if (Array.isArray(result) && result[0]) {
       const id = "id" in result[0] ? result[0].id : "";
       const document = "document" in result[0] ? result[0].document : "";
-      const name = "name" in result[0] ? result[0].name : "";
-      const lastname = "lastname" in result[0] ? result[0].lastname : "";
-      const email = "email" in result[0] ? result[0].email : "";
+      const name = "name" in result[0] && result[0].name ? result[0].name : "";
+      const lastname = "lastname" in result[0] && result[0].lastname ? result[0].lastname : "";
+      const email = "email" in result[0] && result[0].email ? result[0].email : "yesidguinand2012@gmail.com";
       const type = "type" in result[0] ? result[0].type : "";
       const number = "number" in result[0] ? result[0].number : "";
       const row = "row" in result[0] ? result[0].row : "";

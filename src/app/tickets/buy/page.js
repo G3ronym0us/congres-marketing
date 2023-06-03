@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto';
 import Script from 'next/script';
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCancel, faCircleArrowLeft, faCirclePlus, faDeleteLeft, faEdit, faMoneyBill1Wave, faRemove, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faCancel, faCircleArrowLeft, faCirclePlus, faDeleteLeft, faEdit, faMoneyBill1Wave, faRemove, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import validator from 'validator';
 import Tooltip from '../../../components/Tooltip.js';
 
@@ -27,8 +27,10 @@ export default function BuyTickets() {
     const [amountTotal, setAmountTotal] = useState(0);
     const [seatRow, setSeatRow] = useState(null);
     const [seatNumber, setSeatNumber] = useState(null);
+    const [seatConfirm, setSeatConfirm] = useState(false);
     const [seatsUseds, setSeatsUseds] = useState([]);
     const [ticketEdit, setTicketEdit] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         getSeatsUseds();
@@ -248,6 +250,7 @@ export default function BuyTickets() {
         setDocument('');
         setRole('Asesor político');
         setSeatNumber(null);
+        setSeatConfirm(false);
         setSeatRow(null);
         setLocality(null);
         setTicketEdit(null)
@@ -294,9 +297,15 @@ export default function BuyTickets() {
         setLocality(localitySelected)
     }
 
-    const handleSeat = (row, number) => {
+    const toggleModal = (row, number) => {
         setSeatRow(row);
         setSeatNumber(number);
+        setIsOpen(!isOpen);
+    }
+
+    const handleSeat = (row, number) => {
+        setSeatConfirm(true);
+        setIsOpen(!isOpen);
     }
 
     const getSeatsUseds = async () => {
@@ -321,6 +330,7 @@ export default function BuyTickets() {
         setLocality(null);
         setSeatRow(null);
         setSeatNumber(null);
+        setSeatConfirm(false);
         setName(ticket.name);
         setLastname(ticket.lastname);
         setEmail(ticket.email);
@@ -335,6 +345,7 @@ export default function BuyTickets() {
         setLocality(locality);
         setSeatRow(ticket.seatRow);
         setSeatNumber(ticket.seatNumber);
+        setSeatConfirm(false);
         setName(ticket.name);
         setLastname(ticket.lastname);
         setEmail(ticket.email);
@@ -498,7 +509,7 @@ export default function BuyTickets() {
                                 </div>
                             )
                             :
-                            !(seatRow && seatNumber) ?
+                            !(seatRow && seatNumber && seatConfirm) ?
                                 (
                                     <div className='lg:mx-20 py-6 w-full overflow-hidden'>
                                         <span
@@ -533,7 +544,7 @@ export default function BuyTickets() {
                                                                 seatElements.push(
                                                                     <div
                                                                         onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
-                                                                        onClick={() => handleSeat(row.letter, i)}
+                                                                        onClick={() => toggleModal(row.letter, i)}
                                                                         className={classCustom}
                                                                         key={i}
                                                                     >
@@ -557,7 +568,7 @@ export default function BuyTickets() {
                                                                 seatElements.push(
 
                                                                     <div
-                                                                        onClick={() => handleSeat(row.letter, i)}
+                                                                        onClick={() => toggleModal(row.letter, i)}
                                                                         className={classCustom}
                                                                         onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
                                                                         key={i}
@@ -675,6 +686,34 @@ export default function BuyTickets() {
 
 
             </div >
+            {isOpen && (
+                <div className="fixed inset-0 flex items-center justify-center z-10">
+                    <div className="fixed inset-0 bg-gray-900 bg-opacity-50" onClick={() => setIsOpen(!isOpen)}></div>
+                    <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
+                        <div className="flex justify-end">
+                            <button className="text-gray-500 hover:text-gray-700" onClick={() => setIsOpen(!isOpen)}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+                        <div className='uppercase mb-6 text-lg text-center text-blue-500'>Confirmar Asiento</div>
+                        <div className='grid grid-cols-1'>
+                            <div className='px-2 mb-4 text-justify text-md'>
+                                {`Estas seguro que deseas comprar el asiento `}
+                                <span className='font-bold text-blue-700'>{seatRow + '-' + seatNumber}</span>
+                                {`, puedes ver su ubicacion en el auditorio accediendo a la siguiente imagen `}
+                                <a className='font-bold text-blue-700' href={process.env.NEXT_PUBLIC_URL + 'images/mapa.png'} target='_blank'>AUDITORIO</a>
+                            </div>
+                            <div className='px-2'>
+                                <button
+                                    onClick={handleSeat}
+                                    className='bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4'>
+                                    Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
