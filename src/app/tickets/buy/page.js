@@ -687,7 +687,7 @@ export default function BuyTickets() {
 
             </div >
             {isOpen && (
-                <div className="fixed inset-0 flex items-center justify-center z-10">
+                <div className="fixed inset-0 flex items-center justify-center z-10 text-black">
                     <div className="fixed inset-0 bg-gray-900 bg-opacity-50" onClick={() => setIsOpen(!isOpen)}></div>
                     <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
                         <div className="flex justify-end">

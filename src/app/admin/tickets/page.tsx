@@ -130,7 +130,7 @@ const Tickets = () => {
 
   return (
     <>
-      <div className="bg-gray-100 w-full py-10 px-20">
+      <div className="bg-gray-100 w-full py-10 px-20 text-black">
         <div className=" bg-white p-4 mt-10 rounded-lg">
           <div className=" mt-4 w-full">
             <input
