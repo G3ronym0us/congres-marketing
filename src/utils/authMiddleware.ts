@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
+import { parse } from "cookie";
 
 interface AuthenticatedRequest extends NextApiRequest {
   user: any; // Define la estructura de tu objeto de usuario
@@ -10,7 +11,8 @@ export const authenticateMiddleware =
   (handler: (req: AuthenticatedRequest, res: NextApiResponse) => Promise<void>) =>
   async (req: AuthenticatedRequest, res: NextApiResponse) => {
     // Verifica si se proporciona el token de autenticación en los headers
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const cookies = parse(req.headers.cookie || '');
+    const token = cookies['auth-token'];
 
     if (!token) {
       return res

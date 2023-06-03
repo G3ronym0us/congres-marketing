@@ -5,7 +5,6 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
     const jwt = request.cookies.get("auth-token");
-    console.log(jwt);
 
     if (pathname.includes("admin/tickets")) {
       if (!jwt)
@@ -17,7 +16,7 @@ export async function middleware(request: NextRequest) {
         jwtToken,
         new TextEncoder().encode("Pt6HjLhoM3Pt6HjLhoM3")
       );
-      console.log({ payload });
+      
       return NextResponse.next();
     }
   } catch (error) {
