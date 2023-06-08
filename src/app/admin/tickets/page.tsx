@@ -5,8 +5,15 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import logo from "../../../../public/images/logo-congress.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faMailBulk, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEdit,
+  faMailBulk,
+  faTimes,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
+import validator from "validator";
+import InputText from "@/components/form/InputText";
 
 type Ticket = {
   id: number;
@@ -20,6 +27,13 @@ type Ticket = {
   row: string;
 };
 
+type TicketError = {
+  name?: string;
+  lastname?: string;
+  email?: string;
+  document?: string;
+};
+
 const Tickets = () => {
   const router = useRouter();
 
@@ -27,7 +41,16 @@ const Tickets = () => {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [data, setData] = React.useState([]);
+  const [isOpen, setIsOpen] = React.useState(false);
   // Datos de ejemplo
+
+  const [name, setName] = React.useState("");
+  const [lastname, setLastname] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [document, setDocument] = React.useState("");
+
+  const [errors, setErrors]: any = React.useState({});
+  const [ticketEdit, setTicketEdit]: any = React.useState({});
 
   React.useEffect(() => {
     getTickets();
@@ -55,7 +78,11 @@ const Tickets = () => {
   // Filtrar datos según el término de búsqueda
   const filteredData = data.filter((item: Ticket) => {
     if (!searchTerm || searchTerm === "") return true;
-    return item.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return (
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.document?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   // Paginación
@@ -116,7 +143,7 @@ const Tickets = () => {
         showConfirmButton: false,
         timer: 1500,
       });
-      getTickets()
+      getTickets();
     } else {
       Swal.fire({
         position: "top-end",
@@ -126,6 +153,71 @@ const Tickets = () => {
         timer: 1500,
       });
     }
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+
+    const newErrors: TicketError = {};
+
+    if (name.trim() === "") newErrors.name = "Los nombres son requeridos";
+    if (lastname.trim() === "")
+      newErrors.lastname = "Los apellidos son requeridos";
+    if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
+    if (document.trim() === "")
+      newErrors.document = "El documento no es valido";
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      const data: Ticket = {
+        ...ticketEdit,
+        name: name ? name : ticketEdit.name,
+        lastname: lastname ? lastname : ticketEdit.lastname,
+        email: email ? email : ticketEdit.email,
+        document: document ? document : ticketEdit.document,
+      };
+
+      const url =
+        process.env.NEXT_PUBLIC_URL + "api/admin/tickets/update/" + data.id;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.status === 200) {
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: "Ticket editado",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        getTickets();
+        setIsOpen(!isOpen);
+      } else {
+        Swal.fire({
+          position: "top-end",
+          icon: "error",
+          title: "Ticket no editado",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    }
+  };
+
+  const editTicket = (ticket: Ticket) => {
+    setIsOpen(!isOpen);
+    setTicketEdit(ticket);
+    setName(ticket.name);
+    setLastname(ticket.lastname);
+    setDocument(ticket.document);
+    setEmail(ticket.email);
   };
 
   return (
@@ -169,6 +261,11 @@ const Tickets = () => {
                       className="text-blue-500 mr-2 cursor-pointer"
                     />
                     <FontAwesomeIcon
+                      onClick={() => editTicket(item)}
+                      icon={faEdit}
+                      className="text-blue-500 mr-2 cursor-pointer"
+                    />
+                    <FontAwesomeIcon
                       onClick={() => deleteTicket(item.id)}
                       icon={faTrash}
                       className="text-red-500 cursor-pointer"
@@ -193,6 +290,94 @@ const Tickets = () => {
           </div>
         </div>
       </div>
+      {isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-10 text-black">
+          <div
+            className="fixed inset-0 bg-gray-900 bg-opacity-50"
+            onClick={() => setIsOpen(!isOpen)}
+          ></div>
+          <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
+            <div className="flex justify-end">
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <div className="uppercase mb-6 text-lg text-center text-blue-500">
+              Editar Ticket
+            </div>
+            <div className="grid grid-cols-1">
+              <form className="grid grid-cols-1" onSubmit={handleSubmit}>
+                <div className="px-2 mb-4 text-justify text-md">
+                  <div className="grid grid-cols-1 mb-4">
+                    <label className="text-black">Nombres</label>
+                    <InputText
+                      value={name}
+                      error={errors.name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 mb-4">
+                    <label className="text-black">Apellidos</label>
+                    <InputText
+                      value={lastname}
+                      error={errors.lastname}
+                      onChange={(e) => setLastname(e.target.value)}
+                    />
+                    {errors.lastname && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.lastname}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 mb-4">
+                    <label className="text-black">Correo</label>
+                    <InputText
+                      value={email}
+                      error={errors.email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 mb-4">
+                    <label className="text-black">Documento:</label>
+                    <InputText
+                      value={document}
+                      error={errors.document}
+                      onChange={(e) => setDocument(e.target.value)}
+                    />
+                    {errors.document && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.document}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="px-2">
+                  <button
+                    onClick={handleSubmit}
+                    className="bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

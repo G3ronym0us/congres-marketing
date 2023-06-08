@@ -8,7 +8,9 @@ import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCancel, faCircleArrowLeft, faCirclePlus, faDeleteLeft, faEdit, faMoneyBill1Wave, faRemove, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import validator from 'validator';
-import Tooltip from '../../../components/Tooltip.js';
+import title from '../../../../public/images/locality-title.png';
+import Image from 'next/image';
+
 
 export default function BuyTickets() {
 
@@ -359,13 +361,21 @@ export default function BuyTickets() {
         setTickets(ticketsFiltered);
     }
 
+    const bgStyle = {
+        height: '100%',
+        backgroundImage: `url('${process.env.NEXT_PUBLIC_URL}images/locality-bg.png')`
+    };
+
     return (
         <>
             <Navbar />
-            <div className='grid lg:grid-cols-1 bg-gray-100 w-full' style={{ height: '100%' }}>
+            <div className='grid lg:grid-cols-1 w-full' style={bgStyle}>
+                <div className='text-center px-60'>
+                    <img src={`${process.env.NEXT_PUBLIC_URL}images/locality-title.png`} className='w-100' alt='Hola' />
+                </div>
                 {
                     pay ? (
-                        <div div className='mx-20 py-6'>
+                        <div div className='mx-20 pb-6'>
                             <div className='bg-blue text-white py-4 text-center rounded text-2xl'>
                                 Boletos: {tickets.length}
                             </div>
@@ -458,7 +468,7 @@ export default function BuyTickets() {
 
                         !locality ?
                             (
-                                <div className='lg:mx-60 mx-4 py-6'>
+                                <div className='lg:mx-60 mx-4 pb-6'>
                                     <div className='w-full text-center text-3xl text-blue-500 py-6 font-bold'>Seleccione la localidad</div>
                                     <div className='w-full grid grid-cols-5' >
                                         <div
@@ -511,7 +521,7 @@ export default function BuyTickets() {
                             :
                             !(seatRow && seatNumber && seatConfirm) ?
                                 (
-                                    <div className='lg:mx-20 py-6 w-full overflow-hidden'>
+                                    <div className='lg:mx-20 pb-6 w-full overflow-hidden'>
                                         <span
                                             onClick={() => setLocality(null)}
                                             className='inline-block mx-6 text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg'
@@ -593,7 +603,7 @@ export default function BuyTickets() {
                                     </div>
                                 )
                                 : (
-                                    <div className='lg:mx-20 mx-6 py-6 lg:mx-20'>
+                                    <div className='lg:mx-20 mx-6 pb-6 lg:mx-20'>
                                         <Script type="text/javascript" src="https://checkout.wompi.co/widget.js" />
                                         <span
                                             onClick={() => setSeatNumber(null)}
