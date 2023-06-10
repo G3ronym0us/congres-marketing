@@ -196,7 +196,7 @@ async function resendEmail(user: Ticket) {
     // Aquí se muestra un ejemplo usando Gmail. Asegúrate de proporcionar tus propias credenciales y detalles del servidor SMTP.
     host: "smtp.hostinger.com",
     port: 465,
-    secure: false,
+    secure: true,
     auth: {
       user: "info@cnmpcolombia.com",
       pass: "3st0esProd123*",
