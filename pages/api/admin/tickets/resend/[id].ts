@@ -194,12 +194,12 @@ async function resendEmail(user: Ticket) {
   const transporter = nodemailer.createTransport({
     // Configura los detalles del servicio de correo electrónico que usarás
     // Aquí se muestra un ejemplo usando Gmail. Asegúrate de proporcionar tus propias credenciales y detalles del servidor SMTP.
-    host: "smtp-relay.sendinblue.com",
-    port: 587,
+    host: "smtp.hostinger.com",
+    port: 465,
     secure: false,
     auth: {
-      user: "cnmpcolombia@gmail.com",
-      pass: "MGaQ7gtTZkIUAsrw",
+      user: "info@cnmpcolombia.com",
+      pass: "3st0esProd123*",
     },
   });
 
