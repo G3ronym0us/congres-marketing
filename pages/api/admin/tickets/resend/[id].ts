@@ -231,8 +231,10 @@ async function resendEmail(user: Ticket) {
   // Envía el correo electrónico
   const send = await transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
+      console.error("Error al enviar el correo electrónico:", error);
       return false;
     } else {
+      console.log("Correo electrónico enviado:", info.response);
       return true;
     }
   });
