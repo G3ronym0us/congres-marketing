@@ -118,7 +118,7 @@ async function resendEmail(user: Ticket) {
       imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-oro.png";
       break;
     case "Platea Derecha":
-      imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
+      imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
       break;
     case "Platea Izquierda":
       imageTextUrl = process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
