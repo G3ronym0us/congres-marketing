@@ -181,7 +181,7 @@ async function resendEmail(user: Ticket) {
 
   page.drawText(`${user.row} ${user.number}`, {
     x: 77, // Posición horizontal del texto en la página
-    y: 532, // Posición vertical del texto en la página
+    y: 431, // Posición vertical del texto en la página
     size: 14, // Tamaño de fuente del texto
     font: customFont, // Fuente del texto (puedes cargar otras fuentes)
     color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
