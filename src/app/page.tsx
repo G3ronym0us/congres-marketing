@@ -20,6 +20,7 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import CarouselComponent from "@/components/Carousel";
 import Head from "next/head";
+import FloatingWhatsAppButton from "@/components/FloatingWhatsAppIcon";
 
 export default function Landing() {
   return (
@@ -1234,6 +1235,7 @@ export default function Landing() {
         </section> */}
       </main>
       <Footer />
+      <FloatingWhatsAppButton />
     </>
   );
 }

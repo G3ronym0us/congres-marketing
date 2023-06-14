@@ -188,6 +188,18 @@ export default async function handler(
             Haz asegurado tu cupo para participar del Congreso Nacioal de Marketing Político - Colombia 2023.
             
             Recuerda asistir puntual a las conferencias y actividades programadas, y seguir las instrucciones de nuestro personal logístico.
+
+            En el Congreso Nacional de Marketing Político queremos asegurarnos de que tu experiencia sea la mejor, incluyendo tu alojamiento. 
+
+Para tu descanso después de un día lleno de aprendizaje, nos complace recomendarte el Hotel Bari, reconocido por su excelencia en servicio y comodidad, su ubicación estratégica a tres cuadras de la Universidad Autónoma de Bucaramanga, facilitan el acceso a nuestro evento. 
+
+En él recibirás tarifas exclusivas, acreditando con tu entrada que participarás en el Congreso Nacional de Marketing Político. 
+
+¡Te invitamos a vivir una experiencia excepcional en el Congreso Nacional de Marketing Político y disfrutar de la comodidad y hospitalidad del Hotel Bari! 
+
+Tarifa de alojamiento por noche en habitación estándar queen o twin (dos camas) $210.000 + IVA.
+Incluye desayuno en barra tipo buffet.
+No incluye seguro hotelero de $8.100 por persona por noche
             
             Lugar: Auditorio mayor Carlos Gómez Albarracín UNAB, Bucaramanga, Colombia.
             
