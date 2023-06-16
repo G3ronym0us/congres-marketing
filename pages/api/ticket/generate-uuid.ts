@@ -20,7 +20,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const query = "SELECT * FROM tickets WHERE status = ?";
+    const query = "SELECT * FROM tickets WHERE status = ? AND uuid IS NULL";
     const status = "APPROVED";
     const result = await excuteQuery({
       query,
