@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import excuteQuery from "../db";
+import { randomBytes } from "crypto";
 
 type Data = {
   success: boolean;
 };
 
 type Ticket = {
+  uuid: string;
   name: string;
   lastname: string;
   email: string;
@@ -22,14 +24,16 @@ export default async function handler(
 ) {
   try {
     const data = req.body;
+    const uuid = await generateRandomString(20);
 
     await Promise.all(
       data.tickets.map(async (ticket: Ticket) => {
         const query =
-          "INSERT INTO tickets (name, lastname, email, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+          "INSERT INTO tickets (uuid, name, lastname, email, document, type, reference, role, number, `row`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const result = await excuteQuery({
           query,
           values: [
+            uuid,
             ticket.name,
             ticket.lastname,
             ticket.email,
@@ -50,4 +54,9 @@ export default async function handler(
     console.log(error);
     return error;
   }
+}
+
+async function generateRandomString(length: number) {
+  const bytes = await randomBytes(Math.ceil(length / 2));
+  return bytes.toString("hex").slice(0, length);
 }

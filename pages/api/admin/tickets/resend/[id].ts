@@ -12,6 +12,7 @@ interface AuthenticatedRequest extends NextApiRequest {
 
 type Ticket = {
   id: number;
+  uuid: number;
   name: string;
   lastname: string;
   email: string;
@@ -42,6 +43,7 @@ const protectedRouteHandler = async (
     if (Array.isArray(result) && result[0]) {
       const id = "id" in result[0] ? result[0].id : "";
       const document = "document" in result[0] ? result[0].document : "";
+      const uuid = "uuid" in result[0] ? result[0].uuid : "";
       const name = "name" in result[0] && result[0].name ? result[0].name : "";
       const lastname =
         "lastname" in result[0] && result[0].lastname ? result[0].lastname : "";
@@ -55,6 +57,7 @@ const protectedRouteHandler = async (
       const role = "role" in result[0] ? result[0].role : "";
       const user: Ticket = {
         id,
+        uuid,
         name,
         lastname,
         email,
@@ -148,7 +151,7 @@ async function resendEmail(user: Ticket) {
   });
 
   // Agrega el código QR
-  const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + user.document;
+  const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + user.uuid;
   const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
   const qrCodeImage = await pdfDoc.embedPng(qrCodeDataUrl);
   console.log(page.getWidth(), page.getHeight());

@@ -4,12 +4,14 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import QRCode from "qrcode";
 import nodemailer from "nodemailer";
+import { randomBytes } from "crypto";
 
 type Data = {
   success: boolean;
 };
 
 type Ticket = {
+  uuid: string;
   name: string;
   lastname: string;
   email: string;
@@ -26,6 +28,7 @@ export default async function handler(
 ) {
   try {
     const data = req.body;
+    const uuid = await generateRandomString(20);
 
     if (data.code != "Pt6HjLhoM3") {
       res.status(401).json({ success: false });
@@ -35,10 +38,11 @@ export default async function handler(
     await Promise.all(
       data.tickets.map(async (ticket: Ticket) => {
         const query =
-          "INSERT INTO tickets (document, type, reference, number, `row`, status) VALUES(?, ?, ?, ?, ?, ?)";
+          "INSERT INTO tickets (uuid, document, type, reference, number, `row`, status) VALUES(?, ?, ?, ?, ?, ?, ?)";
         const result = await excuteQuery({
           query,
           values: [
+            uuid,
             ticket.document,
             ticket.type,
             data.code,
@@ -116,7 +120,7 @@ export default async function handler(
         });
 
         // Agrega el código QR
-        const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + ticket.document;
+        const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + ticket.uuid;
         const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
         const qrCodeImage = await pdfDoc.embedPng(qrCodeDataUrl);
         console.log(page.getWidth(), page.getHeight());
@@ -202,4 +206,9 @@ export default async function handler(
     console.log(error);
     return error;
   }
+}
+
+async function generateRandomString(length: number) {
+  const bytes = await randomBytes(Math.ceil(length / 2));
+  return bytes.toString("hex").slice(0, length);
 }

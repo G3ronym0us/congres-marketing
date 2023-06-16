@@ -45,6 +45,7 @@ export default async function handler(
 
       if (Array.isArray(result)) {
         result.map(async (user) => {
+          const uuid = "uuid" in user ? user.uuid : null;
           const document = "document" in user ? user.document : null;
           const name = "name" in user ? user.name : null;
           const lastname = "lastname" in user ? user.lastname : null;
@@ -120,7 +121,7 @@ export default async function handler(
           });
 
           // Agrega el código QR
-          const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + document;
+          const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + uuid;
           const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
           const qrCodeImage = await pdfDoc.embedPng(qrCodeDataUrl);
           console.log(page.getWidth(), page.getHeight());

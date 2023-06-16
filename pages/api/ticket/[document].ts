@@ -7,11 +7,11 @@ export default async function handler(
 ) {
   try {
     const { document } = req.query;
-    const query = "SELECT * FROM tickets WHERE status = ? AND document = ?";
+    const query = "SELECT * FROM tickets WHERE status = ? AND (uuid = ? OR document = ?)";
     const status = "APPROVED";
     const result = await excuteQuery({
       query,
-      values: [status, document],
+      values: [status, document, document],
     });
 
     if(Array.isArray(result)){
