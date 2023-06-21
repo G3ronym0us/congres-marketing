@@ -173,7 +173,7 @@ export default function BuyTickets() {
 
         const checkout = await new WidgetCheckout({
             currency: 'COP',
-            amountInCents: amountTotal * 95,
+            amountInCents: amountTotal * 100,
             reference: reference,
             publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY,
             // redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
@@ -433,10 +433,7 @@ export default function BuyTickets() {
                                     Total: $ {numberWithDots(amountTotal)}
                                 </div>
                                 <div>
-                                    {"Descuento (-5%): $ " + numberWithDots(amountTotal * -0.5)}
-                                </div>
-                                <div>
-                                    {"Total a Pagar: $ " + numberWithDots(amountTotal * 0.95)}
+                                    {"Total a Pagar: $ " + numberWithDots(amountTotal)}
                                 </div>
                             </div>
 
