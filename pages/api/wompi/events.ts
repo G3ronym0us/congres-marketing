@@ -191,9 +191,11 @@ No incluye seguro hotelero de $8.100 por persona por noche
             if (error) {
               console.error("Error al enviar el correo electrónico:", error);
               res.status(500).send({ success: false });
+              return false;
             } else {
               console.log("Correo electrónico enviado:", info.response);
               res.status(200).send({ success: true });
+              return true;
             }
           });
           return;
