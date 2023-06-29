@@ -150,7 +150,7 @@ async function resendEmail(user: Ticket) {
     color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
   });
 
-  page.drawText(type.toUpperCase(), {
+  page.drawText(user.type.toUpperCase(), {
     x: 170, // Posición horizontal del texto en la página
     y: 450, // Posición vertical del texto en la página
     size: 14, // Tamaño de fuente del texto
@@ -158,7 +158,7 @@ async function resendEmail(user: Ticket) {
     color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
   });
 
-  page.drawText(`${row} ${number}`, {
+  page.drawText(`${user.row} ${user.number}`, {
     x: 170, // Posición horizontal del texto en la página
     y: 431, // Posición vertical del texto en la página
     size: 14, // Tamaño de fuente del texto
