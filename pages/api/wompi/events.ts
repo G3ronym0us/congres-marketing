@@ -81,45 +81,6 @@ export default async function handler(
             height: page.getHeight(),
           });
 
-          let imageTextUrl =
-            process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
-          switch (type) {
-            case "Diamante":
-              imageTextUrl =
-                process.env.NEXT_PUBLIC_URL + "images/pdf-text-diamante.png";
-              break;
-            case "Oro":
-              imageTextUrl =
-                process.env.NEXT_PUBLIC_URL + "images/pdf-text-oro.png";
-              break;
-            case "Platea Derecha":
-              imageTextUrl =
-                process.env.NEXT_PUBLIC_URL + "images/pdf-tex-plateat.png";
-              break;
-            case "Platea Izquierda":
-              imageTextUrl =
-                process.env.NEXT_PUBLIC_URL + "images/pdf-text-platea.png";
-              break;
-            default:
-              imageTextUrl =
-                process.env.NEXT_PUBLIC_URL + "images/pdf-text-general.png";
-              break;
-          }
-
-          const imageTextResponse = await fetch(imageTextUrl);
-          if (!imageTextResponse.ok) {
-            throw new Error("Failed to fetch the image");
-          }
-
-          const imgeTextBuffer = await imageTextResponse.arrayBuffer();
-          const imageText = await pdfDoc.embedPng(imgeTextBuffer);
-          page.drawImage(imageText, {
-            x: 0,
-            y: 0,
-            width: page.getWidth(),
-            height: page.getHeight(),
-          });
-
           // Agrega el código QR
           const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + uuid;
           const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
@@ -156,8 +117,16 @@ export default async function handler(
             color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
           });
 
+          page.drawText(type.toUpperCase(), {
+            x: 170, // Posición horizontal del texto en la página
+            y: 450, // Posición vertical del texto en la página
+            size: 14, // Tamaño de fuente del texto
+            font: customFont, // Fuente del texto (puedes cargar otras fuentes)
+            color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+          });
+
           page.drawText(`${row} ${number}`, {
-            x: 77, // Posición horizontal del texto en la página
+            x: 170, // Posición horizontal del texto en la página
             y: 431, // Posición vertical del texto en la página
             size: 14, // Tamaño de fuente del texto
             font: customFont, // Fuente del texto (puedes cargar otras fuentes)
@@ -227,6 +196,7 @@ No incluye seguro hotelero de $8.100 por persona por noche
               res.status(200).send({ success: true });
             }
           });
+          return;
         });
       } else {
         console.error("No es un aarray:");
