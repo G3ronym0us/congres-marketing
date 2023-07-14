@@ -183,7 +183,7 @@ async function resendEmail(user: Ticket) {
   });
 
   const mailOptions = {
-    from: "info@cnmpcolombia.com",
+    from: "info2@cnmpcolombia.com",
     to: user.email,
     subject: "Confirmación de Participación CNMP",
     text: `

@@ -164,7 +164,7 @@ export default async function handler(
         });
 
         const mailOptions = {
-          from: "info@cnmpcolombia.com",
+          from: "info2@cnmpcolombia.com",
           to: 'yesidguinand2012@gmail.com',
           subject: "Confirmación de Participación CNMP",
           text: `
