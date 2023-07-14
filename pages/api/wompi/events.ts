@@ -144,7 +144,7 @@ export default async function handler(
             port: 465,
             secure: true,
             auth: {
-              user: "info@cnmpcolombia.com",
+              user: "Info2@cnmpcolombia.com",
               pass: "3st0esProd123*",
             },
           });

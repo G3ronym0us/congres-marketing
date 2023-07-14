@@ -11,6 +11,8 @@ export default async function excuteQuery({ query, values }) {
   });
 
   const [result] = await db.query(query, values);
+  await db.end();
+
   return result;
 
 }
