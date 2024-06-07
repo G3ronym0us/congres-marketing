@@ -208,7 +208,7 @@ No incluye seguro hotelero de $8.100 por persona por noche
             
             Fecha: 14 y 15 de julio de 2023.
             
-            Si requieres información, escríbenos a cnmmcolombia@gmail.com o a nuestro WhatsApp 3160557600
+            Si requieres información, escríbenos a cnmmcolombia@gmail.com o a nuestro WhatsApp 3247519195
             
             ¡Te esperamos!`,
     attachments: [

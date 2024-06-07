@@ -41,7 +41,7 @@ export default function BuyTickets() {
     const localities = [
         {
             name: 'Diamante',
-            amount: 380000,
+            amount: 500000,
             start: 101,
             interval: 1,
             spacing: 1,
@@ -55,7 +55,7 @@ export default function BuyTickets() {
         },
         {
             name: 'Oro',
-            amount: 320000,
+            amount: 380000,
             start: 101,
             interval: 1,
             spacing: 1,
@@ -113,7 +113,7 @@ export default function BuyTickets() {
         },
         {
             name: 'General',
-            amount: 150000,
+            amount: 200000,
             start: 101,
             interval: 1,
             spacing: 2,

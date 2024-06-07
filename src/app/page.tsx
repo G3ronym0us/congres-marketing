@@ -55,16 +55,14 @@ export default function Landing() {
               <div className="w-full px-4 ml-10 mr-10 text-center">
                 <div className="py-12">
                   <h1 className="text-white font-semibold text-5xl">
-                    CONGRESO NACIONAL DE MARKETING POLÍTICO – COLOMBIA 2023
+                  CONGRESO NACIONAL DE MARKETING POLÍTICO – COLOMBIA 2024
                   </h1>
                   <p className="mt-4 text-lg text-justify text-gray-300">
-                    El Congreso Nacional de Marketing político, reúne a los
-                    principales estrategas y consultores de la comunicación y el
-                    marketing político en Colombia, con el fin de orientar a
-                    candidatos, asesores, investigadores y estudiantes
-                    universitarios, y partidos políticos interesados en conocer
-                    las últimas tendencias en estrategia y comunicación política
-                    para ganar elecciones.
+                  El Congreso Nacional de Marketing Político versión Colombia 2024, se realizará en la ciudad de
+Bucaramanga y reunirá a los principales ponentes de la comunicación, la estrategia y el marketing
+político en Colombia, con el fin de orientar a candidatos, asesores, investigadores, estudiantes
+universitarios, y partidos políticos interesados en conocer las últimas tendencias de la estrategia
+de campañas electorales y comunicación de Gobierno.
                   </p>
                 </div>
               </div>

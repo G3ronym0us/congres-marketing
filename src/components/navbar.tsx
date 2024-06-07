@@ -23,7 +23,7 @@ export default function Navbar(props: any) {
             }
             href="https://cnmpcolombia.com/"
           >
-            <Image src={logo} width={250} className="inline" alt="" />
+            <Image src={logo} width={200} className="inline" alt="" />
           </Link>
           <button
             className="cursor-pointer text-xl leading-none px-3 py-1 border border-solid border-transparent rounded bg-transparent block lg:hidden outline-none focus:outline-none"
