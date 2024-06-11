@@ -1,18 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Navbar from "@/components/navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAward,
-  faCoffee,
   faFingerprint,
-  faLightbulb,
-  faMedal,
   faPaperPlane,
-  faPoll,
-  faRetweet,
-  faRocket,
   faTicket,
   faUserFriends,
 } from "@fortawesome/free-solid-svg-icons";

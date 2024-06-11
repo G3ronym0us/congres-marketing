@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@chakra-ui/system": "^2.6.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@fortawesome/react-fontawesome": "^0.2.0",
@@ -27,6 +31,7 @@
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.2",
     "fontkit": "^2.0.2",
+    "framer-motion": "^11.2.10",
     "fs": "^0.0.1-security",
     "jose": "^4.14.4",
     "js-cookie": "^3.0.5",
