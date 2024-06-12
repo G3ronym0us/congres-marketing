@@ -53,6 +53,7 @@ export default function BuyTickets() {
       interval: 1,
       spacing: 1,
       size: 3,
+      inverse: true,
       seats: [
         { letter: "A", quantity: 140 },
         { letter: "B", quantity: 138 },
@@ -66,6 +67,7 @@ export default function BuyTickets() {
       interval: 1,
       spacing: 1,
       size: 3,
+      inverse:true,
       seats: [
         { letter: "D", quantity: 134 },
         { letter: "E", quantity: 132 },
@@ -78,6 +80,7 @@ export default function BuyTickets() {
       interval: 1,
       spacing: 1,
       size: 3,
+      inverse:true,
       seats: [
         { letter: "F", quantity: 134 },
         { letter: "G", quantity: 132 },
@@ -135,6 +138,7 @@ export default function BuyTickets() {
       interval: 1,
       spacing: 2,
       size: 3,
+      inverse: true,
       seats: [
         { letter: "L", quantity: 132 },
         { letter: "M", quantity: 126 },

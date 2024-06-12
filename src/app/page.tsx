@@ -106,7 +106,7 @@ de campañas electorales y comunicación de Gobierno.
                   </div>
                 </div>
               </Link>
-              <a
+              <Link
                 href="#contacts"
                 className="lg:pt-12 pt-6 w-full md:w-4/12 px-4 text-center lg:order-1"
               >
@@ -118,9 +118,9 @@ de campañas electorales y comunicación de Gobierno.
                     <h6 className="text-xl font-semibold ">CONTACTO</h6>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="#conferences"
                 className="pt-6 w-full md:w-4/12 px-4 text-center lg:order-3"
               >
@@ -134,7 +134,7 @@ de campañas electorales y comunicación de Gobierno.
                     </h6>
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
 
             <div className="flex flex-wrap items-center mt-32">
@@ -167,7 +167,7 @@ de campañas electorales y comunicación de Gobierno.
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded-lg bg-pink-600">
                   <img
                     alt="..."
-                    src={process.env.NEXT_PUBLIC_URL + "images/agenda.png"}
+                    src={process.env.NEXT_PUBLIC_URL + "images/agenda-2024.jpeg"}
                     className="w-full align-middle rounded-t-lg"
                   />
                 </div>
@@ -199,14 +199,14 @@ de campañas electorales y comunicación de Gobierno.
 
           <div className="container mx-auto px-4">
             <div className="items-center flex flex-wrap">
-              <div className="w-full md:w-4/12 ml-auto mr-auto px-4">
-                {/* <img
+              {/* <div className="w-full md:w-4/12 ml-auto mr-auto px-4">
+                 <img
                   alt="..."
                   className="max-w-full rounded-lg shadow-lg"
                   src={process.env.NEXT_PUBLIC_URL + "images/paneles.jpeg"}
-                /> */}
+                />
                 <CarouselComponent />
-              </div>
+              </div> */}
               <div className="w-full md:w-5/12 ml-auto mr-auto px-4">
                 <div className="md:pr-12">
                   {/* <div className="text-pink-600 p-3 text-center inline-flex items-center justify-center w-16 h-16 mb-6 shadow-lg rounded-full bg-pink-300">
@@ -398,7 +398,7 @@ de campañas electorales y comunicación de Gobierno.
               </div>
             </div>
             <div className="flex flex-wrap mb-12">
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/victor-vargas"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -438,9 +438,9 @@ de campañas electorales y comunicación de Gobierno.
                     </div> */}
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/angel-beccassino"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -481,9 +481,9 @@ de campañas electorales y comunicación de Gobierno.
                     </div> */}
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/jorge-salim"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -500,7 +500,7 @@ de campañas electorales y comunicación de Gobierno.
                       ‘10 reglas infalibles para ganar la elección’
                     </p>
                     <div className="mt-6">
-                      <a
+                      <Link
                         href="https://www.facebook.com/salim.eljach"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -520,8 +520,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="https://instagram.com/jorgesalim_"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -533,8 +533,8 @@ de campañas electorales y comunicación de Gobierno.
                         >
                           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/salimeljach"
                       >
@@ -552,13 +552,13 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/darmi-fuentes"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -598,11 +598,11 @@ de campañas electorales y comunicación de Gobierno.
                     </div> */}
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
 
             <div className="flex flex-wrap mb-12">
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/jorge-sandoval"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -622,7 +622,7 @@ de campañas electorales y comunicación de Gobierno.
                       cuida’
                     </p>
                     <div className="mt-6">
-                      {/* <a
+                      {/* <Link
                         href="https://www.facebook.com/salim.eljach"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -642,8 +642,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a> */}
-                      <a
+                      </Link> */}
+                      <Link
                         href="https://instagram.com/jorgesandoval_fotografia"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -655,8 +655,8 @@ de campañas electorales y comunicación de Gobierno.
                         >
                           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/jorgesandoval_s"
                       >
@@ -674,13 +674,13 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/jamer-chica"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -697,7 +697,7 @@ de campañas electorales y comunicación de Gobierno.
                       ‘El secreto de la victoria electoral’
                     </p>
                     <div className="mt-6">
-                      <a
+                      <Link
                         href="https://www.facebook.com/jamerchica"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -717,8 +717,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="https://instagram.com/jamerchica"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -730,8 +730,8 @@ de campañas electorales y comunicación de Gobierno.
                         >
                           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/jamerchica"
                       >
@@ -749,13 +749,13 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/robison-castillo"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -778,7 +778,7 @@ de campañas electorales y comunicación de Gobierno.
                       campaña se hagan noticia’
                     </p>
                     <div className="mt-6">
-                      <a
+                      <Link
                         href="https://www.facebook.com/robincastillo"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -798,8 +798,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="https://instagram.com/robincastillo"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -811,8 +811,8 @@ de campañas electorales y comunicación de Gobierno.
                         >
                           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/robincastillo"
                       >
@@ -830,13 +830,13 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href={
                   process.env.NEXT_PUBLIC_URL + "profile/cristian-baracaldo"
                 }
@@ -859,7 +859,7 @@ de campañas electorales y comunicación de Gobierno.
                       pauta para ganar campañas’
                     </p>
                     <div className="mt-6">
-                      <a
+                      <Link
                         href="https://www.facebook.com/cris.baracaldo"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -879,8 +879,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href="https://instagram.com/cris.baracaldo"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -892,8 +892,8 @@ de campañas electorales y comunicación de Gobierno.
                         >
                           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                         </svg>
-                      </a>
-                      {/* <a
+                      </Link>
+                      {/* <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/salimeljach"
                       >
@@ -911,8 +911,8 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a> */}
-                      <a
+                      </Link> */}
+                      <Link
                         href="https://tiktok.com/cris.baracaldo"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -925,8 +925,8 @@ de campañas electorales y comunicación de Gobierno.
                           {" "}
                           <path d="M41,4H9C6.243,4,4,6.243,4,9v32c0,2.757,2.243,5,5,5h32c2.757,0,5-2.243,5-5V9C46,6.243,43.757,4,41,4z M37.006,22.323 c-0.227,0.021-0.457,0.035-0.69,0.035c-2.623,0-4.928-1.349-6.269-3.388c0,5.349,0,11.435,0,11.537c0,4.709-3.818,8.527-8.527,8.527 s-8.527-3.818-8.527-8.527s3.818-8.527,8.527-8.527c0.178,0,0.352,0.016,0.527,0.027v4.202c-0.175-0.021-0.347-0.053-0.527-0.053 c-2.404,0-4.352,1.948-4.352,4.352s1.948,4.352,4.352,4.352s4.527-1.894,4.527-4.298c0-0.095,0.042-19.594,0.042-19.594h4.016 c0.378,3.591,3.277,6.425,6.901,6.685V22.323z" />
                         </svg>
-                      </a>
-                      {/* <a
+                      </Link>
+                      {/* <Link
                         href="https://instagram.com/cris.baracaldo"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -955,8 +955,8 @@ de campañas electorales y comunicación de Gobierno.
                             />
                           </g>
                         </svg>
-                      </a> */}
-                      <a
+                      </Link> */}
+                      <Link
                         href="https://linkedin.com/crisbaracaldo"
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -974,15 +974,15 @@ de campañas electorales y comunicación de Gobierno.
                             d="M12 19H17V36H12zM14.485 17h-.028C12.965 17 12 15.888 12 14.499 12 13.08 12.995 12 14.514 12c1.521 0 2.458 1.08 2.486 2.499C17 15.887 16.035 17 14.485 17zM36 36h-5v-9.099c0-2.198-1.225-3.698-3.192-3.698-1.501 0-2.313 1.012-2.707 1.99C24.957 25.543 25 26.511 25 27v9h-5V19h5v2.616C25.721 20.5 26.85 19 29.738 19c3.578 0 6.261 2.25 6.261 7.274L36 36 36 36z"
                           />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
 
             <div className="flex flex-wrap">
-              <a
+              <Link
                 href={process.env.NEXT_PUBLIC_URL + "profile/adelina-covo"}
                 className="w-full md:w-6/12 lg:w-3/12 lg:mb-0 mb-12 px-4"
               >
@@ -1001,7 +1001,7 @@ de campañas electorales y comunicación de Gobierno.
                       ‘Cómo blindar una elección’
                     </p>
                     <div className="mt-6">
-                      <a
+                      <Link
                         href="https://www.facebook.com/LasHistoriasDeAdelina"
                         className="inline-block bg-white w-8 h-8 rounded-full outline-none focus:outline-none mr-1 mb-1"
                         type="button"
@@ -1021,8 +1021,8 @@ de campañas electorales y comunicación de Gobierno.
                             fill="white"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://twitter.com/adelina_covo"
                       >
@@ -1040,8 +1040,8 @@ de campañas electorales y comunicación de Gobierno.
                             d="M36,17.12c-0.882,0.391-1.999,0.758-3,0.88c1.018-0.604,2.633-1.862,3-3	c-0.951,0.559-2.671,1.156-3.793,1.372C29.789,13.808,24,14.755,24,20v2c-4,0-7.9-3.047-10.327-6c-2.254,3.807,1.858,6.689,2.327,7	c-0.807-0.025-2.335-0.641-3-1c0,0.016,0,0.036,0,0.057c0,2.367,1.661,3.974,3.912,4.422C16.501,26.592,16,27,14.072,27	c0.626,1.935,3.773,2.958,5.928,3c-2.617,2.029-7.126,2.079-8,1.977c8.989,5.289,22.669,0.513,21.982-12.477	C34.95,18.818,35.342,18.104,36,17.12"
                           />
                         </svg>
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         className="inline-block w-8 h-8 rounded-full outline-none focus:outline-none  mr-1 mb-1"
                         href="https://www.youtube.com/@NuestraHistoria"
                       >
@@ -1069,11 +1069,11 @@ de campañas electorales y comunicación de Gobierno.
                             />
                           </g>
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
           </div>
         </section>
