@@ -89,10 +89,30 @@ export default function BuyTickets() {
     {
       name: "Platea Izquierda",
       amount: 250000,
+      start: 1,
+      interval: 2,
+      style: "rotate-45",
+      inverse: true,
+      spacing: 2,
+      size: 4,
+      seats: [
+        { letter: "A", quantity: 17 },
+        { letter: "B", quantity: 25 },
+        { letter: "C", quantity: 27 },
+        { letter: "D", quantity: 35 },
+        { letter: "E", quantity: 27 },
+        { letter: "F", quantity: 17 },
+        { letter: "G", quantity: 11 },
+        { letter: "H", quantity: 11 },
+        { letter: "J", quantity: 5 },
+      ],
+    },
+    {
+      name: "Platea Derecha",
+      amount: 250000,
       start: 2,
       interval: 2,
       style: "-rotate-45",
-      inverse: true,
       spacing: 2,
       size: 4,
       seats: [
@@ -109,27 +129,6 @@ export default function BuyTickets() {
       ],
     },
     {
-      name: "Platea Derecha",
-      amount: 250000,
-      start: 1,
-      interval: 2,
-      style: "rotate-45",
-      spacing: 2,
-      size: 4,
-      seats: [
-        { letter: "A", quantity: 17 },
-        { letter: "B", quantity: 25 },
-        { letter: "C", quantity: 27 },
-        { letter: "D", quantity: 35 },
-        { letter: "E", quantity: 27 },
-        { letter: "F", quantity: 17 },
-        { letter: "G", quantity: 11 },
-        { letter: "H", quantity: 11 },
-        { letter: "J", quantity: 5 }
-      ]
-      ,
-    },
-    {
       name: "General",
       amount: 200000,
       start: 101,
@@ -144,9 +143,8 @@ export default function BuyTickets() {
         { letter: "Q", quantity: 126 },
         { letter: "R", quantity: 124 },
         { letter: "S", quantity: 124 },
-        { letter: "T", quantity: 124 }
-      ]
-      ,
+        { letter: "T", quantity: 124 },
+      ],
     },
   ];
 
@@ -523,7 +521,7 @@ export default function BuyTickets() {
                   <div className="text-2xl">$ 380.000</div>
                 </div>
                 <div
-                  onClick={() => handleLocality("Diamante")}
+                  onClick={() => handleLocality("VIP")}
                   className=" p-6 m-2 rounded-lg text-black-500"
                   style={{ backgroundColor: "#FA7653" }}
                 >
