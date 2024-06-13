@@ -8,7 +8,7 @@ export default function FloatingWhatsAppButton() {
     <>
       <div className="fixed bottom-4 right-4 z-10 text-white">
         <Link
-          href="https://wa.me/53181200000"
+          href="https://wa.me/573181200000"
           target="_blank"
           rel="noopener noreferrer"
           className="bg-green-500 text-white rounded-full flex items-center justify-center w-12 h-12 p-2 shadow-lg hover:bg-green-600"

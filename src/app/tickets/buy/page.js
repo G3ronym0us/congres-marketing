@@ -124,7 +124,7 @@ export default function BuyTickets() {
         { letter: "C", quantity: 34 },
         { letter: "D", quantity: 40 },
         { letter: "E", quantity: 44 },
-        { letter: "F", quantity: 48 },
+        { letter: "F", quantity: 46 },
         { letter: "G", quantity: 26 },
         { letter: "H", quantity: 20 },
         { letter: "J", quantity: 14 },
