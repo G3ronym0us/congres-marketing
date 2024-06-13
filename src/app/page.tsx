@@ -48,7 +48,7 @@ export default function Landing() {
               <div className="w-full px-4 ml-10 mr-10 text-center">
                 <div className="py-12">
                   <h1 className="text-white font-semibold text-5xl">
-                  CONGRESO NACIONAL DE MARKETING POLÍTICO – COLOMBIA 2024
+                  CONGRESO NACIONAL DE MARKETING POLÍTICO – COLOMBIA 2025
                   </h1>
                   <p className="mt-4 text-lg text-justify text-gray-300">
                   El Congreso Nacional de Marketing Político versión Colombia 2024, se realizará en la ciudad de
