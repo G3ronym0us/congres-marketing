@@ -32,96 +32,110 @@ export default function BuyTickets() {
 
     const localities = [
         {
-            name: 'Diamante',
-            amount: 380000,
-            start: 101,
-            interval: 1,
-            spacing: 1,
-            size: 3,
-            seats: [
-                { letter: 'D', quantity: 134 },
-                { letter: 'C', quantity: 134 },
-                { letter: 'B', quantity: 138 },
-                { letter: 'A', quantity: 140 }
-            ]
+          name: "Diamante",
+          amount: 500000,
+          start: 101,
+          interval: 1,
+          spacing: 1,
+          size: 3,
+          inverse: true,
+          seats: [
+            { letter: "A", quantity: 140 },
+            { letter: "B", quantity: 138 },
+            { letter: "C", quantity: 134 },
+          ],
         },
         {
-            name: 'Oro',
-            amount: 320000,
-            start: 101,
-            interval: 1,
-            spacing: 1,
-            size: 3,
-            seats: [
-                { letter: 'J', quantity: 138 },
-                { letter: 'K', quantity: 137 },
-                { letter: 'H', quantity: 134 },
-                { letter: 'G', quantity: 132 },
-                { letter: 'F', quantity: 134 },
-                { letter: 'E', quantity: 132 }
-            ]
+          name: "Oro",
+          amount: 380000,
+          start: 101,
+          interval: 1,
+          spacing: 1,
+          size: 3,
+          inverse:true,
+          seats: [
+            { letter: "D", quantity: 134 },
+            { letter: "E", quantity: 132 },
+          ],
         },
         {
-            name: 'Platea Izquierda',
-            amount: 250000,
-            start: 2,
-            interval: 2,
-            style: '-rotate-45',
-            inverse: true,
-            spacing: 2,
-            size: 4,
-            seats: [
-                { letter: 'K', quantity: 6 },
-                { letter: 'J', quantity: 14 },
-                { letter: 'H', quantity: 20 },
-                { letter: 'G', quantity: 26 },
-                { letter: 'F', quantity: 48 },
-                { letter: 'E', quantity: 44 },
-                { letter: 'D', quantity: 40 },
-                { letter: 'C', quantity: 34 },
-                { letter: 'B', quantity: 28 },
-                { letter: 'A', quantity: 20 }
-            ]
+          name: "VIP",
+          amount: 300000,
+          start: 101,
+          interval: 1,
+          spacing: 1,
+          size: 3,
+          inverse:true,
+          seats: [
+            { letter: "F", quantity: 134 },
+            { letter: "G", quantity: 132 },
+            { letter: "H", quantity: 134 },
+            { letter: "K", quantity: 137 },
+            { letter: "J", quantity: 138 },
+          ],
         },
         {
-            name: 'Platea Derecha',
-            amount: 250000,
-            start: 1,
-            interval: 2,
-            style: 'rotate-45',
-            spacing: 2,
-            size: 4,
-            seats: [
-                { letter: 'J', quantity: 5 },
-                { letter: 'H', quantity: 11 },
-                { letter: 'G', quantity: 11 },
-                { letter: 'F', quantity: 17 },
-                { letter: 'E', quantity: 27 },
-                { letter: 'D', quantity: 35 },
-                { letter: 'C', quantity: 27 },
-                { letter: 'B', quantity: 25 },
-                { letter: 'A', quantity: 17 }
-            ]
+          name: "Platea Izquierda",
+          amount: 250000,
+          start: 1,
+          interval: 2,
+          style: "rotate-45",
+          inverse: true,
+          spacing: 2,
+          size: 4,
+          seats: [
+            { letter: "A", quantity: 17 },
+            { letter: "B", quantity: 25 },
+            { letter: "C", quantity: 27 },
+            { letter: "D", quantity: 35 },
+            { letter: "E", quantity: 27 },
+            { letter: "F", quantity: 17 },
+            { letter: "G", quantity: 11 },
+            { letter: "H", quantity: 11 },
+            { letter: "J", quantity: 5 },
+          ],
         },
         {
-            name: 'General',
-            amount: 150000,
-            start: 101,
-            interval: 1,
-            spacing: 2,
-            size: 3,
-            seats: [
-                { letter: 'T', quantity: 124 },
-                { letter: 'S', quantity: 124 },
-                { letter: 'R', quantity: 124 },
-                { letter: 'Q', quantity: 126 },
-                { letter: 'P', quantity: 126 },
-                { letter: 'N', quantity: 126 },
-                { letter: 'M', quantity: 126 },
-                { letter: 'L', quantity: 132 },
-            ]
-        }
-    ]
+          name: "Platea Derecha",
+          amount: 250000,
+          start: 2,
+          interval: 2,
+          style: "-rotate-45",
+          spacing: 2,
+          size: 4,
+          seats: [
+            { letter: "A", quantity: 20 },
+            { letter: "B", quantity: 28 },
+            { letter: "C", quantity: 34 },
+            { letter: "D", quantity: 40 },
+            { letter: "E", quantity: 44 },
+            { letter: "F", quantity: 46 },
+            { letter: "G", quantity: 26 },
+            { letter: "H", quantity: 20 },
+            { letter: "J", quantity: 14 },
+            { letter: "K", quantity: 6 },
+          ],
+        },
+        {
+          name: "General",
+          amount: 200000,
+          start: 101,
+          interval: 1,
+          spacing: 2,
+          size: 3,
+          inverse: true,
+          seats: [
+            { letter: "L", quantity: 132 },
+            { letter: "M", quantity: 126 },
+            { letter: "N", quantity: 126 },
+            { letter: "P", quantity: 126 },
+            { letter: "Q", quantity: 126 },
+            { letter: "R", quantity: 124 },
+            { letter: "S", quantity: 124 },
+            { letter: "T", quantity: 124 },
+          ],
+        },
+      ];
 
     const roles = [
         'Asesor político',
@@ -412,55 +426,75 @@ export default function BuyTickets() {
 
                         !locality ?
                             (
-                                <div className='lg:mx-60 mx-4 py-6'>
-                                    <div className='w-full text-center text-3xl text-blue-500 py-6 font-bold'>Seleccione la localidad</div>
-                                    <div className='w-full grid grid-cols-5' >
-                                        <div
-                                            onClick={() => handleLocality('General')}
-                                            className=' p-12 my-2 col-start-2 rounded col-span-3 text-black-500 '
-                                            style={{ backgroundColor: '#5F91EB' }}
-                                        >
-                                            <div className="text-center text-3xl font-bold">General</div>
-                                            <div className="text-lg">$ 150.000</div>
-                                        </div>
-                                        <div></div>
-                                        <div
-                                            onClick={() => handleLocality('Platea Izquierda')}
-                                            className=' px-1 py-6 m-2 rounded-lg text-black-500 '
-                                            style={{ backgroundColor: '#FFC300' }}
-                                        >
-                                            <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">Platea Izquierda</div>
-                                            <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">$ 250.000</div>
-                                        </div>
-                                        <div className='col-span-3 grid grid-cols-1'>
-                                            <div
-                                                onClick={() => handleLocality('Oro')}
-                                                className='p-6 m-2 rounded-lg text-black-500 '
-                                                style={{ backgroundColor: '#04FF00' }}
-                                            >
-                                                <div className="text-center text-3xl font-bold">Oro</div>
-                                                <div className="text-2xl">$ 320.000</div>
-                                            </div>
-                                            <div
-                                                onClick={() => handleLocality('Diamante')}
-                                                className=' p-6 m-2 rounded-lg text-black-500'
-                                                style={{ backgroundColor: '#F600FF' }}
-                                            >
-                                                <div className="text-center text-3xl font-bold">Diamante</div>
-                                                <div className="text-2xl">$ 380.000</div>
-                                            </div>
-                                        </div>
-                                        <div
-                                            onClick={() => handleLocality('Platea Derecha')}
-                                            className=' py-6 m-2 rounded-lg text-black-500 '
-                                            style={{ backgroundColor: '#FFC300' }}
-                                        >
-                                            <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">Platea Derecha</div>
-                                            <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">$ 250.000</div>
-                                        </div>
-                                        <div className='col-span-3 col-start-2 bg-black p-6 rounded-xl text-white'>Escenario</div>
-                                    </div>
+                                <div className="lg:mx-60 mx-4 pb-6">
+                                <div className="w-full text-center text-3xl text-blue-500 py-6 font-bold">
+                                  Seleccione la localidad
                                 </div>
+                                <div className="w-full grid grid-cols-5">
+                                  <div className="col-span-3 col-start-2 bg-black p-6 rounded-xl text-white">
+                                    Escenario
+                                  </div>
+                                  <div></div>
+                                  <div
+                                    onClick={() => handleLocality("Platea Izquierda")}
+                                    className=" px-1 py-6 m-2 rounded-lg text-black-500 "
+                                    style={{ backgroundColor: "#FFC300" }}
+                                  >
+                                    <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
+                                      Platea Izquierda
+                                    </div>
+                                    <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">
+                                      $ 250.000
+                                    </div>
+                                  </div>
+                                  <div className="col-span-3 grid grid-cols-1">
+                                    <div
+                                      onClick={() => handleLocality("Diamante")}
+                                      className=" p-6 m-2 rounded-lg text-black-500"
+                                      style={{ backgroundColor: "#F600FF" }}
+                                    >
+                                      <div className="text-center text-3xl font-bold">Diamante</div>
+                                      <div className="text-2xl">$ 500.000</div>
+                                    </div>
+                                    <div
+                                      onClick={() => handleLocality("Oro")}
+                                      className="p-6 m-2 rounded-lg text-black-500 "
+                                      style={{ backgroundColor: "#04FF00" }}
+                                    >
+                                      <div className="text-center text-3xl font-bold">Oro</div>
+                                      <div className="text-2xl">$ 380.000</div>
+                                    </div>
+                                    <div
+                                      onClick={() => handleLocality("VIP")}
+                                      className=" p-6 m-2 rounded-lg text-black-500"
+                                      style={{ backgroundColor: "#FA7653" }}
+                                    >
+                                      <div className="text-center text-3xl font-bold">VIP</div>
+                                      <div className="text-2xl">$ 300.000</div>
+                                    </div>
+                                  </div>
+                                  <div
+                                    onClick={() => handleLocality("Platea Derecha")}
+                                    className=" py-6 m-2 rounded-lg text-black-500 "
+                                    style={{ backgroundColor: "#FFC300" }}
+                                  >
+                                    <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
+                                      Platea Derecha
+                                    </div>
+                                    <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">
+                                      $ 250.000
+                                    </div>
+                                  </div>
+                                  <div
+                                    onClick={() => handleLocality("General")}
+                                    className=" p-12 my-2 col-start-2 rounded col-span-3 text-black-500 "
+                                    style={{ backgroundColor: "#5F91EB" }}
+                                  >
+                                    <div className="text-center text-3xl font-bold">General</div>
+                                    <div className="text-lg">$ 200.000</div>
+                                  </div>
+                                </div>
+                              </div>
                             )
                             :
                             !(seatRow && seatNumber) &&
