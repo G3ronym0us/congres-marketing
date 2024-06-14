@@ -177,8 +177,18 @@ export default async function handler(
           port: 465,
           secure: true,
           auth: {
+<<<<<<< Updated upstream
             user: "Info2@cnmpcolombia.com",
             pass: "3st0esProd123*",
+=======
+<<<<<<< Updated upstream
+            user: "cnmpcolombia@gmail.com",
+            pass: "MGaQ7gtTZkIUAsrw",
+=======
+            user: "info2@cnmpcolombia.com",
+            pass: "3st0esProd123*",
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
           },
         });
 
