@@ -53,6 +53,18 @@ export default async function handler(
         });
         console.log(result);
 
+        // Dimensiones antiguas
+        const oldWidth = 600;
+        const oldHeight = 826;
+
+        // Dimensiones nuevas
+        const newWidth = 2397;
+        const newHeight = 3000;
+
+        // Factores de escala
+        const scaleFactorX = newWidth / oldWidth;
+        const scaleFactorY = newHeight / oldHeight;
+
         const pdfDoc = await PDFDocument.create();
         pdfDoc.registerFontkit(fontkit);
         const page = pdfDoc.addPage();
@@ -64,7 +76,7 @@ export default async function handler(
 
         // Agrega la imagen
         const imageUrl =
-          process.env.NEXT_PUBLIC_URL + "images/pdf-img-template.png";
+          process.env.NEXT_PUBLIC_URL + "images/pdf-img-template.jpg";
 
         const imageResponse = await fetch(imageUrl);
         if (!imageResponse.ok) {
@@ -72,7 +84,7 @@ export default async function handler(
         }
 
         const imageBuffer = await imageResponse.arrayBuffer();
-        const image = await pdfDoc.embedPng(imageBuffer);
+        const image = await pdfDoc.embedJpg(imageBuffer);
         page.drawImage(image, {
           x: 0,
           y: 0,
@@ -110,20 +122,19 @@ export default async function handler(
           throw new Error("Failed to fetch the image");
         }
 
-        const imgeTextBuffer = await imageTextResponse.arrayBuffer();
-        const imageText = await pdfDoc.embedPng(imgeTextBuffer);
-        page.drawImage(imageText, {
-          x: 0,
-          y: 0,
-          width: page.getWidth(),
-          height: page.getHeight(),
-        });
+        // const imgeTextBuffer = await imageTextResponse.arrayBuffer();
+        // const imageText = await pdfDoc.embedPng(imgeTextBuffer);
+        // page.drawImage(imageText, {
+        //   x: 0,
+        //   y: 0,
+        //   width: page.getWidth(),
+        //   height: page.getHeight(),
+        // });
 
         // Agrega el código QR
         const qrCodeUrl = "https://cnmpcolombia.com/ticket/" + ticket.uuid;
         const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
         const qrCodeImage = await pdfDoc.embedPng(qrCodeDataUrl);
-        console.log(page.getWidth(), page.getHeight());
         page.drawImage(qrCodeImage, {
           x: 383,
           y: 66,
@@ -132,19 +143,27 @@ export default async function handler(
         });
 
         page.drawText(ticket.document, {
-          x: 77, // Posición horizontal del texto en la página
-          y: 504, // Posición vertical del texto en la página
-          size: 28, // Tamaño de fuente del texto
-          font: customFont, // Fuente del texto (puedes cargar otras fuentes)
-          color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+          x: 77,
+          y: 570,
+          size: 28,
+          font: customFont,
+          color: rgb(1, 1, 1),
         });
 
         page.drawText(`${ticket.seatRow} ${ticket.seatNumber}`, {
-          x: 85, // Posición horizontal del texto en la página
-          y: 435, // Posición vertical del texto en la página
-          size: 14, // Tamaño de fuente del texto
-          font: customFont, // Fuente del texto (puedes cargar otras fuentes)
-          color: rgb(1, 1, 1), // Color del texto (en este caso, negro)
+          x: 430,
+          y: 440,
+          size: 18,
+          font: customFont,
+          color: rgb(1, 1, 1),
+        });
+
+        page.drawText(`${ticket.type}`, {
+          x: 180,
+          y: 440,
+          size: 18,
+          font: customFont,
+          color: rgb(1, 1, 1),
         });
 
         const pdfBytes = await pdfDoc.save();
@@ -165,7 +184,7 @@ export default async function handler(
 
         const mailOptions = {
           from: "info2@cnmpcolombia.com",
-          to: 'yesidguinand2012@gmail.com',
+          to: "yesidguinand2012@gmail.com",
           subject: "Confirmación de Participación CNMP",
           text: `
               ¡Enhorabuena!
@@ -182,7 +201,7 @@ export default async function handler(
               ¡Te esperamos!`,
           attachments: [
             {
-              filename: "QR-"+ ticket.document +".pdf",
+              filename: "QR-" + ticket.document + ".pdf",
               content: pdfBuffer,
             },
           ],
