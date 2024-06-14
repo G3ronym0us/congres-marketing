@@ -45,7 +45,7 @@ const Login = () => {
         <h2 className="text-2xl font-bold text-center mb-4">Iniciar sesión</h2>
         <div className="text-sm text-red-500 mb-2">{error}</div>
         <form onSubmit={handleLogin}>
-          <div className="mb-4">
+          <div className="mb-4 text-black">
             <label
               htmlFor="username"
               className="block mb-2 text-sm font-medium text-gray-700"
