@@ -7,6 +7,7 @@ import logo from "../../../../public/images/logo-congress.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEdit,
+  faFileDownload,
   faMailBulk,
   faTimes,
   faTrash,
@@ -20,7 +21,7 @@ type Ticket = {
   name: string;
   lastname: string;
   email: string;
-  document: string;
+  documentUser: string;
   type: string;
   role: string;
   number: number;
@@ -31,7 +32,7 @@ type TicketError = {
   name?: string;
   lastname?: string;
   email?: string;
-  document?: string;
+  documentUser?: string;
 };
 
 const Tickets = () => {
@@ -47,7 +48,7 @@ const Tickets = () => {
   const [name, setName] = React.useState("");
   const [lastname, setLastname] = React.useState("");
   const [email, setEmail] = React.useState("");
-  const [document, setDocument] = React.useState("");
+  const [documentUser, setDocumentUser] = React.useState("");
 
   const [errors, setErrors]: any = React.useState({});
   const [ticketEdit, setTicketEdit]: any = React.useState({});
@@ -81,7 +82,7 @@ const Tickets = () => {
     return (
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.document?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.documentUser?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -125,6 +126,30 @@ const Tickets = () => {
     }
   };
 
+  const downloadPDF = async (id: number) => {
+    const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets/download/" + id;
+  
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'ticket.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } else {
+      console.error('Error downloading PDF');
+    }
+  };
+
   const deleteTicket = async (id: number) => {
     const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets/delete/" + id;
 
@@ -164,8 +189,8 @@ const Tickets = () => {
     if (lastname.trim() === "")
       newErrors.lastname = "Los apellidos son requeridos";
     if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
-    if (document.trim() === "")
-      newErrors.document = "El documento no es valido";
+    if (documentUser.trim() === "")
+      newErrors.documentUser = "El documento no es valido";
 
     setErrors(newErrors);
 
@@ -216,7 +241,7 @@ const Tickets = () => {
     setTicketEdit(ticket);
     setName(ticket.name);
     setLastname(ticket.lastname);
-    setDocument(ticket.document);
+    setDocumentUser(ticket.documentUser);
     setEmail(ticket.email);
   };
 
@@ -246,7 +271,7 @@ const Tickets = () => {
             <tbody>
               {currentItems.map((item: Ticket) => (
                 <tr key={item.id}>
-                  <td className="py-2">{item.document}</td>
+                  <td className="py-2">{item.documentUser}</td>
                   <td className="py-2">
                     {!item.name
                       ? "Reservada"
@@ -258,6 +283,11 @@ const Tickets = () => {
                     <FontAwesomeIcon
                       onClick={() => resendEmail(item.id)}
                       icon={faMailBulk}
+                      className="text-blue-500 mr-2 cursor-pointer"
+                    />
+                    <FontAwesomeIcon
+                      onClick={() => downloadPDF(item.id)}
+                      icon={faFileDownload}
                       className="text-blue-500 mr-2 cursor-pointer"
                     />
                     <FontAwesomeIcon
@@ -354,9 +384,9 @@ const Tickets = () => {
                   <div className="grid grid-cols-1 mb-4">
                     <label className="text-black">Documento:</label>
                     <InputText
-                      value={document}
+                      value={documentUser}
                       error={errors.document}
-                      onChange={(e) => setDocument(e.target.value)}
+                      onChange={(e) => setDocumentUser(e.target.value)}
                     />
                     {errors.document && (
                       <p className="text-red-500 text-sm mt-1">
