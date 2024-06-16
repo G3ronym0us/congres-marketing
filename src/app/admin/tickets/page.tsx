@@ -21,7 +21,7 @@ type Ticket = {
   name: string;
   lastname: string;
   email: string;
-  documentUser: string;
+  document: string;
   type: string;
   role: string;
   number: number;
@@ -32,7 +32,7 @@ type TicketError = {
   name?: string;
   lastname?: string;
   email?: string;
-  documentUser?: string;
+  document?: string;
 };
 
 const Tickets = () => {
@@ -82,7 +82,7 @@ const Tickets = () => {
     return (
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.documentUser?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.document?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -126,27 +126,31 @@ const Tickets = () => {
     }
   };
 
-  const downloadPDF = async (id: number) => {
-    const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets/download/" + id;
-  
+  const downloadPDF = async (ticket: Ticket) => {
+    const url =
+      process.env.NEXT_PUBLIC_URL + "api/admin/tickets/download/" + ticket.id;
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     });
-  
+
     if (response.ok) {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', 'ticket.pdf');
+      link.setAttribute(
+        "download",
+        `CNMP_COLOMBIA_BOLETO(${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}).pdf`
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
     } else {
-      console.error('Error downloading PDF');
+      console.error("Error downloading PDF");
     }
   };
 
@@ -190,7 +194,7 @@ const Tickets = () => {
       newErrors.lastname = "Los apellidos son requeridos";
     if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
     if (documentUser.trim() === "")
-      newErrors.documentUser = "El documento no es valido";
+      newErrors.document = "El documento no es valido";
 
     setErrors(newErrors);
 
@@ -241,7 +245,7 @@ const Tickets = () => {
     setTicketEdit(ticket);
     setName(ticket.name);
     setLastname(ticket.lastname);
-    setDocumentUser(ticket.documentUser);
+    setDocumentUser(ticket.document);
     setEmail(ticket.email);
   };
 
@@ -271,7 +275,7 @@ const Tickets = () => {
             <tbody>
               {currentItems.map((item: Ticket) => (
                 <tr key={item.id}>
-                  <td className="py-2">{item.documentUser}</td>
+                  <td className="py-2">{item.document}</td>
                   <td className="py-2">
                     {!item.name
                       ? "Reservada"
@@ -286,7 +290,7 @@ const Tickets = () => {
                       className="text-blue-500 mr-2 cursor-pointer"
                     />
                     <FontAwesomeIcon
-                      onClick={() => downloadPDF(item.id)}
+                      onClick={() => downloadPDF(item)}
                       icon={faFileDownload}
                       className="text-blue-500 mr-2 cursor-pointer"
                     />
