@@ -17,34 +17,36 @@ import Image from "next/image";
 import { Conferencista } from "@/types/conferencista";
 
 export default function Profile() {
-  const conferencista: Conferencista =  {
+  const conferencista: Conferencista = {
     nombre: "EUGENIE RICHARD",
     alt: "eugenie-richard",
-    titulo: "‘La comunicación de gobierno: saber construir y comunicar su legado como líder político’",
-    descripcion: "Politóloga, docente-investigadora de la Facultad de Finanzas, Gobierno y Relaciones Internacionales de la Universidad Externado, PhD(c) en Estudios Sociales, Magister en Communication Politique et Publique (Université Paris VII). Consultora desde 2008 en temas de marketing político, comunicación politica y pública para candidatos, gobierno e instituciones locales, nacionales e internacionales. Experta en comunicación asertiva, planes de comunicación para la proyección de las políticas públicas, construcción de legado, marketing digital, storytelling y equidad de género.",
+    titulo:
+      "‘La comunicación de gobierno: saber construir y comunicar su legado como líder político’",
+    descripcion:
+      "Politóloga, docente-investigadora de la Facultad de Finanzas, Gobierno y Relaciones Internacionales de la Universidad Externado, PhD(c) en Estudios Sociales, Magister en Communication Politique et Publique (Université Paris VII). Consultora desde 2008 en temas de marketing político, comunicación politica y pública para candidatos, gobierno e instituciones locales, nacionales e internacionales. Experta en comunicación asertiva, planes de comunicación para la proyección de las políticas públicas, construcción de legado, marketing digital, storytelling y equidad de género.",
     roles: [
-        "Consultora en marketing político",
-        "Consultora en comunicación política y pública",
-        "Docente-investigadora en la Universidad Externado"
+      "Consultora en marketing político",
+      "Consultora en comunicación política y pública",
+      "Docente-investigadora en la Universidad Externado",
     ],
     publicaciones: [
-        "González, A. Richard, E. y Rincón, O. (2017), Comunicación política en Colombia: discursos, prácticas y estéticas. Bogotá: Universidad Externado de Colombia.",
-        "Richard, E. y González, A. (2016), Manual de Comunicación de Gobierno. Estrategias para proyectar las políticas públicas. Bogotá: Universidad Externado de Colombia.",
-        "Richard, E. (2015), Manual de Marketing Político. Cómo construir una campaña electoral exitosa en Colombia, paso a paso. Bogotá: Universidad Externado de Colombia."
+      "González, A. Richard, E. y Rincón, O. (2017), Comunicación política en Colombia: discursos, prácticas y estéticas. Bogotá: Universidad Externado de Colombia.",
+      "Richard, E. y González, A. (2016), Manual de Comunicación de Gobierno. Estrategias para proyectar las políticas públicas. Bogotá: Universidad Externado de Colombia.",
+      "Richard, E. (2015), Manual de Marketing Político. Cómo construir una campaña electoral exitosa en Colombia, paso a paso. Bogotá: Universidad Externado de Colombia.",
     ],
     formacion: [
-        "Candidata a DOCTORADO en Estudios Sociales, U. Externado de Colombia, Facultad de Ciencias Sociales y Humanas",
-        "MASTER Análisis de Problemas Políticos, Económicos e Internacionales Contemporáneos. Academia Diplomática, Instituto de Altos Estudios para el Desarrollo, U. Externado de Colombia, 2008",
-        "MASTER Comunicación Política y Pública en Francia y en Europa, U. Paris XII Val de Marne, Paris, Francia, 2005",
-        "Maîtrise en Ciencias Políticas, U. de Paris VII, Francia, 2004"
+      "Candidata a DOCTORADO en Estudios Sociales, U. Externado de Colombia, Facultad de Ciencias Sociales y Humanas",
+      "MASTER Análisis de Problemas Políticos, Económicos e Internacionales Contemporáneos. Academia Diplomática, Instituto de Altos Estudios para el Desarrollo, U. Externado de Colombia, 2008",
+      "MASTER Comunicación Política y Pública en Francia y en Europa, U. Paris XII Val de Marne, Paris, Francia, 2005",
+      "Maîtrise en Ciencias Políticas, U. de Paris VII, Francia, 2004",
     ],
     redesSociales: {
-        Instagram: "https://www.instagram.com/richard_eugenie?igsh=MTNuOHRoMGNwYjRobg==",
-        X: "https://x.com/moving_world?s=11",
-        Facebook: "https://www.facebook.com/eugenie.richard"
-    }
-}
-
+      Instagram:
+        "https://www.instagram.com/richard_eugenie?igsh=MTNuOHRoMGNwYjRobg==",
+      X: "https://x.com/moving_world?s=11",
+      Facebook: "https://www.facebook.com/eugenie.richard",
+    },
+  };
 
   return (
     <>
@@ -107,31 +109,32 @@ export default function Profile() {
                   </div>
                   <div className="w-full lg:w-6/12 px-4 lg:order-2">
                     <div className="text-center py-4 lg:pt-4 pt-8">
-                      {conferencista.roles.length > 0 && (
-                        <>
-                          <div className="mb-2 text-gray-700 mt-10">
-                            <FontAwesomeIcon
-                              icon={faBriefcase}
-                              className="mr-2"
-                            />
-                            ROLES
-                          </div>
+                      {conferencista.roles &&
+                        conferencista.roles.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700 mt-10">
+                              <FontAwesomeIcon
+                                icon={faBriefcase}
+                                className="mr-2"
+                              />
+                              ROLES
+                            </div>
 
-                          <div className="block text-gray-500 mx-14">
-                            <ul className="mb-6">
-                              {conferencista.roles.map((rol, index) => (
-                                <li key={index}>
-                                  <FontAwesomeIcon
-                                    icon={faHandPointUp}
-                                    className="mr-2"
-                                  />
-                                  {rol}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </>
-                      )}
+                            <div className="block text-gray-500 mx-14">
+                              <ul className="mb-6">
+                                {conferencista.roles.map((rol, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faHandPointUp}
+                                      className="mr-2"
+                                    />
+                                    {rol}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -141,63 +144,70 @@ export default function Profile() {
                       <div className="text-justify mb-4">
                         {conferencista.descripcion}
                       </div>
-                      {conferencista.premios && conferencista.premios.length > 0 && (
-                        <>
-                          <div className="mb-2 text-gray-700">
-                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
-                            PREMIOS
-                          </div>
-                          <ul className="mb-6 text-justify text-gray-500">
-                            {conferencista.premios?.map((premio, index) => (
-                              <li key={index}>
-                                <FontAwesomeIcon
-                                  icon={faTrophy}
-                                  className="mr-2"
-                                />
-                                {premio}
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                      {conferencista.publicaciones && conferencista.publicaciones.length > 0 && (
-                        <>
-                          <div className="mb-2 text-gray-700">
-                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
-                            PUBLICACIONES
-                          </div>
-                          <ul className="mb-6 text-justify text-gray-500">
-                            {conferencista.publicaciones?.map((publicacion, index) => (
-                              <li key={index}>
-                                <FontAwesomeIcon
-                                  icon={faBook}
-                                  className="mr-2"
-                                />
-                                {publicacion}
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                      {conferencista.formacion && conferencista.formacion.length > 0 && (
-                        <>
-                          <div className="mb-2 text-gray-700">
-                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
-                            FORMACIÓN
-                          </div>
-                          <ul className="mb-6 text-justify text-gray-500">
-                            {conferencista.formacion?.map((estudio, index) => (
-                              <li key={index}>
-                                <FontAwesomeIcon
-                                  icon={faUniversity}
-                                  className="mr-2"
-                                />
-                                {estudio}
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
+                      {conferencista.premios &&
+                        conferencista.premios.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              PREMIOS
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.premios?.map((premio, index) => (
+                                <li key={index}>
+                                  <FontAwesomeIcon
+                                    icon={faTrophy}
+                                    className="mr-2"
+                                  />
+                                  {premio}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      {conferencista.publicaciones &&
+                        conferencista.publicaciones.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              PUBLICACIONES
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.publicaciones?.map(
+                                (publicacion, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faBook}
+                                      className="mr-2"
+                                    />
+                                    {publicacion}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </>
+                        )}
+                      {conferencista.formacion &&
+                        conferencista.formacion.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              FORMACIÓN
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.formacion?.map(
+                                (estudio, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faUniversity}
+                                      className="mr-2"
+                                    />
+                                    {estudio}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </>
+                        )}
                     </div>
                   </div>
                 </div>
