@@ -7,11 +7,11 @@ const Carousel: any = OriginalCarousel;
 const images = [
   "carousel2.jpg",
   "carousel3.jpg",
-  "carousel4.jpeg",
-  "carousel5.jpeg",
-  "carousel6.jpeg",
-  "carousel7.jpeg",
-  "carousel8.jpeg",
+  "carousel4.jpg",
+  "carousel5.jpg",
+  "carousel6.jpg",
+  "carousel7.jpg",
+  "carousel8.jpg",
 ];
 
 const CarouselComponent = () => {
@@ -22,7 +22,7 @@ const CarouselComponent = () => {
           return (
             <div key={index}>
               <img
-                src={process.env.NEXT_PUBLIC_URL + "images/" + image }
+                src={process.env.NEXT_PUBLIC_URL + "images/2024/carrousel/" + image }
                 alt={image}
               />
             </div>

@@ -13,8 +13,31 @@ import {
   faTrophy,
   faUniversity,
 } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
+import { Conferencista } from "@/types/conferencista";
 
 export default function Profile() {
+  const conferencista: Conferencista = {
+    nombre: "JAMER CHICA",
+    alt: "jamer-chica",
+    titulo: "‘Ganadores de elecciones, perdedores de Gobiernos’",
+    descripcion: " Estratega Político. Abogado, Especialista en Derecho Público, Especialista en Gestión de Gobierno y Campañas Electorales, Especialista en Gerencia Empresarial y estudios en Gerencia de Campañas Políticas en EEUU. CEO de la firma Jamer Chica & Associates LLC. Miembro de la Asociación Americana de Consultores Políticos (AACP) en Estados Unidos y de la Asociación Colombiana de Consultores Políticos (ACOPOL). Con una trayectoria de quince años, ha participado en diferentes procesos electorales exitosos en varios países de América. Ganador en varias ocasiones del Napolitan Victory Awards. Exaltado como “uno de los cien profesionales más influyentes de la política” según The Washington Compol Magazine. Autor del libro “El secreto de la victoria electoral”.",
+    roles: [
+        "Estratega Político",
+        "CEO de Jamer Chica & Associates LLC",
+        "Miembro de la Asociación Americana de Consultores Políticos (AACP)",
+        "Miembro de la Asociación Colombiana de Consultores Políticos (ACOPOL)"
+    ],
+    publicaciones: [
+        "El secreto de la victoria electoral. Editorial Planeta Colombia S.A. 2023"
+    ],
+    redesSociales: {
+        Instagram: "https://www.instagram.com/jamerchica?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+    }
+};
+
+
+
   return (
     <>
       <Navbar transparent />
@@ -58,185 +81,134 @@ export default function Profile() {
                 <div className="flex flex-wrap justify-center">
                   <div className="w-full lg:w-6/12 text-center px-4 lg:order-1 flex justify-center mt-10">
                     <div className="relative">
-                      <img
-                        alt="..."
-                        src={
-                          process.env.NEXT_PUBLIC_URL + "images/jamer-chica.jpg"
-                        }
+                      <Image
+                        alt={conferencista.nombre}
+                        src={`/images/2024/${conferencista.alt}.jpg`}
                         className="shadow-lg rounded-full max-w-full mx-auto"
-                        style={{ maxWidth: "120px" }}
+                        width={120}
+                        height={140}
                       />
                       <h3 className="text-4xl font-semibold leading-normal mb-2 text-gray-800 mb-2">
-                        Jamer Chica
+                        {conferencista.nombre}
                       </h3>
                       <div className="text-sm leading-normal mt-0 mb-2 text-gray-500 font-bold uppercase">
                         <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-500"></i>{" "}
-                        ‘El secreto de la victoria electoral’
+                        {conferencista.titulo}
                       </div>
                     </div>
                   </div>
-                  {/* <div className="w-full lg:w-6/12 px-4 lg:order-2">
+                  <div className="w-full lg:w-6/12 px-4 lg:order-2">
                     <div className="text-center py-4 lg:pt-4 pt-8">
-                      <div className="block mb-2 text-gray-700 mt-10 mb-4">
-                        <FontAwesomeIcon icon={faUniversity} className="mr-2" />
-                        SUBTEMAS
-                      </div>
-                      <div className="block">
-                        <ul className="mb-6">
-                          <li>
+                      {conferencista.roles && conferencista.roles.length > 0 && (
+                        <>
+                          <div className="mb-2 text-gray-700 mt-10">
                             <FontAwesomeIcon
-                              icon={faHandPointUp}
+                              icon={faBriefcase}
                               className="mr-2"
                             />
-                            Una idea puede cambiarlo todo.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            Claves para formular bien un programa.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            Secretos de la relación entre un candidato y sus
-                            aliados: una propuesta común, la agenda compartida y
-                            el trabajo colaborativo.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            Promesa de valor: los candidatos a Concejos y
-                            Asambleas también tienen propuesta.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            Un discurso eficaz, una campaña exitosa.
-                          </li>
-                        </ul>
-                      </div>
+                            ROLES
+                          </div>
+
+                          <div className="block text-gray-500 mx-14">
+                            <ul className="mb-6">
+                              {conferencista.roles.map((rol, index) => (
+                                <li key={index}>
+                                  <FontAwesomeIcon
+                                    icon={faHandPointUp}
+                                    className="mr-2"
+                                  />
+                                  {rol}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div> */}
-                </div>
-                <div className="text-center mt-12">
-                  {/* <div className="mb-2 text-gray-700 mt-10">
-                    <i className="fas fa-briefcase mr-2 text-lg text-gray-500"></i>
-                    Solution Manager - Creative Tim Officer
                   </div>
-                  <div className="mb-2 text-gray-700">
-                    <i className="fas fa-university mr-2 text-lg text-gray-500"></i>
-                    University of Computer Science
-                  </div> */}
                 </div>
                 <div className="mt-10 py-10 border-t border-gray-300 text-center">
                   <div className="flex flex-wrap justify-center">
-                    <div className="w-full lg:w-9/12 px-4">
-                      <div className="mb-2 text-gray-700">
-                        <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
-                        HOJA DE VIDA{" "}
+                    <div className="w-full lg:w-9/12 px-4 text-gray-500">
+                      <div className="text-justify mb-4">
+                        {conferencista.descripcion}
                       </div>
-                      <ul className="mb-6 text-justify text-gray-500">
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Consultor Político y Estratega de Campañas
-                          Electorales. Abogado.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Postgrados en:
-                          <ul>
-                            <li>
-                              <FontAwesomeIcon icon={faUniversity} />{" "}
-                              Especialización en Derecho Público
-                            </li>
-                            <li>
-                              <FontAwesomeIcon icon={faUniversity} />{" "}
-                              Especialista en Gestión de Gobierno y Campañas
-                              Electorales
-                            </li>
-                            <li>
-                              <FontAwesomeIcon icon={faUniversity} />{" "}
-                              Especialista en Alta Gerencia
-                            </li>
-                            <li>
-                              <FontAwesomeIcon icon={faUniversity} /> Estudios
-                              en Gerencia de Campañas Políticas de la
-                              Universidad Internacional de Virginia (Estados
-                              Unidos)
-                            </li>
+                      {conferencista.premios && conferencista.premios.length > 0 && (
+                        <>
+                          <div className="mb-2 text-gray-700">
+                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                            PREMIOS
+                          </div>
+                          <ul className="mb-6 text-justify text-gray-500">
+                            {conferencista.premios?.map((premio, index) => (
+                              <li key={index}>
+                                <FontAwesomeIcon
+                                  icon={faTrophy}
+                                  className="mr-2"
+                                />
+                                {premio}
+                              </li>
+                            ))}
                           </ul>
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          CEO de la firma Jamer Chica & Associates LLC.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Miembro de la Asociación Americana de Consultores
-                          Políticos (AACP) en los Estados Unidos de América y de
-                          la Asociación Colombiana de Consultores Políticos
-                          (ACOPOL).
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Ha participado en diferentes procesos electorales
-                          exitosos en varios países de América.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Ganador en varias ocasiones del Napolitan Victory
-                          Awards.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Exaltado como “uno de los cien profesionales más
-                          influyentes de la política” según The Washington
-                          Compol Magazine.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Autor del libro “El secreto de la victoria electoral”.
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />
-                          {' Denominado por la prensa como "El antigurú".'}
-                        </li>
-                      </ul>
+                        </>
+                      )}
+                      {conferencista.publicaciones && conferencista.publicaciones.length > 0 && (
+                        <>
+                          <div className="mb-2 text-gray-700">
+                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                            PUBLICACIONES
+                          </div>
+                          <ul className="mb-6 text-justify text-gray-500">
+                            {conferencista.publicaciones?.map((publicacion, index) => (
+                              <li key={index}>
+                                <FontAwesomeIcon
+                                  icon={faBook}
+                                  className="mr-2"
+                                />
+                                {publicacion}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {conferencista.formacion && conferencista.formacion.length > 0 && (
+                        <>
+                          <div className="mb-2 text-gray-700">
+                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                            FORMACIÓN
+                          </div>
+                          <ul className="mb-6 text-justify text-gray-500">
+                            {conferencista.formacion?.map((estudio, index) => (
+                              <li key={index}>
+                                <FontAwesomeIcon
+                                  icon={faUniversity}
+                                  className="mr-2"
+                                />
+                                {estudio}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {conferencista.experiencias && conferencista.experiencias.length > 0 && (
+                        <>
+                          <div className="mb-2 text-gray-700">
+                            <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                            EXPERIENCIA
+                          </div>
+                          <ul className="mb-6 text-justify text-gray-500">
+                            {conferencista.experiencias?.map((experiencia, index) => (
+                              <li key={index}>
+                                <FontAwesomeIcon
+                                  icon={faBullhorn}
+                                  className="mr-2"
+                                />
+                                {experiencia}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

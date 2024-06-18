@@ -5,14 +5,39 @@ import Footer from "../../../components/Footer";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBook,
+  faBriefcase,
   faBullhorn,
   faHandPointUp,
   faLifeRing,
   faTrophy,
   faUniversity,
 } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
+import { Conferencista } from "@/types/conferencista";
 
 export default function Profile() {
+  const conferencista: Conferencista = {
+    nombre: "JORGE SALIM ELJACH",
+    alt: "jorge-salim",
+    titulo: "El próximo presidente de Colombia según las redes",
+    descripcion:
+      "Estratega electoral con más de 200 campañas y 90% de éxitos. Asesor de gobierno, imagen pública y reputación. Investigador y Analista en comportamiento electoral. ‘Es uno de los más certeros asesores políticos y el más influyente en la región’. Jorge Salim combina su visión creativa con el efecto político de sus mensajes. Su método para ganar elecciones, se basa en la operativización efectiva de las acciones tácticas y la incorporación de tecnología electoral. Esto le ha permitido ganar 17 Alcaldías en el área metropolitana de Bucaramanga.",
+    roles: [],
+    publicaciones: [],
+    formacion: [
+      "Publicista / Ing de Mercados / Administrador de Empresas",
+      "Estrategia Política / George Washington University (USA)",
+      "Especialista en Comercio Electrónico / OBS (ESP)",
+      "Magister en Marketing Digital / Universidad de Barcelona (ESP)",
+      "Magister en Dirección de Campañas Electorales / Universidad Nebrija (ESP)",
+    ],
+    redesSociales: {
+      Instagram:
+        "https://www.instagram.com/jorgesalim_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+    },
+  };
+
   return (
     <>
       <Navbar transparent />
@@ -56,131 +81,123 @@ export default function Profile() {
                 <div className="flex flex-wrap justify-center">
                   <div className="w-full lg:w-6/12 text-center px-4 lg:order-1 flex justify-center mt-10">
                     <div className="relative">
-                      <img
-                        alt="..."
-                        src={
-                          process.env.NEXT_PUBLIC_URL + "images/jorge-salim.jpg"
-                        }
+                      <Image
+                        alt={conferencista.nombre}
+                        src={`/images/2024/${conferencista.alt}.jpg`}
                         className="shadow-lg rounded-full max-w-full mx-auto"
-                        style={{ maxWidth: "120px" }}
+                        width={120}
+                        height={140}
                       />
                       <h3 className="text-4xl font-semibold leading-normal mb-2 text-gray-800 mb-2">
-                        Jorge Salim Eljach
+                        {conferencista.nombre}
                       </h3>
                       <div className="text-sm leading-normal mt-0 mb-2 text-gray-500 font-bold uppercase">
                         <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-500"></i>{" "}
-                        10 reglas infalibles para ganar la elección
+                        {conferencista.titulo}
                       </div>
                     </div>
                   </div>
                   <div className="w-full lg:w-6/12 px-4 lg:order-2">
                     <div className="text-center py-4 lg:pt-4 pt-8">
-                      <div className="block mb-2 text-gray-700 mt-10 mb-4">
-                        <FontAwesomeIcon icon={faUniversity} className="mr-2" />
-                        SUBTEMAS
-                      </div>
-                      <div className="block text-gray-500">
-                        <ul className="mb-6">
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            El Candidato diferencial.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            El mercado electoral, cómo piensa (y actúa) el
-                            elector.
-                          </li>
-                          <li>
-                            <FontAwesomeIcon
-                              icon={faHandPointUp}
-                              className="mr-2"
-                            />
-                            Tecnología para simplificar la campaña
-                          </li>
-                        </ul>
-                      </div>
+                      {conferencista.roles &&
+                        conferencista.roles.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700 mt-10">
+                              <FontAwesomeIcon
+                                icon={faBriefcase}
+                                className="mr-2"
+                              />
+                              ROLES
+                            </div>
+
+                            <div className="block text-gray-500 mx-14">
+                              <ul className="mb-6">
+                                {conferencista.roles.map((rol, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faHandPointUp}
+                                      className="mr-2"
+                                    />
+                                    {rol}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </>
+                        )}
                     </div>
                   </div>
-                </div>
-                <div className="text-center mt-12">
-                  {/* <div className="mb-2 text-gray-700 mt-10">
-                    <i className="fas fa-briefcase mr-2 text-lg text-gray-500"></i>
-                    Solution Manager - Creative Tim Officer
-                  </div>
-                  <div className="mb-2 text-gray-700">
-                    <i className="fas fa-university mr-2 text-lg text-gray-500"></i>
-                    University of Computer Science
-                  </div> */}
                 </div>
                 <div className="mt-10 py-10 border-t border-gray-300 text-center">
                   <div className="flex flex-wrap justify-center">
                     <div className="w-full lg:w-9/12 px-4 text-gray-500">
                       <div className="text-justify mb-4">
-                        Estratega electoral con más de 200 campañas y 90% de
-                        éxitos. Asesor de gobierno, imagen pública y reputación.
-                        Investigador y Analista en comportamiento electoral. “Es
-                        uno de los más certeros asesores políticos y el más
-                        influyente en la región.
+                        {conferencista.descripcion}
                       </div>
-                      <div className="text-justify mb-6">
-                        Jorge Salim combina su visión creativa con el efecto
-                        político de sus mensajes. Su método para ganar
-                        elecciones, se basa en la operativización efectiva de
-                        las acciones tácticas y la incorporación de tecnología
-                        electoral. Esto le ha permitido ganar 17 Alcaldías en el
-                        área metropolitana de B/manga”
-                      </div>
-                      <div className="mb-2 text-gray-700">
-                        <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
-                        Formación
-                      </div>
-                      <ul className="mb-6 text-justify text-gray-500">
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Publicista / Ing de Mercados / Administrador de
-                          Empresas
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Estrategia Política / George Washington University
-                          (USA)
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Especialista en Comercio Electrónico / OBS (ESP)
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Magister en Marketing Digital / Universidad de
-                          Barcelona (ESP)
-                        </li>
-                        <li>
-                          <FontAwesomeIcon
-                            icon={faUniversity}
-                            className="mr-2"
-                          />{" "}
-                          Magister en Dirección de Campañas Electorales /
-                          Universidad Nebrija (ESP)
-                        </li>
-                      </ul>
+                      {conferencista.premios &&
+                        conferencista.premios.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              PREMIOS
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.premios?.map((premio, index) => (
+                                <li key={index}>
+                                  <FontAwesomeIcon
+                                    icon={faTrophy}
+                                    className="mr-2"
+                                  />
+                                  {premio}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      {conferencista.publicaciones &&
+                        conferencista.publicaciones.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              PUBLICACIONES
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.publicaciones?.map(
+                                (publicacion, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faBook}
+                                      className="mr-2"
+                                    />
+                                    {publicacion}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </>
+                        )}
+                      {conferencista.formacion &&
+                        conferencista.formacion.length > 0 && (
+                          <>
+                            <div className="mb-2 text-gray-700">
+                              <i className="fas fa-university mr-2 text-lg text-gray-500 font-bold"></i>
+                              FORMACIÓN
+                            </div>
+                            <ul className="mb-6 text-justify text-gray-500">
+                              {conferencista.formacion?.map(
+                                (estudio, index) => (
+                                  <li key={index}>
+                                    <FontAwesomeIcon
+                                      icon={faUniversity}
+                                      className="mr-2"
+                                    />
+                                    {estudio}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </>
+                        )}
                     </div>
                   </div>
                 </div>
