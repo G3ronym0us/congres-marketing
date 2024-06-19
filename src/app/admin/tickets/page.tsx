@@ -195,16 +195,15 @@ const Tickets = () => {
     if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
     if (documentUser.trim() === "")
       newErrors.document = "El documento no es valido";
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       const data: Ticket = {
         ...ticketEdit,
-        name: name ? name : ticketEdit.name,
-        lastname: lastname ? lastname : ticketEdit.lastname,
-        email: email ? email : ticketEdit.email,
-        document: document ? document : ticketEdit.document,
+        name: name ?? ticketEdit.name,
+        lastname: lastname ?? ticketEdit.lastname,
+        email: email ?? ticketEdit.email,
+        document: documentUser ?? ticketEdit.document,
       };
 
       const url =
