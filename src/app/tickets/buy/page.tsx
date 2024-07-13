@@ -236,7 +236,7 @@ export default function BuyTickets() {
           orderId: reference,
           currency: 'COP',
           amount: amountTotal,
-          apiKey: 'swe4ee7SzuHOkyVfEvKONZp61AnMkXrBrEhLs_dCz7Q',
+          apiKey: process.env.NEXT_PUBLIC_BOLD_KEY,
           redirectionUrl: `http://localhost:3001/tickets/purchase/${reference}`,
           integritySignature: hash,
           description: 'Camiseta Rolling Stones XL',
