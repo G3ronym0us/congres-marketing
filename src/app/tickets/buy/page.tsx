@@ -1,53 +1,56 @@
-"use client";
+"use client"
 
-import InputText from "@/components/form/InputText";
-import Navbar from "@/components/navbar";
-import { randomBytes } from "crypto";
-import Script from "next/script";
-import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import InputText from '@/components/form/InputText';
+import Navbar from '@/components/navbar';
+import { randomBytes } from 'crypto';
+import Script from 'next/script';
+import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCancel,
   faCircleArrowLeft,
   faCirclePlus,
-  faDeleteLeft,
   faEdit,
   faMoneyBill1Wave,
   faRemove,
-  faSave,
   faTimes,
-} from "@fortawesome/free-solid-svg-icons";
-import validator from "validator";
-import title from "../../../../public/images/locality-title.png";
-import Image from "next/image";
+} from '@fortawesome/free-solid-svg-icons';
+import validator from 'validator';
+import { getIntegrityHash, getSeatsUsed, saveTickets } from '../../../services/tickets';
+import { metadata } from '@/app/layout';
+
 
 export default function BuyTickets() {
-  const [locality, setLocality] = useState(null);
-  const [pay, setPay] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [name, setName] = useState("");
-  const [lastname, setLastname] = useState("");
-  const [seatAux, setSeatAux] = useState("");
-  const [email, setEmail] = useState("");
-  const [document, setDocument] = useState("");
-  const [role, setRole] = useState("Asesor político");
-  const [tickets, setTickets] = useState([]);
-  const [selectedOption, setSelectedOption] = useState("diamond");
-  const [amountTotal, setAmountTotal] = useState(0);
-  const [seatRow, setSeatRow] = useState(null);
-  const [seatNumber, setSeatNumber] = useState(null);
-  const [seatConfirm, setSeatConfirm] = useState(false);
-  const [seatsUseds, setSeatsUseds] = useState([]);
-  const [ticketEdit, setTicketEdit] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [locality, setLocality] = useState<Locality | undefined>();
+  const [pay, setPay] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [name, setName] = useState<string>('');
+  const [lastname, setLastname] = useState<string>('');
+  const [seatAux, setSeatAux] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [document, setDocument] = useState<string>('');
+  const [role, setRole] = useState<string>('Asesor político');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [amountTotal, setAmountTotal] = useState<number>(0);
+  const [seatRow, setSeatRow] = useState<string|undefined>(undefined);
+  const [seatNumber, setSeatNumber] = useState<number | null>(null);
+  const [seatConfirm, setSeatConfirm] = useState<boolean>(false);
+  const [seatsUseds, setSeatsUseds] = useState<SeatUsed[]>([]);
+  const [ticketEdit, setTicketEdit] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    getSeatsUseds();
+    loadSeatUseds();
   }, []);
+
+  const loadSeatUseds = async () => {
+    const seatUseds = await getSeatsUsed();
+    console.log(seatUseds);
+    setSeatsUseds(seatUseds);
+  };
 
   const localities = [
     {
-      name: "Diamante",
+      name: 'Diamante',
       amount: 500000,
       start: 101,
       interval: 1,
@@ -55,84 +58,84 @@ export default function BuyTickets() {
       size: 3,
       inverse: true,
       seats: [
-        { letter: "A", quantity: 140 },
-        { letter: "B", quantity: 138 },
-        { letter: "C", quantity: 134 },
+        { letter: 'A', quantity: 140 },
+        { letter: 'B', quantity: 138 },
+        { letter: 'C', quantity: 134 },
       ],
     },
     {
-      name: "Oro",
+      name: 'Oro',
       amount: 380000,
       start: 101,
       interval: 1,
       spacing: 1,
       size: 3,
-      inverse:true,
+      inverse: true,
       seats: [
-        { letter: "D", quantity: 134 },
-        { letter: "E", quantity: 132 },
+        { letter: 'D', quantity: 134 },
+        { letter: 'E', quantity: 132 },
       ],
     },
     {
-      name: "VIP",
+      name: 'VIP',
       amount: 300000,
       start: 101,
       interval: 1,
       spacing: 1,
       size: 3,
-      inverse:true,
+      inverse: true,
       seats: [
-        { letter: "F", quantity: 134 },
-        { letter: "G", quantity: 132 },
-        { letter: "H", quantity: 134 },
-        { letter: "K", quantity: 137 },
-        { letter: "J", quantity: 138 },
+        { letter: 'F', quantity: 134 },
+        { letter: 'G', quantity: 132 },
+        { letter: 'H', quantity: 134 },
+        { letter: 'K', quantity: 137 },
+        { letter: 'J', quantity: 138 },
       ],
     },
     {
-      name: "Platea Izquierda",
+      name: 'Platea Izquierda',
       amount: 250000,
       start: 1,
       interval: 2,
-      style: "rotate-45",
+      style: 'rotate-45',
       inverse: true,
       spacing: 2,
       size: 4,
       seats: [
-        { letter: "A", quantity: 17 },
-        { letter: "B", quantity: 25 },
-        { letter: "C", quantity: 27 },
-        { letter: "D", quantity: 35 },
-        { letter: "E", quantity: 27 },
-        { letter: "F", quantity: 17 },
-        { letter: "G", quantity: 11 },
-        { letter: "H", quantity: 11 },
-        { letter: "J", quantity: 5 },
+        { letter: 'A', quantity: 17 },
+        { letter: 'B', quantity: 25 },
+        { letter: 'C', quantity: 27 },
+        { letter: 'D', quantity: 35 },
+        { letter: 'E', quantity: 27 },
+        { letter: 'F', quantity: 17 },
+        { letter: 'G', quantity: 11 },
+        { letter: 'H', quantity: 11 },
+        { letter: 'J', quantity: 5 },
       ],
     },
     {
-      name: "Platea Derecha",
+      name: 'Platea Derecha',
       amount: 250000,
       start: 2,
       interval: 2,
-      style: "-rotate-45",
+      style: '-rotate-45',
       spacing: 2,
       size: 4,
       seats: [
-        { letter: "A", quantity: 20 },
-        { letter: "B", quantity: 28 },
-        { letter: "C", quantity: 34 },
-        { letter: "D", quantity: 40 },
-        { letter: "E", quantity: 44 },
-        { letter: "F", quantity: 46 },
-        { letter: "G", quantity: 26 },
-        { letter: "H", quantity: 20 },
-        { letter: "J", quantity: 14 },
-        { letter: "K", quantity: 6 },
+        { letter: 'A', quantity: 20 },
+        { letter: 'B', quantity: 28 },
+        { letter: 'C', quantity: 34 },
+        { letter: 'D', quantity: 40 },
+        { letter: 'E', quantity: 44 },
+        { letter: 'F', quantity: 46 },
+        { letter: 'G', quantity: 26 },
+        { letter: 'H', quantity: 20 },
+        { letter: 'J', quantity: 14 },
+        { letter: 'K', quantity: 6 },
       ],
     },
     {
-      name: "General",
+      name: 'General',
       amount: 200000,
       start: 101,
       interval: 1,
@@ -140,104 +143,151 @@ export default function BuyTickets() {
       size: 3,
       inverse: true,
       seats: [
-        { letter: "L", quantity: 132 },
-        { letter: "M", quantity: 126 },
-        { letter: "N", quantity: 126 },
-        { letter: "P", quantity: 126 },
-        { letter: "Q", quantity: 126 },
-        { letter: "R", quantity: 124 },
-        { letter: "S", quantity: 124 },
-        { letter: "T", quantity: 124 },
+        { letter: 'L', quantity: 132 },
+        { letter: 'M', quantity: 126 },
+        { letter: 'N', quantity: 126 },
+        { letter: 'P', quantity: 126 },
+        { letter: 'Q', quantity: 126 },
+        { letter: 'R', quantity: 124 },
+        { letter: 'S', quantity: 124 },
+        { letter: 'T', quantity: 124 },
       ],
     },
   ];
 
   const roles = [
-    "Asesor político",
-    "Candidato",
-    "Estudiante Universitario",
-    "Docente Universitario",
-    "Otro",
+    'Asesor político',
+    'Candidato',
+    'Estudiante Universitario',
+    'Docente Universitario',
+    'Otro',
   ];
 
   useEffect(() => {
     setAmountTotal(tickets.reduce((total, ticket) => total + ticket.amount, 0));
   }, [tickets]);
 
+  useEffect(() => {
+    const initBoldCheckout = () => {
+      if (typeof window !== 'undefined' && window.document) {
+        if ('BoldCheckout' in window) {
+          console.warn('Bold Checkout script is already loaded.');
+          return;
+        }
+
+        const js = window.document.createElement('script');
+        js.onload = () => {
+          window.dispatchEvent(new Event('boldCheckoutLoaded'));
+        };
+        js.onerror = () => {
+          console.error('Failed to load Bold Checkout script');
+        };
+        js.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+        window.document.head.appendChild(js);
+      }
+    };
+
+    initBoldCheckout();
+  }, []);
+
   const buy = async () => {
     const reference = await generateRandomString(20);
-    const data = { tickets, reference };
-    const apiUrl = process.env.NEXT_PUBLIC_URL + "api/ticket/save";
+    const data: Ticket[] = tickets.map((ticket) => ({
+      ...ticket,
+      reference,
+    }));
 
-    postData(apiUrl, data)
-      .then((response) => {
-        console.log("Respuesta:", response);
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        return;
-      });
+    try {
+      const response = await saveTickets(data);
+      console.log('Respuesta:', response);
 
-    const checkout = await new WidgetCheckout({
-      currency: "COP",
-      amountInCents: amountTotal * 100,
-      reference: reference,
-      publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY,
-      // redirectUrl: 'https://transaction-redirect.wompi.co/check', // Opcional
-      taxInCents: {
-        // Opcional
-        vat: 1900,
-        consumption: 800,
-      },
-    });
-
-    checkout.open(function (result) {
-      var transaction = result.transaction;
-      console.log("Transaction ID: ", transaction.id);
-      console.log("Transaction object: ", transaction);
-      clearForm();
-      setTickets([]);
-      setPay(false);
-    });
+      if (typeof window !== 'undefined') {
+        if (!('BoldCheckout' in window)) {
+          window.addEventListener(
+            'boldCheckoutLoaded',
+            () => {
+              createBoldCheckout(reference);
+            },
+            { once: true },
+          );
+        } else {
+          createBoldCheckout(reference);
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const createBoldCheckout = async (reference: string) => {
+    if (typeof window !== 'undefined' && 'BoldCheckout' in window) {
+      
+      const data = {
+        reference,
+        amount: amountTotal,
+        currency: 'COP',
+      };
+
+      const {hash} = await getIntegrityHash(data);
+
+      if (typeof window !== 'undefined' && 'BoldCheckout' in window) {
+        const BoldCheckout = (window as any).BoldCheckout;
+        const checkout = new BoldCheckout({
+          orderId: reference,
+          currency: 'COP',
+          amount: amountTotal,
+          apiKey: 'swe4ee7SzuHOkyVfEvKONZp61AnMkXrBrEhLs_dCz7Q',
+          redirectionUrl: `http://localhost:3001/tickets/purchase/${reference}`,
+          integritySignature: hash,
+          description: 'Camiseta Rolling Stones XL',
+          tax: 'vat-19',
+          metadata: {
+            reference,
+          }
+        });
+        console.log('Checkout:', checkout);
+        checkout.open();
+      }
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
-    if (name.trim() === "") newErrors.name = "Los nombres son requeridos";
-    if (lastname.trim() === "")
-      newErrors.lastname = "Los apellidos son requeridos";
-    if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
-    if (document.trim() === "")
-      newErrors.document = "El documento no es valido";
-    if (role.trim() === "") newErrors.role = "El rol no es valido";
+    if (name.trim() === '') newErrors.name = 'Los nombres son requeridos';
+    if (lastname.trim() === '')
+      newErrors.lastname = 'Los apellidos son requeridos';
+    if (!validator.isEmail(email)) newErrors.email = 'El email no es valido';
+    if (document.trim() === '')
+      newErrors.document = 'El documento no es valido';
+    if (role.trim() === '') newErrors.role = 'El rol no es valido';
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       if (ticketEdit) {
-        setTickets(() => {
-          return tickets.map((ticket) => {
-            if (ticket.document == ticketEdit) {
+        setTickets((prevTickets) => {
+          return prevTickets.map((ticket) => {
+            if (ticket.document === ticketEdit) {
               return {
-                name: name ? name : ticket.name,
-                lastname: lastname ? lastname : ticket.lastname,
-                email: email ? email : ticket.email,
-                document: document ? document : ticket.document,
-                role: role ? role : ticket.role,
+                name: name || ticket.name,
+                lastname: lastname || ticket.lastname,
+                email: email || ticket.email,
+                document: document || ticket.document,
+                role: role || ticket.role,
                 type: locality ? locality.name : ticket.type,
-                seatNumber: seatNumber ? seatNumber : ticket.seatNumber,
-                seatRow: seatRow ? seatRow : ticket.seatRow,
+                seatNumber: seatNumber || ticket.seatNumber,
+                seatRow: seatRow || ticket.seatRow,
                 amount: locality ? locality.amount : ticket.amount,
               };
             }
             return ticket;
           });
         });
-      } else {
-        const ticket = {
+      } else if (locality && seatNumber && seatRow) {
+        const ticket: Ticket = {
           name,
           lastname,
           email,
@@ -256,93 +306,50 @@ export default function BuyTickets() {
   };
 
   const clearForm = () => {
-    setName("");
-    setLastname("");
-    setEmail("");
-    setDocument("");
-    setRole("Asesor político");
+    setName('');
+    setLastname('');
+    setEmail('');
+    setDocument('');
+    setRole('Asesor político');
     setSeatNumber(null);
     setSeatConfirm(false);
-    setSeatRow(null);
-    setLocality(null);
+    setSeatRow(undefined);
+    setLocality(undefined);
     setTicketEdit(null);
   };
 
-  const handleOptionChange = (value) => {
-    setSelectedOption(value);
+  const numberWithDots = (value: number) => {
+    const formattedValue = value.toLocaleString('en-US', { useGrouping: true });
+    return formattedValue.replace(/,/g, '.');
   };
 
-  const radioStyles = (value) =>
-    selectedOption === value
-      ? "border-2 border-indigo-500 bg-indigo-500 text-white"
-      : "border border-gray-300";
-
-  const numberWithDots = (value) => {
-    const formattedValue = value.toLocaleString("en-US", { useGrouping: true });
-    return formattedValue.replace(/,/g, ".");
-  };
-
-  async function generateRandomString(length) {
+  async function generateRandomString(length: number) {
     const bytes = await randomBytes(Math.ceil(length / 2));
-    return bytes.toString("hex").slice(0, length);
+    return bytes.toString('hex').slice(0, length);
   }
 
-  async function postData(url, data) {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      throw new Error("Error en la solicitud POST");
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  }
-
-  const handleLocality = async (localityName) => {
+  const handleLocality = async (localityName: string) => {
     const localitySelected = localities.find(
-      (loc) => loc.name === localityName
+      (loc) => loc.name === localityName,
     );
     setLocality(localitySelected);
   };
 
-  const toggleModal = (row, number) => {
+  const toggleModal = (row: string, number: number) => {
     setSeatRow(row);
     setSeatNumber(number);
     setIsOpen(!isOpen);
   };
 
-  const handleSeat = (row, number) => {
+  const handleSeat = () => {
     setSeatConfirm(true);
     setIsOpen(!isOpen);
   };
 
-  const getSeatsUseds = async () => {
-    const url = process.env.NEXT_PUBLIC_URL + "api/ticket/all";
-    await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        setSeatsUseds(response.result);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
-
-  const editSeat = (ticket) => {
+  const editSeat = (ticket: Ticket) => {
     setTicketEdit(ticket.document);
-    setLocality(null);
-    setSeatRow(null);
+    setLocality(undefined);
+    setSeatRow(undefined);
     setSeatNumber(null);
     setSeatConfirm(false);
     setName(ticket.name);
@@ -353,9 +360,9 @@ export default function BuyTickets() {
     setPay(false);
   };
 
-  const editInformation = (ticket) => {
+  const editInformation = (ticket: Ticket) => {
     const locality = localities.find(
-      (locality) => locality.name === ticket.type
+      (locality) => locality.name === ticket.type,
     );
     setTicketEdit(ticket.document);
     setLocality(locality);
@@ -370,15 +377,15 @@ export default function BuyTickets() {
     setPay(false);
   };
 
-  const deleteTicket = (ticket) => {
+  const deleteTicket = (ticket: Ticket) => {
     const ticketsFiltered = tickets.filter(
-      (t) => t.document != ticket.document
+      (t) => t.document != ticket.document,
     );
     setTickets(ticketsFiltered);
   };
 
   const bgStyle = {
-    height: "100%",
+    height: '100%',
     backgroundImage: `url('${process.env.NEXT_PUBLIC_URL}images/locality-bg.png')`,
   };
 
@@ -394,7 +401,7 @@ export default function BuyTickets() {
           />
         </div>
         {pay ? (
-          <div div className="mx-20 pb-6">
+          <div className="mx-20 pb-6">
             <div className="bg-blue text-white py-4 text-center rounded text-2xl">
               Boletos: {tickets.length}
             </div>
@@ -411,14 +418,14 @@ export default function BuyTickets() {
                       key={index}
                     >
                       <p>
-                        <span className="font-bold">Nombre:</span>{" "}
-                        {ticket.lastname + ", " + ticket.name}
+                        <span className="font-bold">Nombre:</span>{' '}
+                        {ticket.lastname + ', ' + ticket.name}
                       </p>
                       <p>
                         <span className="font-bold">Email:</span> {ticket.email}
                       </p>
                       <p>
-                        <span className="font-bold">Documento:</span>{" "}
+                        <span className="font-bold">Documento:</span>{' '}
                         {ticket.document}
                       </p>
                       <p>
@@ -428,7 +435,7 @@ export default function BuyTickets() {
                         <span className="font-bold">Zona:</span> {ticket.type}
                       </p>
                       <p>
-                        <span className="font-bold">Asiento:</span>{" "}
+                        <span className="font-bold">Asiento:</span>{' '}
                         {ticket.seatRow + ticket.seatNumber}
                       </p>
                       <div>
@@ -463,7 +470,7 @@ export default function BuyTickets() {
               <div className="line-through">
                 Total: $ {numberWithDots(amountTotal)}
               </div>
-              <div>{"Total a Pagar: $ " + numberWithDots(amountTotal)}</div>
+              <div>{'Total a Pagar: $ ' + numberWithDots(amountTotal)}</div>
             </div>
 
             <div className="w-full text-center">
@@ -496,9 +503,9 @@ export default function BuyTickets() {
               </div>
               <div></div>
               <div
-                onClick={() => handleLocality("Platea Izquierda")}
+                onClick={() => handleLocality('Platea Izquierda')}
                 className=" px-1 py-6 m-2 rounded-lg text-black-500 "
-                style={{ backgroundColor: "#FFC300" }}
+                style={{ backgroundColor: '#FFC300' }}
               >
                 <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
                   Platea Izquierda
@@ -509,34 +516,34 @@ export default function BuyTickets() {
               </div>
               <div className="col-span-3 grid grid-cols-1">
                 <div
-                  onClick={() => handleLocality("Diamante")}
+                  onClick={() => handleLocality('Diamante')}
                   className=" p-6 m-2 rounded-lg text-black-500"
-                  style={{ backgroundColor: "#F600FF" }}
+                  style={{ backgroundColor: '#F600FF' }}
                 >
                   <div className="text-center text-3xl font-bold">Diamante</div>
                   <div className="text-2xl">$ 500.000</div>
                 </div>
                 <div
-                  onClick={() => handleLocality("Oro")}
+                  onClick={() => handleLocality('Oro')}
                   className="p-6 m-2 rounded-lg text-black-500 "
-                  style={{ backgroundColor: "#04FF00" }}
+                  style={{ backgroundColor: '#04FF00' }}
                 >
                   <div className="text-center text-3xl font-bold">Oro</div>
                   <div className="text-2xl">$ 380.000</div>
                 </div>
                 <div
-                  onClick={() => handleLocality("VIP")}
+                  onClick={() => handleLocality('VIP')}
                   className=" p-6 m-2 rounded-lg text-black-500"
-                  style={{ backgroundColor: "#FA7653" }}
+                  style={{ backgroundColor: '#FA7653' }}
                 >
                   <div className="text-center text-3xl font-bold">VIP</div>
                   <div className="text-2xl">$ 300.000</div>
                 </div>
               </div>
               <div
-                onClick={() => handleLocality("Platea Derecha")}
+                onClick={() => handleLocality('Platea Derecha')}
                 className=" py-6 m-2 rounded-lg text-black-500 "
-                style={{ backgroundColor: "#FFC300" }}
+                style={{ backgroundColor: '#FFC300' }}
               >
                 <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
                   Platea Derecha
@@ -546,9 +553,9 @@ export default function BuyTickets() {
                 </div>
               </div>
               <div
-                onClick={() => handleLocality("General")}
+                onClick={() => handleLocality('General')}
                 className=" p-12 my-2 col-start-2 rounded col-span-3 text-black-500 "
-                style={{ backgroundColor: "#5F91EB" }}
+                style={{ backgroundColor: '#5F91EB' }}
               >
                 <div className="text-center text-3xl font-bold">General</div>
                 <div className="text-lg">$ 200.000</div>
@@ -558,26 +565,26 @@ export default function BuyTickets() {
         ) : !(seatRow && seatNumber && seatConfirm) ? (
           <div className="lg:mx-20 pb-6 w-full overflow-hidden">
             <span
-              onClick={() => setLocality(null)}
+              onClick={() => setLocality(undefined)}
               className="inline-block mx-6 text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg"
             >
               <FontAwesomeIcon icon={faCircleArrowLeft} className="mr-2" />
               Volver
             </span>
             <div className="w-full text-center text-2xl text-blue-500 py-6 font-bold">
-              Seleccione su Asiento{" "}
+              Seleccione su Asiento{' '}
             </div>
             <div className="w-full flex justify-center">
               <div
                 className="bg-white p-2 rounded-lg drop-shadow-lg text-blue-500 font-bold text-center"
-                style={{ width: "100px" }}
+                style={{ width: '100px' }}
               >
-                {seatAux}{" "}
+                {seatAux}{' '}
               </div>
             </div>
             <div
               className={`text-xs text-center pt-32 pb-20 mx-4 overflow-scroll overflow-hidden w-full lg:w-full `}
-              style={{ touchAction: "manipulation" }}
+              style={{ touchAction: 'manipulation' }}
             >
               {locality.seats.map((row, index) => {
                 const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-4 h-4 mr-2`;
@@ -593,11 +600,11 @@ export default function BuyTickets() {
                       (seat) =>
                         seat.type == locality.name &&
                         seat.row == row.letter &&
-                        seat.number == i
+                        seat.number == i,
                     );
                     if (used) {
                       seatElements.push(
-                        <div className={classCustomUsed} key={i}></div>
+                        <div className={classCustomUsed} key={i}></div>,
                       );
                     } else {
                       seatElements.push(
@@ -606,7 +613,7 @@ export default function BuyTickets() {
                           onClick={() => toggleModal(row.letter, i)}
                           className={classCustom}
                           key={i}
-                        ></div>
+                        ></div>,
                       );
                     }
                   }
@@ -620,7 +627,7 @@ export default function BuyTickets() {
                       (seat) =>
                         seat.type == locality.name &&
                         seat.row == row.letter &&
-                        seat.number == i
+                        seat.number == i,
                     );
                     if (used) {
                       seatElements.push(
@@ -628,7 +635,7 @@ export default function BuyTickets() {
                           onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
                           className={classCustomUsed}
                           key={i}
-                        ></div>
+                        ></div>,
                       );
                     } else {
                       seatElements.push(
@@ -637,7 +644,7 @@ export default function BuyTickets() {
                           className={classCustom}
                           onMouseEnter={() => setSeatAux(`${row.letter}-${i}`)}
                           key={i}
-                        ></div>
+                        ></div>,
                       );
                     }
                   }
@@ -647,7 +654,7 @@ export default function BuyTickets() {
                   <div
                     key={index}
                     className={`my-2`}
-                    style={{ whiteSpace: "nowrap", transformStyle: "flat" }}
+                    style={{ whiteSpace: 'nowrap', transformStyle: 'flat' }}
                   >
                     <div
                       key={index}
@@ -704,6 +711,7 @@ export default function BuyTickets() {
                   value={email}
                   error={errors.email}
                   onChange={(e) => setEmail(e.target.value)}
+                  type="email"
                 />
                 {errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -726,7 +734,7 @@ export default function BuyTickets() {
                 <label className="text-black">Rol:</label>
                 <select
                   className={`bg-gray-200 rounded-lg px-4 py-2 text-black ${
-                    errors.role ? "border-red-500" : "border-gray-300"
+                    errors.role ? 'border-red-500' : 'border-gray-300'
                   }`}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
@@ -792,12 +800,12 @@ export default function BuyTickets() {
               <div className="px-2 mb-4 text-justify text-md">
                 {`Estas seguro que deseas comprar el asiento `}
                 <span className="font-bold text-blue-700">
-                  {seatRow + "-" + seatNumber}
+                  {seatRow + '-' + seatNumber}
                 </span>
                 {`, puedes ver su ubicacion en el auditorio accediendo a la siguiente imagen `}
                 <a
                   className="font-bold text-blue-700"
-                  href={process.env.NEXT_PUBLIC_URL + "images/mapa.png"}
+                  href={process.env.NEXT_PUBLIC_URL + 'images/mapa.png'}
                   target="_blank"
                 >
                   AUDITORIO

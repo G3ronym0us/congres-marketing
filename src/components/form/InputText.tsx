@@ -4,20 +4,21 @@ interface InputTextProps {
   value: string;
   error: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  type?: string; // Nuevo prop opcional para el tipo de input
 }
 
-const InputText = (params: InputTextProps) => {
+const InputText = ({ value, error, onChange, type = "text" }: InputTextProps) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    params.onChange(event);
+    onChange(event);
   };
 
   return (
     <input
-      type="text"
+      type={type} // Usa el prop type, o "text" por defecto
       className={`bg-gray-200 rounded-lg px-4 py-2 text-black ${
-        params.error ? "border-red-500" : "border-gray-300"
+        error ? "border-red-500" : "border-gray-300"
       }`}
-      value={params.value}
+      value={value}
       onChange={handleChange}
     />
   );
