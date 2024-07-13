@@ -237,9 +237,9 @@ export default function BuyTickets() {
           currency: 'COP',
           amount: amountTotal,
           apiKey: process.env.NEXT_PUBLIC_BOLD_KEY,
-          redirectionUrl: `http://localhost:3001/tickets/purchase/${reference}`,
+          redirectionUrl: `${process.env.NEXT_PUBLIC_URL}/tickets/purchase/${reference}`,
           integritySignature: hash,
-          description: 'Camiseta Rolling Stones XL',
+          description: 'Entradas para el evento',
           tax: 'vat-19',
           metadata: {
             reference,
@@ -414,7 +414,7 @@ export default function BuyTickets() {
                 tickets.map((ticket, index) => {
                   return (
                     <div
-                      className="py-2 px-6 border border-black-600 my-2 rounded bg-gray-50"
+                      className="py-2 px-6 border border-black-600 my-2 rounded bg-gray-50 text-black"
                       key={index}
                     >
                       <p>
