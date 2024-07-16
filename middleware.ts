@@ -5,12 +5,10 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   console.log(`Middleware called for path: ${pathname}`);
 
-  // No aplicar el middleware a la ruta de autenticación
   if (pathname === "/admin/auth") {
     return NextResponse.next();
   }
 
-  // Aplicar el middleware solo a rutas administrativas
   if (pathname.startsWith("/admin")) {
     const token = request.cookies.get("token");
     
@@ -20,9 +18,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      // Verifica el token
-      // Asegúrate de reemplazar 'tu_secreto' con tu clave secreta real
-      await jwtVerify(token.value, new TextEncoder().encode('tu_secreto'));
+      await jwtVerify(token.value, new TextEncoder().encode(process.env.JWT_SECRET));
       console.log("Token verified successfully");
       return NextResponse.next();
     } catch (error) {
@@ -31,7 +27,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Para todas las demás rutas, simplemente continúa
   return NextResponse.next();
 }
 
