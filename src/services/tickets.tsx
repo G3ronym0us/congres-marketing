@@ -20,6 +20,15 @@ const handleError = (error: any) => {
   throw error;
 };
 
+export const getTicket = async (uuid: string) => {
+  try {
+    const response = await api.get(`/tickets/${uuid}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 export const getSeatsUsed = async (): Promise<Seat[]> => {
   try {
     const response = await api.get('/tickets/approved');
@@ -73,11 +82,15 @@ export async function updateTickets(data: UpdateTicketInput) {
 
 export async function deleteTickets(uuid: string) {
   try {
-    const response = await api.post('admin/tickets/delete', { uuid }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const response = await api.post(
+      'admin/tickets/delete',
+      { uuid },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -98,7 +111,9 @@ export async function downloadTicket(uuid: string): Promise<Blob> {
   }
 }
 
-export async function resendEmailTicket(uuid: string): Promise<{status: string}> {
+export async function resendEmailTicket(
+  uuid: string,
+): Promise<{ status: string }> {
   try {
     const response = await api.get(`/admin/ticket/email/resend/${uuid}`, {
       headers: {

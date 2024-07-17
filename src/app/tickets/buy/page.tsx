@@ -137,7 +137,7 @@ export default function BuyTickets() {
     },
     {
       name: 'General',
-      amount: 10000,
+      amount: 200000,
       start: 101,
       interval: 1,
       spacing: 2,
@@ -241,7 +241,6 @@ export default function BuyTickets() {
           redirectionUrl: `${process.env.NEXT_PUBLIC_URL}/tickets/purchase/${reference}`,
           integritySignature: hash,
           description: 'Entradas para el evento',
-          tax: 'vat-19',
           metadata: {
             reference,
           }
