@@ -158,10 +158,12 @@ export default function Landing() {
                     el marketing político en Colombia.
                   </p>
                   <div className="flex items-center mt-6 w-full">
-                    <button className="text-white text-xl font-semibold bg-[#1C2C67] text-center px-6 py-4 rounded w-full md:w-max">
-                      <FontAwesomeIcon icon={faTicket} className="mr-4" />
-                      Comprar Entradas
-                    </button>
+                    <Link href={`/tickets/buy`}>
+                      <button className="text-white text-xl font-semibold bg-[#1C2C67] text-center px-6 py-4 rounded w-full md:w-max">
+                        <FontAwesomeIcon icon={faTicket} className="mr-4" />
+                        Comprar Entradas
+                      </button>
+                    </Link>
                   </div>
                 </div>
                 <div className="hidden md:flex md:justify-center text-white">
