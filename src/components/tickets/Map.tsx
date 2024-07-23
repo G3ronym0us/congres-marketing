@@ -597,7 +597,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY,
+        touch1.clientY - touch2.clientY
       );
       const scaleFactor = distance / startDragPoint.x;
 
@@ -607,14 +607,15 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
       const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
 
-      const newScale = scale * scaleFactor;
-      const dx = (centerX / scale) * (1 - 1 / scaleFactor);
-      const dy = (centerY / scale) * (1 - 1 / scaleFactor);
+      // Invertimos el factor de escala para corregir el zoom
+      const newScale = scale * (1 / scaleFactor);
+      const dx = (centerX / scale) * (1 - scaleFactor);
+      const dy = (centerY / scale) * (1 - scaleFactor);
 
       setScale(newScale);
-      setPosition((prev) => ({
+      setPosition(prev => ({
         x: prev.x + dx,
-        y: prev.y + dy,
+        y: prev.y + dy
       }));
 
       setStartDragPoint({ x: distance, y: 0 });
