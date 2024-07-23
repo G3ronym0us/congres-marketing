@@ -575,11 +575,12 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 
   const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
+      e.preventDefault(); // Prevenir el zoom de la página
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY,
+        touch1.clientY - touch2.clientY
       );
       setStartDragPoint({ x: distance, y: 0 });
     } else if (e.touches.length === 1) {
@@ -589,11 +590,12 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 
   const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
+      e.preventDefault(); // Prevenir el zoom de la página
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY,
+        touch1.clientY - touch2.clientY
       );
       const scaleFactor = distance / startDragPoint.x;
       setScale((prevScale) => prevScale * scaleFactor);
@@ -605,6 +607,25 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
   };
+
+  useEffect(() => {
+    const svgElement = svgRef.current;
+    if (svgElement && isMobile) {
+      const preventDefaultZoom = (e: TouchEvent) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      };
+      
+      svgElement.addEventListener('touchstart', preventDefaultZoom, { passive: false });
+      svgElement.addEventListener('touchmove', preventDefaultZoom, { passive: false });
+      
+      return () => {
+        svgElement.removeEventListener('touchstart', preventDefaultZoom);
+        svgElement.removeEventListener('touchmove', preventDefaultZoom);
+      };
+    }
+  }, [isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     // Previene el comportamiento por defecto para evitar seleccionar texto u otros elementos por accidente
@@ -701,7 +722,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 
   return (
     <div className="w-full">
-      <div className="map-container bg-gray-200  overflow-hidden">
+      <div className="map-container bg-gray-200 overflow-hidden" style={{ touchAction: 'none' }}>
         <svg
           ref={svgRef}
           width="100%"
