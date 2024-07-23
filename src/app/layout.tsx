@@ -1,12 +1,13 @@
-import "./globals.css";
-import { Inter } from "next/font/google";
+import { AuthProvider } from '@/conext/AuthContext';
+import './globals.css';
+import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: "Congreso Nacional de Marketing Politico Colombia",
-  description: "Congreso Nacional de Marketing Politico Colombia",
-  "facebook-domain-verification": "jt2ot27pe1huad2jmb79us4h59gucj",
+  title: 'Congreso Nacional de Marketing Politico Colombia',
+  description: 'Congreso Nacional de Marketing Politico Colombia',
+  'facebook-domain-verification': 'jt2ot27pe1huad2jmb79us4h59gucj',
 };
 
 export default function RootLayout({
@@ -17,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className + ` min-h-screen`}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

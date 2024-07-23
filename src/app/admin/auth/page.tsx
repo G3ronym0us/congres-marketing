@@ -1,38 +1,37 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import logo from "../../../../public/images/logo-congress.png";
+import React, { useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import logo from '../../../../public/images/logo-congress.png';
+import { loginUser } from '@/services/user';
+import { LoginUserInput } from '@/types/user';
+import { AuthContext } from '@/conext/AuthContext';
 
 const Login = () => {
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
-  const [username, setUsername] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState("");
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState(''); 
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
+    setError('');
 
-    setError("");
+    const payload: LoginUserInput = {
+      email: username,
+      password,
+    };
 
-    const url = process.env.NEXT_PUBLIC_URL + "api/auth/login";
+    const response = await loginUser(payload);
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (response.status === 401) {
-      const responseData = await response.json();
-      setError(responseData.message);
-    } else if (response.status === 200) {
-      await response.json();
-      router.push("/admin/tickets"); // Redireccionar al dashboard después del inicio de sesión exitoso
+    if (response.status === 'fail') {
+      setError(response.error);
+    } else if (response.status === 'ok') {
+      await auth?.login(response.token);
+      router.push('/admin/dashboard');
     }
   };
 

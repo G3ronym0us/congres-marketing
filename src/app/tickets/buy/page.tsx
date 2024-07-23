@@ -20,6 +20,9 @@ import {
   getSeatsUsed,
   saveTickets,
 } from '../../../services/tickets';
+import { metadata } from '@/app/layout';
+import { Locality, SeatUsed, Ticket } from '@/types/tickets';
+
 
 export default function BuyTickets() {
   const [locality, setLocality] = useState<Locality | undefined>();
@@ -37,7 +40,7 @@ export default function BuyTickets() {
   const [seatNumber, setSeatNumber] = useState<number | null>(null);
   const [seatConfirm, setSeatConfirm] = useState<boolean>(false);
   const [seatsUseds, setSeatsUseds] = useState<SeatUsed[]>([]);
-  const [ticketEdit, setTicketEdit] = useState<string | null>(null);
+  const [ticketEdit, setTicketEdit] = useState<string | undefined>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -241,7 +244,6 @@ export default function BuyTickets() {
           redirectionUrl: `${process.env.NEXT_PUBLIC_URL}/tickets/purchase/${reference}`,
           integritySignature: hash,
           description: 'Entradas para el evento',
-          tax: 'vat-19',
           metadata: {
             reference,
           },
@@ -252,7 +254,7 @@ export default function BuyTickets() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     const newErrors: Record<string, string> = {};
@@ -266,6 +268,8 @@ export default function BuyTickets() {
     if (role.trim() === '') newErrors.role = 'El rol no es valido';
 
     setErrors(newErrors);
+
+    const reference = await generateRandomString(20);
 
     if (Object.keys(newErrors).length === 0) {
       if (ticketEdit) {
@@ -282,6 +286,7 @@ export default function BuyTickets() {
                 seatNumber: seatNumber || ticket.seatNumber,
                 seatRow: seatRow || ticket.seatRow,
                 amount: locality ? locality.amount : ticket.amount,
+                reference
               };
             }
             return ticket;
@@ -298,12 +303,14 @@ export default function BuyTickets() {
           seatNumber,
           seatRow,
           amount: locality.amount,
+          reference
         };
         setTickets([...tickets, ticket]);
       }
       setPay(true);
       clearForm();
     }
+    return;
   };
 
   const clearForm = () => {
@@ -316,7 +323,7 @@ export default function BuyTickets() {
     setSeatConfirm(false);
     setSeatRow(undefined);
     setLocality(undefined);
-    setTicketEdit(null);
+    setTicketEdit(undefined);
   };
 
   const numberWithDots = (value: number) => {
@@ -353,11 +360,11 @@ export default function BuyTickets() {
     setSeatRow(undefined);
     setSeatNumber(null);
     setSeatConfirm(false);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setEmail(ticket.email);
-    setDocument(ticket.document);
-    setRole(ticket.role);
+    setName(ticket.name || '');
+    setLastname(ticket.lastname || '');
+    setEmail(ticket.email || '');
+    setDocument(ticket.document || '');
+    setRole(ticket.role || '');
     setPay(false);
   };
 
@@ -370,11 +377,11 @@ export default function BuyTickets() {
     setSeatRow(ticket.seatRow);
     setSeatNumber(ticket.seatNumber);
     setSeatConfirm(false);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setEmail(ticket.email);
-    setDocument(ticket.document);
-    setRole(ticket.role);
+    setName(ticket.name || '');
+    setLastname(ticket.lastname || '');
+    setEmail(ticket.email || '');
+    setDocument(ticket.document || '');
+    setRole(ticket.role || '');
     setPay(false);
   };
 
