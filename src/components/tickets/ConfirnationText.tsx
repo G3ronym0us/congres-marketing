@@ -1,5 +1,5 @@
 import React from 'react';
-import { Locality } from '@/types/tickets';
+import { Locality, localityColors } from '@/types/tickets';
 
 
 interface Props {
@@ -16,9 +16,9 @@ const ConfirmationText: React.FC<Props> = ({ locality }) => {
     return 'text-black'; // Color por defecto
   };
 
-  const getColorName = (hexColor) => {
+  const getColorName = (hexColor: string) => {
     // Mapeo de colores hexadecimales a nombres de clases de Tailwind
-    const colorMap = {
+    const colorMap: any = {
       '#150FBF': 'blue-700',
       '#FFD700': 'yellow-400',
       '#FF69B4': 'pink-400',

@@ -510,7 +510,4 @@ export default function BuyTickets() {
   );
 }
 
-export const numberWithDots = (value: number) => {
-  const formattedValue = value.toLocaleString('en-US', { useGrouping: true });
-  return formattedValue.replace(/,/g, '.');
-};
+

@@ -1,5 +1,5 @@
-import { numberWithDots } from '@/app/tickets/buy/page';
 import { Ticket } from '@/types/tickets';
+import { numberWithDots } from '@/utils/utils';
 import {
   faCirclePlus,
   faEdit,
