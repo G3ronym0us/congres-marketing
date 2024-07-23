@@ -556,22 +556,24 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const newScale = e.deltaY > 0 ? scale * 0.9 : scale * 1.1;
-    setScale(newScale);
-  };
+    const svgRect = svgRef.current?.getBoundingClientRect();
+    if (!svgRect) return;
 
-  useEffect(() => {
-    const svgElement = svgRef.current;
-    if (svgElement) {
-      const preventScroll = (e: WheelEvent) => {
-        e.preventDefault();
-      };
-      svgElement.addEventListener('wheel', preventScroll, { passive: false });
-      return () => {
-        svgElement.removeEventListener('wheel', preventScroll);
-      };
-    }
-  }, []);
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+
+    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1; // Inverted zoom
+    const newScale = scale * scaleFactor;
+
+    const dx = (mouseX / scale) * (1 - 1 / scaleFactor);
+    const dy = (mouseY / scale) * (1 - 1 / scaleFactor);
+
+    setScale(newScale);
+    setPosition((prev) => ({
+      x: prev.x + dx,
+      y: prev.y + dy,
+    }));
+  };
 
   const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
@@ -598,8 +600,23 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         touch1.clientY - touch2.clientY,
       );
       const scaleFactor = distance / startDragPoint.x;
-      // Invert the zoom behavior
-      setScale((prevScale) => prevScale * (1 / scaleFactor));
+
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (!svgRect) return;
+
+      const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
+      const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
+
+      const newScale = scale * scaleFactor;
+      const dx = (centerX / scale) * (1 - 1 / scaleFactor);
+      const dy = (centerY / scale) * (1 - 1 / scaleFactor);
+
+      setScale(newScale);
+      setPosition((prev) => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+
       setStartDragPoint({ x: distance, y: 0 });
     } else if (e.touches.length === 1) {
       const dx = e.touches[0].clientX - startDragPoint.x;
@@ -608,6 +625,19 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
   };
+
+  useEffect(() => {
+    const svgElement = svgRef.current;
+    if (svgElement) {
+      const preventScroll = (e: WheelEvent) => {
+        e.preventDefault();
+      };
+      svgElement.addEventListener('wheel', preventScroll, { passive: false });
+      return () => {
+        svgElement.removeEventListener('wheel', preventScroll);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     const svgElement = svgRef.current;
