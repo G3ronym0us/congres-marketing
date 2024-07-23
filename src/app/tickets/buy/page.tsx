@@ -21,9 +21,14 @@ import {
   saveTickets,
 } from '../../../services/tickets';
 import MapTickets from '@/components/tickets/Map';
-import { Locality, SeatUsed, Ticket } from '@/types/tickets';
+import { localities, Locality, SeatUsed, Ticket } from '@/types/tickets';
 import TicketList from '@/components/tickets/TicketsList';
 import { metadata } from '@/app/layout';
+
+export async function generateRandomString(length: number) {
+  const bytes = await randomBytes(Math.ceil(length / 2));
+  return bytes.toString('hex').slice(0, length);
+}
 
 export default function BuyTickets() {
   const [locality, setLocality] = useState<Locality>();
@@ -62,113 +67,6 @@ export default function BuyTickets() {
     const seatUseds = await getSeatsUsed();
     console.log(seatUseds);
     setSeatsUseds(seatUseds);
-  };
-
-  const localities = {
-    [Locality.DIAMOND]: {
-      name: 'Diamante',
-      amount: 500000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'A', quantity: 140 },
-        { letter: 'B', quantity: 138 },
-        { letter: 'C', quantity: 134 },
-      ],
-    },
-    [Locality.GOLD]: {
-      name: 'Oro',
-      amount: 380000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'D', quantity: 134 },
-        { letter: 'E', quantity: 132 },
-      ],
-    },
-    [Locality.VIP]: {
-      name: 'VIP',
-      amount: 300000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'F', quantity: 134 },
-        { letter: 'G', quantity: 132 },
-        { letter: 'H', quantity: 134 },
-        { letter: 'K', quantity: 137 },
-        { letter: 'J', quantity: 138 },
-      ],
-    },
-    [Locality.LEFT_STALL]: {
-      name: 'Platea Izquierda',
-      amount: 250000,
-      start: 1,
-      interval: 2,
-      style: 'rotate-45',
-      inverse: true,
-      spacing: 2,
-      size: 4,
-      seats: [
-        { letter: 'A', quantity: 17 },
-        { letter: 'B', quantity: 25 },
-        { letter: 'C', quantity: 27 },
-        { letter: 'D', quantity: 35 },
-        { letter: 'E', quantity: 27 },
-        { letter: 'F', quantity: 17 },
-        { letter: 'G', quantity: 11 },
-        { letter: 'H', quantity: 11 },
-        { letter: 'J', quantity: 5 },
-      ],
-    },
-    [Locality.RIGHT_STALL]: {
-      name: 'Platea Derecha',
-      amount: 250000,
-      start: 2,
-      interval: 2,
-      style: '-rotate-45',
-      spacing: 2,
-      size: 4,
-      seats: [
-        { letter: 'A', quantity: 20 },
-        { letter: 'B', quantity: 28 },
-        { letter: 'C', quantity: 34 },
-        { letter: 'D', quantity: 40 },
-        { letter: 'E', quantity: 44 },
-        { letter: 'F', quantity: 46 },
-        { letter: 'G', quantity: 26 },
-        { letter: 'H', quantity: 20 },
-        { letter: 'J', quantity: 14 },
-        { letter: 'K', quantity: 6 },
-      ],
-    },
-    [Locality.GENERAL]: {
-      name: 'General',
-      amount: 200000,
-      start: 101,
-      interval: 1,
-      spacing: 2,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'L', quantity: 132 },
-        { letter: 'M', quantity: 126 },
-        { letter: 'N', quantity: 126 },
-        { letter: 'P', quantity: 126 },
-        { letter: 'Q', quantity: 126 },
-        { letter: 'R', quantity: 124 },
-        { letter: 'S', quantity: 124 },
-        { letter: 'T', quantity: 124 },
-      ],
-    },
   };
 
   const roles = [
@@ -338,11 +236,6 @@ export default function BuyTickets() {
     setTicketEdit(undefined);
   };
 
-  async function generateRandomString(length: number) {
-    const bytes = await randomBytes(Math.ceil(length / 2));
-    return bytes.toString('hex').slice(0, length);
-  }
-
   const toggleModal = (row: string, number: number, locality: Locality) => {
     console.log(locality);
     setSeatRow(row);
@@ -396,11 +289,11 @@ export default function BuyTickets() {
     setSeatRow(ticket.seatRow);
     setSeatNumber(ticket.seatNumber);
     setSeatConfirm(true);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setEmail(ticket.email);
-    setDocument(ticket.document);
-    setRole(ticket.role);
+    setName(ticket.name || '');
+    setLastname(ticket.lastname || '');
+    setEmail(ticket.email || '');
+    setDocument(ticket.document || '');
+    setRole(ticket.role || '');
     setPay(false);
   };
 

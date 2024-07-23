@@ -1,31 +1,31 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/navbar';
-import { randomBytes } from 'crypto';
-import { useEffect, useState } from 'react';
+import MapTickets from '@/components/tickets/Map';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCancel,
   faCircleArrowLeft,
   faCirclePlus,
-  faDeleteLeft,
   faEdit,
-  faMoneyBill1Wave,
   faRemove,
   faSave,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
 import { BeatLoader } from 'react-spinners';
 import {
   AdminCreateTicketInput,
+  localities,
   Locality,
   SeatUsed,
   Ticket,
 } from '@/types/tickets';
 import { adminSaveTickets, getTicketsApproved } from '@/services/tickets';
+import { generateRandomString } from '@/app/tickets/buy/page';
 
 export default function ReserveTickets() {
-  const [locality, setLocality] = useState<Locality | undefined>(undefined);
+  const [locality, setLocality] = useState<Locality>();
   const [pay, setPay] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,139 +34,27 @@ export default function ReserveTickets() {
   const [seatNumber, setSeatNumber] = useState<number | undefined>(undefined);
   const [seatsUseds, setSeatsUseds] = useState<SeatUsed[]>([]);
   const [ticketEdit, setTicketEdit] = useState<AdminCreateTicketInput>();
-  const [seatAux, setSeatAux] = useState('');
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     getSeatsUseds();
   }, []);
 
-  const localities = [
-    {
-      name: 'Diamante',
-      amount: 500000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'A', quantity: 140 },
-        { letter: 'B', quantity: 138 },
-        { letter: 'C', quantity: 134 },
-      ],
-    },
-    {
-      name: 'Oro',
-      amount: 380000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'D', quantity: 134 },
-        { letter: 'E', quantity: 132 },
-      ],
-    },
-    {
-      name: 'VIP',
-      amount: 300000,
-      start: 101,
-      interval: 1,
-      spacing: 1,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'F', quantity: 134 },
-        { letter: 'G', quantity: 132 },
-        { letter: 'H', quantity: 134 },
-        { letter: 'K', quantity: 137 },
-        { letter: 'J', quantity: 138 },
-      ],
-    },
-    {
-      name: 'Platea Izquierda',
-      amount: 250000,
-      start: 1,
-      interval: 2,
-      style: 'rotate-45',
-      inverse: true,
-      spacing: 2,
-      size: 4,
-      seats: [
-        { letter: 'A', quantity: 17 },
-        { letter: 'B', quantity: 25 },
-        { letter: 'C', quantity: 27 },
-        { letter: 'D', quantity: 35 },
-        { letter: 'E', quantity: 27 },
-        { letter: 'F', quantity: 17 },
-        { letter: 'G', quantity: 11 },
-        { letter: 'H', quantity: 11 },
-        { letter: 'J', quantity: 5 },
-      ],
-    },
-    {
-      name: 'Platea Derecha',
-      amount: 250000,
-      start: 2,
-      interval: 2,
-      style: '-rotate-45',
-      spacing: 2,
-      size: 4,
-      seats: [
-        { letter: 'A', quantity: 20 },
-        { letter: 'B', quantity: 28 },
-        { letter: 'C', quantity: 34 },
-        { letter: 'D', quantity: 40 },
-        { letter: 'E', quantity: 44 },
-        { letter: 'F', quantity: 46 },
-        { letter: 'G', quantity: 26 },
-        { letter: 'H', quantity: 20 },
-        { letter: 'J', quantity: 14 },
-        { letter: 'K', quantity: 6 },
-      ],
-    },
-    {
-      name: 'General',
-      amount: 200000,
-      start: 101,
-      interval: 1,
-      spacing: 2,
-      size: 3,
-      inverse: true,
-      seats: [
-        { letter: 'L', quantity: 132 },
-        { letter: 'M', quantity: 126 },
-        { letter: 'N', quantity: 126 },
-        { letter: 'P', quantity: 126 },
-        { letter: 'Q', quantity: 126 },
-        { letter: 'R', quantity: 124 },
-        { letter: 'S', quantity: 124 },
-        { letter: 'T', quantity: 124 },
-      ],
-    },
-  ];
-
-  const roles = [
-    'Asesor político',
-    'Candidato',
-    'Estudiante Universitario',
-    'Docente Universitario',
-    'Otro',
-  ];
-
-  const ticketsType = [
-    {
-      name: 'Zona Diamante',
-      amount: 390000,
-      value: 'diamond',
-    },
-    {
-      name: 'Zona VIP',
-      amount: 330000,
-      value: 'vip',
-    },
-  ];
+  const getSeatsUseds = async () => {
+    const response = await getTicketsApproved();
+    setSeatsUseds(response);
+  };
 
   const reserveTicket = async () => {
     setLoading(true);
@@ -198,64 +86,43 @@ export default function ReserveTickets() {
     setTicketEdit(undefined);
   };
 
-  async function generateRandomString(length: number) {
-    const bytes = await randomBytes(Math.ceil(length / 2));
-    return bytes.toString('hex').slice(0, length);
-  }
-
-  const handleLocality = async (localityName: string) => {
-    const localitySelected = localities.find(
-      (loc) => loc.name === localityName,
-    );
-    setLocality(localitySelected);
-  };
-
-  const handleSeat = async (row: string, number: number) => {
+  const toggleModal = (row: string, number: number, locality: Locality) => {
     setSeatRow(row);
     setSeatNumber(number);
+    setLocality(locality);
+    setIsOpen(!isOpen);
+  };
 
+  const handleSeat = async () => {
     if (ticketEdit) {
-      const ticketsUpdate = await Promise.all(
-        tickets.map(async (ticket) => {
-          const reference = await generateRandomString(20);
-
-          if (
-            (ticket.seatRow === ticketEdit.seatRow &&
-              ticket.seatNumber === ticketEdit.seatNumber,
-            reference)
-          ) {
-            return {
-              type: locality ? locality.name : ticket.type,
-              seatNumber: number ? number : ticket.seatNumber,
-              seatRow: row ? row : ticket.seatRow,
-              amount: locality ? locality.amount : ticket.amount,
-              document: ticket.document,
-              reference,
-            };
-          }
-          return ticket;
-        }),
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>{
+          return ticket === ticketEdit
+            ? {
+                ...ticket,
+                type: locality || ticket.type,
+                seatNumber: seatNumber || ticket.seatNumber,
+                seatRow: seatRow || ticket.seatRow,
+                amount: locality ? localities[locality].amount : ticket.amount,
+              }
+            : ticket}
+        )
       );
-      setTickets(ticketsUpdate);
     } else {
-      if (!locality) return;
+      if (!locality || !seatNumber || !seatRow) return;
       const reference = await generateRandomString(20);
-      const ticket = {
-        type: locality.name,
-        seatNumber: number,
-        seatRow: row,
-        amount: locality.amount,
-        reference,
+      const newTicket = {
+        type: locality,
+        seatNumber,
+        seatRow,
+        amount: localities[locality].amount,
+        reference
       };
-      setTickets([...tickets, ticket]);
+      setTickets([...tickets, newTicket]);
     }
     clearForm();
     setPay(true);
-  };
-
-  const getSeatsUseds = async () => {
-    const response = await getTicketsApproved();
-    setSeatsUseds(response);
+    setIsOpen(false);
   };
 
   const editSeat = (ticket: AdminCreateTicketInput) => {
@@ -267,35 +134,47 @@ export default function ReserveTickets() {
   };
 
   const deleteTicket = (ticket: AdminCreateTicketInput) => {
-    const ticketsFiltered = tickets.filter(
-      (t) => t.seatNumber != ticket.seatNumber && t.seatRow != ticket.seatRow,
-    );
-    setTickets(ticketsFiltered);
+    setTickets(tickets.filter((t) => t !== ticket));
+  };
+
+  const bgStyle = {
+    height: '100%',
+    backgroundImage: `url('${process.env.NEXT_PUBLIC_URL}images/locality-bg.png')`,
   };
 
   return (
     <>
-      <div
-        className="grid lg:grid-cols-1 bg-gray-100 w-full"
-        style={{ height: '100%' }}
-      >
-        {pay ? (
-          <div className="mx-20 py-6">
-            <div className="bg-blue text-white py-4 text-center rounded text-2xl">
-              Boletos: {tickets.length}
-            </div>
-            <div>
-              {tickets.length < 1 ? (
-                <div className="py-2 px-6 border border-black-600 my-2 rounded bg-gray-100">
-                  Aun no se han creado boletos
-                </div>
-              ) : (
-                tickets.map((ticket, index) => {
-                  return (
-                    <div
-                      className="py-2 px-6 border border-black-600 my-2 rounded bg-gray-50 text-black"
-                      key={index}
-                    >
+      <Navbar />
+      <div className="w-full min-h-screen bg-cover bg-center" style={bgStyle}>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <img
+              src={`${process.env.NEXT_PUBLIC_URL}images/locality-title.png`}
+              className="w-full max-w-md mx-auto"
+              alt="Mapa de Localidades"
+            />
+          </div>
+
+          <div className="mb-20 lg:mb-0">
+            {!pay && (
+              <div
+                className={`map-container bg-gray-200 overflow-hidden ${
+                  isMobile ? 'h-[600px]' : ''
+                }`}
+              >
+                <MapTickets
+                  toggleModal={toggleModal}
+                  seatUseds={seatsUseds}
+                  isMobile={isMobile}
+                />
+              </div>
+            )}
+            <div className="">
+              {pay && (
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h2 className="text-2xl font-bold mb-4">Boletos Reservados</h2>
+                  {tickets.map((ticket, index) => (
+                    <div key={index} className="mb-4 p-4 border rounded">
                       <p>
                         <span className="font-bold">Zona:</span> {ticket.type}
                       </p>
@@ -303,248 +182,90 @@ export default function ReserveTickets() {
                         <span className="font-bold">Asiento:</span>{' '}
                         {ticket.seatRow + ticket.seatNumber}
                       </p>
-                      <div>
+                      <div className="mt-2">
                         <button
                           onClick={() => editSeat(ticket)}
-                          className="p-1 mr-4 my-1 text-blue-500 hover:bg-blue-500 hover:text-white rounded-lg"
+                          className="mr-2 text-blue-500 hover:text-blue-700"
                         >
-                          <FontAwesomeIcon icon={faEdit} className="pr-2" />
-                          Editar Asiento
+                          <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                          Editar
                         </button>
                         <button
                           onClick={() => deleteTicket(ticket)}
-                          className="p-1 mr-4 my-1 text-red-500 hover:bg-red-500 hover:text-white rounded-lg"
+                          className="text-red-500 hover:text-red-700"
                         >
-                          <FontAwesomeIcon icon={faRemove} className="pr-2" />
-                          Eliminar Boleto
+                          <FontAwesomeIcon icon={faRemove} className="mr-1" />
+                          Eliminar
                         </button>
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+                  <div className="mt-4">
+                    {loading ? (
+                      <BeatLoader color="#478acf" size={30} />
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setPay(false)}
+                          className="mr-2 bg-gray-500 text-white px-4 py-2 rounded"
+                        >
+                          <FontAwesomeIcon icon={faCirclePlus} className="mr-2" />
+                          Reservar más
+                        </button>
+                        <button
+                          onClick={reserveTicket}
+                          className="bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                          <FontAwesomeIcon icon={faSave} className="mr-2" />
+                          Confirmar Reserva
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="bg-blue text-white py-4 text-center rounded text-2xl"></div>
-
-            <div className="w-full text-center">
-              {tickets.length > 0 &&
-                (loading ? (
-                  <BeatLoader color="#478acf" size={30} className="py-6" />
-                ) : (
-                  <>
-                    <div>
-                      <button
-                        onClick={() => setPay(false)}
-                        className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                      >
-                        <FontAwesomeIcon icon={faCirclePlus} className="mr-2" />
-                        Reservar mas entradas
-                      </button>
-                      <button
-                        className="bg-blue mt-2 mr-6 inline-flex items-center px-8 py-2 rounded text-lg font-semibold tracking-tighter text-white hover:bg-white hover:text-blue-500 hover:border-blue"
-                        onClick={reserveTicket}
-                      >
-                        <FontAwesomeIcon icon={faSave} className="mr-2" />
-                        Reservar
-                      </button>
-                    </div>
-
-                    {errors.code && (
-                      <div>
-                        <p className="text-red-500 text-sm mt-2">
-                          {errors.code}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ))}
-            </div>
           </div>
-        ) : !locality ? (
-          <div className="lg:mx-20 mx-4 pb-6">
-            <div className="w-full text-center text-3xl text-blue-500 py-6 font-bold">
-              Seleccione la localidad
-            </div>
-            <div className="w-full grid grid-cols-5">
-              <div className="col-span-3 col-start-2 bg-black p-6 rounded-xl text-white">
-                Escenario
-              </div>
-              <div></div>
-              <div
-                onClick={() => handleLocality('Platea Izquierda')}
-                className=" px-1 py-6 m-2 rounded-lg text-black-500 "
-                style={{ backgroundColor: '#FFC300' }}
-              >
-                <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
-                  Platea Izquierda
-                </div>
-                <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">
-                  $ 250.000
-                </div>
-              </div>
-              <div className="col-span-3 grid grid-cols-1">
-                <div
-                  onClick={() => handleLocality('Diamante')}
-                  className=" p-6 m-2 rounded-lg text-black-500"
-                  style={{ backgroundColor: '#F600FF' }}
-                >
-                  <div className="text-center text-3xl font-bold">Diamante</div>
-                  <div className="text-2xl">$ 500.000</div>
-                </div>
-                <div
-                  onClick={() => handleLocality('Oro')}
-                  className="p-6 m-2 rounded-lg text-black-500 "
-                  style={{ backgroundColor: '#04FF00' }}
-                >
-                  <div className="text-center text-3xl font-bold">Oro</div>
-                  <div className="text-2xl">$ 380.000</div>
-                </div>
-                <div
-                  onClick={() => handleLocality('VIP')}
-                  className=" p-6 m-2 rounded-lg text-black-500"
-                  style={{ backgroundColor: '#FA7653' }}
-                >
-                  <div className="text-center text-3xl font-bold">VIP</div>
-                  <div className="text-2xl">$ 300.000</div>
-                </div>
-              </div>
-              <div
-                onClick={() => handleLocality('Platea Derecha')}
-                className=" py-6 m-2 rounded-lg text-black-500 "
-                style={{ backgroundColor: '#FFC300' }}
-              >
-                <div className="text-center font-bold text-sm -rotate-90 whitespace-nowrap mt-20">
-                  Platea Derecha
-                </div>
-                <div className="text-center text-xs whitespace-nowrap -rotate-90 ml-8 ">
-                  $ 250.000
-                </div>
-              </div>
-              <div
-                onClick={() => handleLocality('General')}
-                className=" p-12 my-2 col-start-2 rounded col-span-3 text-black-500 "
-                style={{ backgroundColor: '#5F91EB' }}
-              >
-                <div className="text-center text-3xl font-bold">General</div>
-                <div className="text-lg">$ 200.000</div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          !(seatRow && seatNumber) && (
-            <div className="lg:mx-20 mx-6 py-6 w-full overflow-hidden">
-              <span
-                onClick={() => setLocality(undefined)}
-                className="inline-block text-red-500 hover:text-white p-2 mb-4 uppercase hover:bg-red-500 cursor-pointer rounded-lg"
-              >
-                <FontAwesomeIcon icon={faCircleArrowLeft} className="mr-2" />
-                Volver
-              </span>
-              <div className="w-full text-center text-2xl text-blue-500 py-6 font-bold">
-                Seleccione su Asiento
-              </div>
-              <div className="w-full flex justify-center">
-                <div
-                  className="bg-white p-2 rounded-lg drop-shadow-lg text-blue-500 font-bold text-center"
-                  style={{ width: '100px' }}
-                >
-                  {seatAux}{' '}
-                </div>
-              </div>
-              <div
-                className={`text-xs text-center pt-32 pb-20 overflow-scroll overflow-hidden w-screen lg:w-full `}
-                style={{ touchAction: 'manipulation' }}
-              >
-                {locality.seats.map((row, index) => {
-                  const classCustom = `inline-block rounded-full uppercase bg-blue-500 min-w-2 max-w-2 cursor-pointer w-4 h-4 mr-2`;
-                  const classCustomUsed = `inline-block rounded-full uppercase bg-red-500 min-w-2 max-w-2 w-4 h-4 mr-2`;
-                  const seatElements = [];
-                  if (locality.inverse) {
-                    for (
-                      let i = row.quantity;
-                      i >= locality.start;
-                      i -= locality.interval
-                    ) {
-                      const used = seatsUseds.find(
-                        (seat) =>
-                          seat.type == locality.name &&
-                          seat.row == row.letter &&
-                          seat.number == i,
-                      );
-                      if (used) {
-                        seatElements.push(
-                          <div className={classCustomUsed} key={i}></div>,
-                        );
-                      } else {
-                        seatElements.push(
-                          <div
-                            onMouseEnter={() =>
-                              setSeatAux(`${row.letter}-${i}`)
-                            }
-                            onClick={() => handleSeat(row.letter, i)}
-                            className={classCustom}
-                            key={i}
-                          ></div>,
-                        );
-                      }
-                    }
-                  } else {
-                    for (
-                      let i = locality.start;
-                      i <= row.quantity;
-                      i += locality.interval
-                    ) {
-                      const used = seatsUseds.find(
-                        (seat) =>
-                          seat.type == locality.name &&
-                          seat.row == row.letter &&
-                          seat.number == i,
-                      );
-                      if (used) {
-                        seatElements.push(
-                          <div
-                            onMouseEnter={() =>
-                              setSeatAux(`${row.letter}-${i}`)
-                            }
-                            className={classCustomUsed}
-                            key={i}
-                          ></div>,
-                        );
-                      } else {
-                        seatElements.push(
-                          <div
-                            onMouseEnter={() =>
-                              setSeatAux(`${row.letter}-${i}`)
-                            }
-                            onClick={() => handleSeat(row.letter, i)}
-                            className={classCustom}
-                            key={i}
-                          ></div>,
-                        );
-                      }
-                    }
-                  }
-
-                  return (
-                    <div
-                      key={index}
-                      className={`my-2`}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      <div
-                        key={index}
-                        className={`justify-center  ${locality.style}`}
-                      >
-                        {seatElements}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )
-        )}
+        </div>
       </div>
+      {isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-10 text-black mx-5 lg:mx-0">
+          <div
+            className="fixed inset-0 bg-gray-900 bg-opacity-50"
+            onClick={() => setIsOpen(!isOpen)}
+          ></div>
+          <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
+            <div className="flex justify-end">
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <div className="uppercase mb-6 text-lg text-center text-blue-500">
+              Confirmar Reserva de Asiento
+            </div>
+            <div className="grid grid-cols-1">
+              <div className="px-2 mb-4 text-justify text-md">
+                {`¿Estás seguro que deseas reservar el asiento `}
+                <span className="font-bold text-blue-700">
+                  {seatRow + '-' + seatNumber}
+                </span>
+                {`?`}
+              </div>
+              <div className="px-2">
+                <button
+                  onClick={handleSeat}
+                  className="bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
