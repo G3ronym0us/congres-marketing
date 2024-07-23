@@ -23,6 +23,7 @@ import {
 import MapTickets from '@/components/tickets/Map';
 import { Locality, SeatUsed, Ticket } from '@/types/tickets';
 import TicketList from '@/components/tickets/TicketsList';
+import { metadata } from '@/app/layout';
 
 export default function BuyTickets() {
   const [locality, setLocality] = useState<Locality>();
@@ -254,7 +255,6 @@ export default function BuyTickets() {
           redirectionUrl: `${process.env.NEXT_PUBLIC_URL}/tickets/purchase/${reference}`,
           integritySignature: hash,
           description: 'Entradas para el evento',
-          tax: 'vat-19',
           metadata: {
             reference,
           },
@@ -265,7 +265,7 @@ export default function BuyTickets() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     const newErrors: Record<string, string> = {};
@@ -279,6 +279,8 @@ export default function BuyTickets() {
     if (role.trim() === '') newErrors.role = 'El rol no es valido';
 
     setErrors(newErrors);
+
+    const reference = await generateRandomString(20);
 
     if (Object.keys(newErrors).length === 0) {
       if (ticketEdit) {
@@ -296,6 +298,7 @@ export default function BuyTickets() {
                 seatNumber: seatNumber || ticket.seatNumber,
                 seatRow: seatRow || ticket.seatRow,
                 amount: locality ? localities[locality].amount : ticket.amount,
+                reference
               };
             }
             return ticket;
@@ -312,12 +315,14 @@ export default function BuyTickets() {
           seatNumber,
           seatRow,
           amount: localities[locality].amount,
+          reference
         };
         setTickets([...tickets, ticket]);
       }
       setPay(true);
       clearForm();
     }
+    return;
   };
 
   const clearForm = () => {
@@ -377,11 +382,11 @@ export default function BuyTickets() {
     setSeatRow(undefined);
     setSeatNumber(null);
     setSeatConfirm(false);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setEmail(ticket.email);
-    setDocument(ticket.document);
-    setRole(ticket.role);
+    setName(ticket.name || '');
+    setLastname(ticket.lastname || '');
+    setEmail(ticket.email || '');
+    setDocument(ticket.document || '');
+    setRole(ticket.role || '');
     setPay(false);
   };
 
