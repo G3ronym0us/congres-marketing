@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import InputText from '@/components/form/InputText';
 import Navbar from '@/components/navbar';
@@ -15,7 +15,11 @@ import {
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import validator from 'validator';
-import { getIntegrityHash, getSeatsUsed, saveTickets } from '../../../services/tickets';
+import {
+  getIntegrityHash,
+  getSeatsUsed,
+  saveTickets,
+} from '../../../services/tickets';
 import { metadata } from '@/app/layout';
 import { Locality, SeatUsed, Ticket } from '@/types/tickets';
 
@@ -32,7 +36,7 @@ export default function BuyTickets() {
   const [role, setRole] = useState<string>('Asesor político');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [amountTotal, setAmountTotal] = useState<number>(0);
-  const [seatRow, setSeatRow] = useState<string|undefined>();
+  const [seatRow, setSeatRow] = useState<string | undefined>(undefined);
   const [seatNumber, setSeatNumber] = useState<number | null>(null);
   const [seatConfirm, setSeatConfirm] = useState<boolean>(false);
   const [seatsUseds, setSeatsUseds] = useState<SeatUsed[]>([]);
@@ -222,14 +226,13 @@ export default function BuyTickets() {
 
   const createBoldCheckout = async (reference: string) => {
     if (typeof window !== 'undefined' && 'BoldCheckout' in window) {
-      
       const data = {
         reference,
         amount: amountTotal,
         currency: 'COP',
       };
 
-      const {hash} = await getIntegrityHash(data);
+      const { hash } = await getIntegrityHash(data);
 
       if (typeof window !== 'undefined' && 'BoldCheckout' in window) {
         const BoldCheckout = (window as any).BoldCheckout;
@@ -243,7 +246,7 @@ export default function BuyTickets() {
           description: 'Entradas para el evento',
           metadata: {
             reference,
-          }
+          },
         });
         console.log('Checkout:', checkout);
         checkout.open();
@@ -397,6 +400,9 @@ export default function BuyTickets() {
   return (
     <>
       <Navbar />
+      {/* <div className='w-1/2'>
+        <MapTickets />
+      </div> */}
       <div className="grid lg:grid-cols-1 w-full" style={bgStyle}>
         <div className="text-center px-60">
           <img
