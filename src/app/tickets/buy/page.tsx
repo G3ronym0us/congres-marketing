@@ -24,11 +24,7 @@ import MapTickets from '@/components/tickets/Map';
 import { localities, Locality, SeatUsed, Ticket } from '@/types/tickets';
 import TicketList from '@/components/tickets/TicketsList';
 import { metadata } from '@/app/layout';
-
-export async function generateRandomString(length: number) {
-  const bytes = await randomBytes(Math.ceil(length / 2));
-  return bytes.toString('hex').slice(0, length);
-}
+import { generateRandomString } from '@/utils/utils';
 
 export default function BuyTickets() {
   const [locality, setLocality] = useState<Locality>();

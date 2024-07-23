@@ -22,7 +22,7 @@ import {
   Ticket,
 } from '@/types/tickets';
 import { adminSaveTickets, getTicketsApproved } from '@/services/tickets';
-import { generateRandomString } from '@/app/tickets/buy/page';
+import { generateRandomString } from '@/utils/utils';
 
 export default function ReserveTickets() {
   const [locality, setLocality] = useState<Locality>();
