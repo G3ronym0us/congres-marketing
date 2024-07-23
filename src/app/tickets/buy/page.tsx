@@ -20,8 +20,6 @@ import {
   getSeatsUsed,
   saveTickets,
 } from '../../../services/tickets';
-import { metadata } from '@/app/layout';
-import MapTickets from '../map/page';
 
 export default function BuyTickets() {
   const [locality, setLocality] = useState<Locality | undefined>();
@@ -395,9 +393,9 @@ export default function BuyTickets() {
   return (
     <>
       <Navbar />
-      <div className='w-1/2'>
+      {/* <div className='w-1/2'>
         <MapTickets />
-      </div>
+      </div> */}
       <div className="grid lg:grid-cols-1 w-full" style={bgStyle}>
         <div className="text-center px-60">
           <img
