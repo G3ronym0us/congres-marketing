@@ -19,11 +19,20 @@ interface SeatProps {
 const Seat: React.FC<SeatProps> = ({ rowName, seatNumber, cx, cy, scale }) => {
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0 });
 
-  const handleMouseEnter = (e: React.MouseEvent<SVGCircleElement>) => {
-    setTooltip({ visible: true, x: e.clientX, y: e.clientY });
+  const handleInteractionStart = (
+    e: React.MouseEvent<SVGCircleElement> | React.TouchEvent<SVGCircleElement>,
+  ) => {
+    const svgRect = (
+      e.target as SVGCircleElement
+    ).ownerSVGElement?.getBoundingClientRect();
+    if (svgRect) {
+      const x = cx - svgRect.left;
+      const y = cy - svgRect.top;
+      setTooltip({ visible: true, x, y });
+    }
   };
 
-  const handleMouseLeave = () => {
+  const handleInteractionEnd = () => {
     setTooltip({ visible: false, x: 0, y: 0 });
   };
 
@@ -34,18 +43,28 @@ const Seat: React.FC<SeatProps> = ({ rowName, seatNumber, cx, cy, scale }) => {
         cy={cy}
         r={8 / scale}
         className="seat"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={handleInteractionStart}
+        onMouseLeave={handleInteractionEnd}
+        onTouchStart={handleInteractionStart}
+        onTouchEnd={handleInteractionEnd}
       />
       {tooltip.visible && (
-        <foreignObject x={tooltip.x} y={tooltip.y} width="120" height="40">
+        <foreignObject
+          x={tooltip.x + 10 / scale}
+          y={tooltip.y - 30 / scale}
+          width={120 / scale}
+          height={40 / scale}
+        >
           <div
             style={{
               background: 'white',
               border: '1px solid black',
               padding: '5px',
               borderRadius: '5px',
-              fontSize: '12px',
+              fontSize: `${12 / scale}px`,
+              position: 'absolute',
+              textAlign: 'center',
+              width: `${120 / scale}px`,
             }}
           >
             Fila {rowName}, Asiento {seatNumber}
@@ -96,6 +115,15 @@ const MapTickets: React.FC = () => {
     platea_izquierda: '',
     platea_derecha: '',
   });
+
+  const localityColors = {
+    diamond: '#150FBF', // Cyan para Diamante
+    gold: '#FFD700', // Dorado para Oro
+    vip: '#FF69B4', // Rosa para VIP
+    general: '#FFA500', // Naranja para General
+    platea_izquierda: '#32CD32', // Verde lima para Platea Izquierda
+    platea_derecha: '#32CD32', // Verde lima para Platea Derecha
+  };
 
   const seats: SeatRows[] = React.useMemo(() => {
     const rows = [
@@ -290,6 +318,43 @@ const MapTickets: React.FC = () => {
       },
     ];
 
+    const renderLocalityPolygon = (locality: string) => {
+      const color = localityColors[locality as keyof typeof localityColors];
+      const points = polygonPoints[locality as keyof typeof polygonPoints];
+
+      // Calcular el centro del polígono para posicionar la etiqueta
+      const pointsArray = points
+        .split(' ')
+        .map((p) => p.split(',').map(Number));
+      const centerX =
+        pointsArray.reduce((sum, [x]) => sum + x, 0) / pointsArray.length;
+      const centerY =
+        pointsArray.reduce((sum, [, y]) => sum + y, 0) / pointsArray.length;
+
+      return (
+        <g key={locality}>
+          <polygon
+            onClick={() => setLocalitySelected(locality)}
+            points={points}
+            fill={`${color}4D`} // 30% de opacidad
+            stroke={color}
+            strokeWidth="2"
+          />
+          <text
+            x={centerX / scale + position.x}
+            y={centerY / scale + position.y}
+            fill={color}
+            fontSize={16 / scale}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            pointerEvents="none"
+          >
+            {locality.replace('_', ' ').toUpperCase()}
+          </text>
+        </g>
+      );
+    };
+
     const rowsWithPosition = rows.map((row) => {
       const seatCount = Math.ceil(
         (row.endSeat - row.startSeat + 1) / (row.interval || 1),
@@ -372,10 +437,58 @@ const MapTickets: React.FC = () => {
     return rowsWithPosition;
   }, [scale, position]);
 
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+
     const newScale = e.deltaY > 0 ? scale * 0.9 : scale * 1.1;
     setScale(newScale);
+  };
+
+  useEffect(() => {
+    const svgElement = svgRef.current;
+    if (svgElement) {
+      const preventScroll = (e: WheelEvent) => {
+        e.preventDefault();
+      };
+      svgElement.addEventListener('wheel', preventScroll, { passive: false });
+      return () => {
+        svgElement.removeEventListener('wheel', preventScroll);
+      };
+    }
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY,
+      );
+      setStartDragPoint({ x: distance, y: 0 });
+    } else if (e.touches.length === 1) {
+      setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY,
+      );
+      const scaleFactor = distance / startDragPoint.x;
+      setScale((prevScale) => prevScale * scaleFactor);
+      setStartDragPoint({ x: distance, y: 0 });
+    } else if (e.touches.length === 1) {
+      const dx = e.touches[0].clientX - startDragPoint.x;
+      const dy = e.touches[0].clientY - startDragPoint.y;
+      setPosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -471,187 +584,295 @@ const MapTickets: React.FC = () => {
     setPolygonPoints((prev) => ({ ...prev, [locality]: polygonPoints }));
   };
 
-  const renderSideSeat = (
-    rowName: string,
-    seatNumber: number,
-    x: number,
-    y: number,
-  ) => {
-    return (
-      <g key={`${rowName}-${seatNumber}`}>
-        <rect
-          x={x - 5 / scale}
-          y={y - 5 / scale}
-          width={10 / scale}
-          height={10 / scale}
-          fill={seatNumber % 2 === 0 ? 'yellow' : 'orange'}
-          stroke="black"
-          strokeWidth={0.5 / scale}
-        />
-        <text
-          x={x}
-          y={y + 3 / scale}
-          fontSize={6 / scale}
-          textAnchor="middle"
-          fill="black"
-        >
-          {seatNumber}
-        </text>
-      </g>
-    );
-  };
-
   return (
-    <div className='flex justify-center mt-20'>
-
-    
-    <div
-      className="map-container bg-gray-200 w-[90%] h-[400px] md:h-[700px] overflow-hidden"
-    >
-      <svg
-        ref={svgRef}
-        width="100%"
-        height="100%"
-        viewBox="-250 -100 1500 900"
-        xmlns="http://www.w3.org/2000/svg"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <g>
-          <rect
-            x={150 / scale + position.x}
-            y={20 / scale + position.y}
-            width={700 / scale}
-            height={60 / scale}
-            fill="black"
-            rx={20 / scale}
-            ry={20 / scale}
-          />
-          <text
-            x={500 / scale + position.x}
-            y={45 / scale + position.y}
-            fill="white"
-            textAnchor="middle"
-            fontSize={16 / scale}
-          >
-            ESCENARIO
-          </text>
-        </g>
-
-        <g id="asientos">
-          {localitySelected === 'diamond' ? (
-            <g id="diamond" fill="purple">
-              {seats.map((seat) => {
-                if (seat.locality === 'diamond') return seat.cols;
-              })}
-            </g>
-          ) : (
-            // poligono con la forma que abarcan los circulos de los asientos
-            <polygon
-              onClick={() => setLocalitySelected('diamond')}
-              points={polygonPoints.diamond}
-              fill="rgba(128, 0, 128, 0.3)" // Semi-transparent purple
-              stroke="purple"
-              strokeWidth="2"
+    <div className="w-full">
+      <div className="map-container bg-gray-200  overflow-hidden">
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          viewBox="-250 -100 1500 900"
+          xmlns="http://www.w3.org/2000/svg"
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+        >
+          <g>
+            <rect
+              x={150 / scale + position.x}
+              y={20 / scale + position.y}
+              width={700 / scale}
+              height={60 / scale}
+              fill="black"
+              rx={20 / scale}
+              ry={20 / scale}
             />
-          )}
-          {localitySelected === 'gold' ? (
-            <g id="gold" fill="gold">
-              {seats.map((seat) => {
-                if (seat.locality === 'gold') return seat.cols;
+            <text
+              x={500 / scale + position.x}
+              y={45 / scale + position.y}
+              fill="white"
+              textAnchor="middle"
+              fontSize={16 / scale}
+            >
+              ESCENARIO
+            </text>
+          </g>
 
-                return null;
-              })}
-            </g>
-          ) : (
-            <polygon
-              onClick={() => setLocalitySelected('gold')}
-              points={polygonPoints.gold}
-              fill="rgba(255, 215, 0, 0.3)" // Semi-transparent gold
-              stroke="gold"
-              strokeWidth="4"
-            />
-          )}
-          {localitySelected === 'vip' ? (
-            <g id="vip" fill="green">
-              {seats.map((seat) => {
-                if (seat.locality === 'vip') return seat.cols;
+          <g id="asientos">
+            {localitySelected === 'diamond' ? (
+              <g
+                id="diamond"
+                fill={`${localityColors['diamond' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'diamond') return seat.cols;
+                })}
+              </g>
+            ) : (
+              // poligono con la forma que abarcan los circulos de los asientos
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('diamond')}
+                  points={polygonPoints.diamond}
+                  fill={`${localityColors['diamond' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['diamond' as keyof typeof localityColors]}`}
+                  strokeWidth="2"
+                />
+                <text
+                  x={500 / scale + position.x}
+                  y={120 / scale + position.y}
+                  fill={`${localityColors['diamond' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  DIAMANTE
+                </text>
+                <text
+                  x={500 / scale + position.x}
+                  y={155 / scale + position.y}
+                  fill={`${localityColors['diamond' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  380.000 COP
+                </text>
+              </g>
+            )}
+            {localitySelected === 'gold' ? (
+              <g
+                id="gold"
+                fill={`${localityColors['gold' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'gold') return seat.cols;
 
-                return null;
-              })}
-            </g>
-          ) : (
-            <g>
-              <polygon
-                onClick={() => setLocalitySelected('vip')}
-                points={polygonPoints.vip}
-                fill="rgba(0, 255, 0, 0.3)" // Changed to semi-transparent green
-                stroke="green"
-                strokeWidth="4"
-              />
-            </g>
-          )}
-          {localitySelected === 'general' ? (
-            <g id="general" fill="blue">
-              {seats.map((seat) => {
-                if (seat.locality === 'general') return seat.cols;
+                  return null;
+                })}
+              </g>
+            ) : (
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('gold')}
+                  points={polygonPoints.gold}
+                  fill={`${localityColors['gold' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['gold' as keyof typeof localityColors]}`}
+                  strokeWidth="4"
+                />
+                <text
+                  x={500 / scale + position.x}
+                  y={230 / scale + position.y}
+                  fill={`${localityColors['gold' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  ORO - 380.000 COP
+                </text>
+              </g>
+            )}
+            {localitySelected === 'vip' ? (
+              <g
+                id="vip"
+                fill={`${localityColors['vip' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'vip') return seat.cols;
 
-                return null;
-              })}
-            </g>
-          ) : (
-            <g>
-              <polygon
-                onClick={() => setLocalitySelected('general')}
-                points={polygonPoints.general}
-                fill="rgba(0, 0, 255, 0.3)" // Changed to semi-transparent blue
-                stroke="blue"
-                strokeWidth="4"
-              />
-            </g>
-          )}
-          {localitySelected === 'platea_izquierda' ? (
-            <g id="platea_izquierda" fill="blue">
-              {seats.map((seat) => {
-                if (seat.locality === 'platea_izquierda') return seat.cols;
-                return null;
-              })}
-            </g>
-          ) : (
-            <g>
-              <polygon
-                onClick={() => setLocalitySelected('platea_izquierda')}
-                points={polygonPoints.platea_izquierda}
-                fill="rgba(0, 0, 255, 0.3)"
-                stroke="blue"
-                strokeWidth="4"
-              />
-            </g>
-          )}
-          {localitySelected === 'platea_derecha' ? (
-            <g id="platea_derecha" fill="blue">
-              {seats.map((seat) => {
-                if (seat.locality === 'platea_derecha') return seat.cols;
-                return null;
-              })}
-            </g>
-          ) : (
-            <g>
-              <polygon
-                onClick={() => setLocalitySelected('platea_derecha')}
-                points={polygonPoints.platea_derecha}
-                fill="rgba(0, 0, 255, 0.3)"
-                stroke="blue"
-                strokeWidth="4"
-              />
-            </g>
-          )}
-        </g>
-      </svg>
-    </div>
+                  return null;
+                })}
+              </g>
+            ) : (
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('vip')}
+                  points={polygonPoints.vip}
+                  fill={`${localityColors['vip' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['vip' as keyof typeof localityColors]}`}
+                  strokeWidth="4"
+                />
+                <text
+                  x={500 / scale + position.x}
+                  y={330 / scale + position.y}
+                  fill={`${localityColors['vip' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  VIP
+                </text>
+                <text
+                  x={500 / scale + position.x}
+                  y={370 / scale + position.y}
+                  fill={`${localityColors['vip' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  300.000 COP
+                </text>
+              </g>
+            )}
+            {localitySelected === 'general' ? (
+              <g
+                id="general"
+                fill={`${localityColors['general' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'general') return seat.cols;
+
+                  return null;
+                })}
+              </g>
+            ) : (
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('general')}
+                  points={polygonPoints.general}
+                  fill={`${localityColors['general' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['general' as keyof typeof localityColors]}`}
+                  strokeWidth="4"
+                />
+                <text
+                  x={500 / scale + position.x}
+                  y={550 / scale + position.y}
+                  fill={`${localityColors['general' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  GENERAL
+                </text>
+                <text
+                  x={500 / scale + position.x}
+                  y={590 / scale + position.y}
+                  fill={`${localityColors['general' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  200.000 COP
+                </text>
+              </g>
+            )}
+            {localitySelected === 'platea_izquierda' ? (
+              <g
+                id="platea_izquierda"
+                fill={`${localityColors['platea_izquierda' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'platea_izquierda') return seat.cols;
+                  return null;
+                })}
+              </g>
+            ) : (
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('platea_izquierda')}
+                  points={polygonPoints.platea_izquierda}
+                  fill={`${localityColors['platea_izquierda' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['platea_izquierda' as keyof typeof localityColors]}`}
+                  strokeWidth="4"
+                />
+                <text
+                  x={-52 / scale + position.x}
+                  y={300 / scale + position.y}
+                  fill={`${localityColors['platea_izquierda' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={22 / scale}
+                  fontWeight={`semibold`}
+                >
+                  PLATEA IZQUIERDA
+                </text>
+                <text
+                  x={-52 / scale + position.x}
+                  y={340 / scale + position.y}
+                  fill={`${localityColors['platea_izquierda' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  250.000 COP
+                </text>
+              </g>
+            )}
+            {localitySelected === 'platea_derecha' ? (
+              <g
+                id="platea_derecha"
+                fill={`${localityColors['platea_derecha' as keyof typeof localityColors]}`}
+              >
+                {seats.map((seat) => {
+                  if (seat.locality === 'platea_derecha') return seat.cols;
+                  return null;
+                })}
+              </g>
+            ) : (
+              <g>
+                <polygon
+                  onClick={() => setLocalitySelected('platea_derecha')}
+                  points={polygonPoints.platea_derecha}
+                  fill={`${localityColors['platea_derecha' as keyof typeof localityColors]}4D`}
+                  stroke={`${localityColors['platea_derecha' as keyof typeof localityColors]}`}
+                  strokeWidth="4"
+                />
+                <text
+                  x={1070 / scale + position.x}
+                  y={300 / scale + position.y}
+                  fill={`${localityColors['platea_derecha' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  PLATEA DERECHA
+                </text>
+                <text
+                  x={1070 / scale + position.x}
+                  y={340 / scale + position.y}
+                  fill={`${localityColors['platea_derecha' as keyof typeof localityColors]}`}
+                  textAnchor="middle"
+                  fontSize={24 / scale}
+                  fontWeight={`semibold`}
+                >
+                  250.000 COP
+                </text>
+              </g>
+            )}
+          </g>
+        </svg>
+      </div>
+      <div className="w-full bg-[#737373]">
+        <p className="text-center text-lg">
+          {localitySelected
+            ? `Localidad seleccionada: ${localitySelected}`
+            : 'Haz clic en una localidad para ver los asientos'}
+        </p>
+      </div>
     </div>
   );
 };
