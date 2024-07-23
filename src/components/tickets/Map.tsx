@@ -766,7 +766,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
           ref={svgRef}
           width="100%"
           height="100%"
-          viewBox={isMobile ? '-250 -200 1500 1200' : '-250 -100 1500 900'}
+          viewBox={isMobile ? '-250 -200 1500 2200' : '-250 -100 1500 900'}
           xmlns="http://www.w3.org/2000/svg"
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
