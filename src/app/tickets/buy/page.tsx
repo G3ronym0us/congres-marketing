@@ -140,7 +140,7 @@ export default function BuyTickets() {
     },
     {
       name: 'General',
-      amount: 10000,
+      amount: 200000,
       start: 101,
       interval: 1,
       spacing: 2,
