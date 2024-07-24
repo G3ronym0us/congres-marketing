@@ -50,47 +50,31 @@ const Seat: React.FC<SeatProps> = ({
   };
 
   return (
-    <>
+    <g
+      onClick={() => {
+        if (blocked) return;
+        handleModal(rowName, seatNumber, locality);
+      }}
+    >
       <circle
         cx={cx}
         cy={cy}
-        r={8 / scale}
+        r={10 / scale}
         className="seat"
-        onMouseEnter={handleInteractionStart}
-        onMouseLeave={handleInteractionEnd}
-        onTouchStart={handleInteractionStart}
-        onTouchEnd={handleInteractionEnd}
-        onClick={() => {
-          console.log('info', blocked, rowName, seatNumber, locality);
-          if (blocked) return;
-          handleModal(rowName, seatNumber, locality);
-        }}
         fill={blocked ? 'red' : localityColors[locality]}
       />
-      {tooltip.visible && !blocked && (
-        <foreignObject
-          x={tooltip.x + 10 / scale}
-          y={tooltip.y - 30 / scale}
-          width={120 / scale}
-          height={40 / scale}
-        >
-          <div
-            style={{
-              background: 'white',
-              border: '1px solid black',
-              padding: '5px',
-              borderRadius: '5px',
-              fontSize: `${12 / scale}px`,
-              position: 'absolute',
-              textAlign: 'center',
-              width: `${120 / scale}px`,
-            }}
-          >
-            Fila {rowName}, Asiento {seatNumber}
-          </div>
-        </foreignObject>
-      )}
-    </>
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={7 / scale}
+        fill="white"
+        pointerEvents="none"
+      >
+        {`${rowName} ${seatNumber}`}
+      </text>
+    </g>
   );
 };
 
@@ -104,6 +88,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [scale, setScale] = useState<number>(1);
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [minScale, setMinScale] = useState<number>(1);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [startDragPoint, setStartDragPoint] = useState<Position>({
     x: 0,
@@ -463,7 +448,8 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const seatCount = Math.ceil(
         (row.endSeat - row.startSeat + 1) / (row.interval || 1),
       );
-      const rowWidth = seatCount * 20;
+      const seatSpacing = 25; // Increased from 20 to 30 for more separation
+      const rowWidth = seatCount * seatSpacing;
       const startX =
         row.locality === Locality.LEFT_STALL ? 0 : (1000 - rowWidth) / 2;
 
@@ -477,16 +463,16 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         const seatNumber = row.startSeat + i * (row.interval || 1);
         if (seatNumber > row.endSeat) break;
 
-        let x = startX + i * 20 + (row.offset || 0) * 20;
+        let x = startX + i * seatSpacing + (row.offset || 0) * seatSpacing;
         let y = row.y;
 
         if (row.locality === Locality.LEFT_STALL) {
           // Adjust initial position
-          x -= 380; // Move seats to the left
-          y += -50; // Adjust vertical position
+          x -= 400; // Move seats to the left
+          y += -180; // Adjust vertical position
 
           // Apply rotation transformation
-          const angle = -110 * (Math.PI / 180); // Rotate by -45 degrees
+          const angle = -110 * (Math.PI / 180); // Rotate by -110 degrees
           const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
           const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
 
@@ -496,11 +482,11 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 
         if (row.locality === Locality.RIGHT_STALL) {
           // Adjust initial position
-          x -= 350; // Move seats to the left
-          y += 900; // Adjust vertical position
+          x -= 300; // Move seats to the left
+          y += 1000; // Adjust vertical position
 
           // Apply rotation transformation
-          const angle = -70 * (Math.PI / 180); // Rotate by -45 degrees
+          const angle = -70 * (Math.PI / 180); // Rotate by -70 degrees
           const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
           const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
 
@@ -517,7 +503,6 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
             seat.row === row.row &&
             seat.type === row.locality,
         );
-        console.log('blocked', !!blocked);
 
         cols.push(
           <Seat
@@ -552,28 +537,55 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     return rowsWithPosition;
   }, [scale, position, seatUseds]);
 
+  useEffect(() => {
+    // Calcula el minScale basado en las dimensiones del SVG y el contenedor
+    const updateMinScale = () => {
+      if (svgRef.current) {
+        const svgRect = svgRef.current.getBoundingClientRect();
+        const containerRect =
+          svgRef.current.parentElement?.getBoundingClientRect();
+        if (containerRect) {
+          const scaleX = containerRect.width / svgRect.width;
+          const scaleY = containerRect.height / svgRect.height;
+          setMinScale(Math.min(scaleX, scaleY));
+        }
+      }
+    };
+
+    updateMinScale();
+    window.addEventListener('resize', updateMinScale);
+
+    return () => {
+      window.removeEventListener('resize', updateMinScale);
+    };
+  }, []);
+
   const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
     e.stopPropagation();
-
+  
     const svgRect = svgRef.current?.getBoundingClientRect();
     if (!svgRect) return;
-
+  
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
-
-    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1; // Inverted zoom
-    const newScale = scale * scaleFactor;
-
-    const dx = (mouseX / scale) * (1 - 1 / scaleFactor);
-    const dy = (mouseY / scale) * (1 - 1 / scaleFactor);
-
+  
+    const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
+    const newScale = Math.min(scale * scaleFactor, minScale);
+  
+    if (newScale === scale) return;
+  
+    const dx = (mouseX / scale) * (1 - scale / newScale);
+    const dy = (mouseY / scale) * (1 - scale / newScale);
+  
     setScale(newScale);
-    setPosition((prev) => ({
+    setPosition(prev => ({
       x: prev.x + dx,
-      y: prev.y + dy,
+      y: prev.y + dy
     }));
   };
+
+
 
   const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
@@ -597,7 +609,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch1.clientX - touch2.clientX,
-        touch1.clientY - touch2.clientY
+        touch1.clientY - touch2.clientY,
       );
       const scaleFactor = distance / startDragPoint.x;
 
@@ -607,15 +619,17 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
       const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
 
-      // Invertimos el factor de escala para corregir el zoom
-      const newScale = scale * (1 / scaleFactor);
-      const dx = (centerX / scale) * (1 - scaleFactor);
-      const dy = (centerY / scale) * (1 - scaleFactor);
+      const newScale = Math.min(scale * (1 / scaleFactor), minScale); // Limita el zoom out
+
+      if (newScale === scale) return; // Si no hay cambio en la escala, no hacemos nada
+
+      const dx = (centerX / scale) * (1 - scale / newScale);
+      const dy = (centerY / scale) * (1 - scale / newScale);
 
       setScale(newScale);
-      setPosition(prev => ({
+      setPosition((prev) => ({
         x: prev.x + dx,
-        y: prev.y + dy
+        y: prev.y + dy,
       }));
 
       setStartDragPoint({ x: distance, y: 0 });
@@ -667,6 +681,8 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     // Previene el comportamiento por defecto para evitar seleccionar texto u otros elementos por accidente
     e.preventDefault();
 
+    if (scale > 1) return;
+
     // Calcula el punto inicial del arrastre teniendo en cuenta la posición actual del SVG
     const startX = e.clientX - position.x;
     const startY = e.clientY - position.y;
@@ -683,6 +699,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       // Limpia los manejadores de eventos una vez que se suelta el botón del mouse
       document.removeEventListener('mousemove', doDrag);
       document.removeEventListener('mouseup', stopDrag);
+
     };
 
     // Registra los manejadores de eventos para el movimiento y la liberación del mouse
@@ -690,12 +707,15 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     document.addEventListener('mouseup', stopDrag);
     setIsDragging(true);
     setStartDragPoint({ x: e.clientX - position.x, y: e.clientY - position.y });
+    console.log('position', e.clientX, e.clientY);
+
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!isDragging) return;
+    if (!isDragging || scale <= 1) return;
     const dx = e.clientX - startDragPoint.x;
     const dy = e.clientY - startDragPoint.y;
+    console.log(dx, dy);
     setPosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
     setStartDragPoint({ x: e.clientX, y: e.clientY });
   };
@@ -712,10 +732,6 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     polygonConstructor(Locality.LEFT_STALL);
     polygonConstructor(Locality.RIGHT_STALL);
   }, [seats]);
-
-  React.useEffect(() => {
-    console.log(polygonPoints);
-  }, [polygonPoints]);
 
   const polygonConstructor = (locality: string) => {
     const localitySeats = seats.filter((seat) => seat.locality === locality);
@@ -766,7 +782,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
           ref={svgRef}
           width="100%"
           height="100%"
-          viewBox={isMobile ? '-250 -200 1500 2200' : '-250 -100 1500 900'}
+          viewBox={isMobile ? '-350 -200 1700 2200' : '-380 -100 1800 900'}
           xmlns="http://www.w3.org/2000/svg"
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
@@ -973,7 +989,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   strokeWidth="4"
                 />
                 <text
-                  x={-52 / scale + position.x}
+                  x={-175 / scale + position.x}
                   y={300 / scale + position.y}
                   fill={`${localityColors[Locality.LEFT_STALL as keyof typeof localityColors]}`}
                   textAnchor="middle"
@@ -983,7 +999,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   PLATEA IZQUIERDA
                 </text>
                 <text
-                  x={-52 / scale + position.x}
+                  x={-175 / scale + position.x}
                   y={340 / scale + position.y}
                   fill={`${localityColors[Locality.LEFT_STALL as keyof typeof localityColors]}`}
                   textAnchor="middle"
@@ -1014,7 +1030,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   strokeWidth="4"
                 />
                 <text
-                  x={1070 / scale + position.x}
+                  x={1170 / scale + position.x}
                   y={300 / scale + position.y}
                   fill={`${localityColors[Locality.RIGHT_STALL as keyof typeof localityColors]}`}
                   textAnchor="middle"
@@ -1024,7 +1040,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   PLATEA DERECHA
                 </text>
                 <text
-                  x={1070 / scale + position.x}
+                  x={1170 / scale + position.x}
                   y={340 / scale + position.y}
                   fill={`${localityColors[Locality.RIGHT_STALL as keyof typeof localityColors]}`}
                   textAnchor="middle"
