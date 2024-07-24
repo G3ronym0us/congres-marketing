@@ -173,7 +173,7 @@ export default function ReserveTickets() {
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h2 className="text-2xl font-bold mb-4">Boletos Reservados</h2>
                   {tickets.map((ticket, index) => (
-                    <div key={index} className="mb-4 p-4 border rounded">
+                    <div key={index} className="mb-4 p-4 border rounded text-black">
                       <p>
                         <span className="font-bold">Zona:</span> {ticket.type}
                       </p>
@@ -246,7 +246,7 @@ export default function ReserveTickets() {
               Confirmar Reserva de Asiento
             </div>
             <div className="grid grid-cols-1">
-              <div className="px-2 mb-4 text-justify text-md">
+              <div className="px-2 mb-4 text-justify text-md text-black">
                 {`¿Estás seguro que deseas reservar el asiento `}
                 <span className="font-bold text-blue-700">
                   {seatRow + '-' + seatNumber}

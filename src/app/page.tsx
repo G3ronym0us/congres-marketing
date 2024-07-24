@@ -17,7 +17,7 @@ import FloatingWhatsAppButton from '@/components/FloatingWhatsAppIcon';
 import { Conferencista } from '@/types/conferencista';
 import Image from 'next/image';
 import LecturerCard from '@/components/lecturer-card';
-import politics from '../../public/images/2024/icons/politics.png';
+import politics from '../../public/images/2024/conferencistas.png';
 
 export default function Landing() {
   const conferencistas: Conferencista[] = [
@@ -166,15 +166,11 @@ export default function Landing() {
                     </Link>
                   </div>
                 </div>
-                <div className="hidden md:flex md:justify-center text-white">
-                  <div className="w-3/5">
+                <div className="w-full rounded-lg overflow-hidden md:mx-10 md:mt-5">
                     <Image
                       src={politics}
                       alt="image"
-                      width={300}
-                      height={200}
                     />
-                  </div>
                 </div>
               </div>
             </div>

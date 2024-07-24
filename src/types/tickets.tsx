@@ -58,7 +58,7 @@ export const localityColors = {
   [Locality.DIAMOND]: '#0000FF', // Azul fuerte para Diamante
   [Locality.GOLD]: '#FFD700', // Dorado (mantenido)
   [Locality.VIP]: '#FF1493', // Rosa fuerte para VIP
-  [Locality.GENERAL]: '#FF4500', // Naranja-rojo para General
+  [Locality.GENERAL]: '#FFA500', // Naranja-rojo para General
   [Locality.LEFT_STALL]: '#00FF00', // Verde brillante para Platea Izquierda
   [Locality.RIGHT_STALL]: '#00FF00', // Verde brillante para Platea Derecha
 };

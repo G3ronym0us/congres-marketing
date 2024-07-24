@@ -309,8 +309,8 @@ export default function BuyTickets() {
       >
         {pay ? (
           <div div className="mx-20 py-6">
-            <div className="bg-blue text-white py-4 text-center rounded text-2xl">
-              Boletos: {tickets.length}
+            <div className="bg-blue py-4 text-center rounded text-2xl">
+              <span className="text-white">Boletos: {tickets.length} </span>
             </div>
             <div>
               {tickets.length < 1 ? (
