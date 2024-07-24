@@ -563,29 +563,31 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
   const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
     e.stopPropagation();
-  
+
     const svgRect = svgRef.current?.getBoundingClientRect();
     if (!svgRect) return;
-  
+
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
-  
+
     const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
     const newScale = Math.min(scale * scaleFactor, minScale);
-  
+
     if (newScale === scale) return;
-  
+
     const dx = (mouseX / scale) * (1 - scale / newScale);
     const dy = (mouseY / scale) * (1 - scale / newScale);
-  
+
     setScale(newScale);
-    setPosition(prev => ({
+    setPosition((prev) => ({
       x: prev.x + dx,
-      y: prev.y + dy
+      y: prev.y + dy,
     }));
   };
 
-
+  const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(
+    null,
+  );
 
   const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
@@ -596,7 +598,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY,
       );
-      setStartDragPoint({ x: distance, y: 0 });
+      setLastTouchDistance(distance);
     } else if (e.touches.length === 1) {
       setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
@@ -611,34 +613,44 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY,
       );
-      const scaleFactor = distance / startDragPoint.x;
 
-      const svgRect = svgRef.current?.getBoundingClientRect();
-      if (!svgRect) return;
+      if (lastTouchDistance !== null) {
+        const scaleFactor = lastTouchDistance / distance;
+        // Cambiamos esta línea para invertir el comportamiento del zoom
+        const newScale = Math.min(
+          Math.max(scale * scaleFactor, 0.1),
+          minScale,
+        );
 
-      const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
-      const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
+        const svgRect = svgRef.current?.getBoundingClientRect();
+        if (svgRect) {
+          const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
+          const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
 
-      const newScale = Math.min(scale * (1 / scaleFactor), minScale); // Limita el zoom out
+          const dx = (centerX / scale) * (1 - scale / newScale);
+          const dy = (centerY / scale) * (1 - scale / newScale);
 
-      if (newScale === scale) return; // Si no hay cambio en la escala, no hacemos nada
-
-      const dx = (centerX / scale) * (1 - scale / newScale);
-      const dy = (centerY / scale) * (1 - scale / newScale);
-
-      setScale(newScale);
+          setScale(newScale);
+          setPosition((prev) => ({
+            x: prev.x + dx,
+            y: prev.y + dy,
+          }));
+        }
+      }
+      setLastTouchDistance(distance);
+    } else if (e.touches.length === 1) {
+      const dx = (e.touches[0].clientX - startDragPoint.x) * 1.5;
+      const dy = (e.touches[0].clientY - startDragPoint.y) * 1.5;
       setPosition((prev) => ({
         x: prev.x + dx,
         y: prev.y + dy,
       }));
-
-      setStartDragPoint({ x: distance, y: 0 });
-    } else if (e.touches.length === 1) {
-      const dx = e.touches[0].clientX - startDragPoint.x;
-      const dy = e.touches[0].clientY - startDragPoint.y;
-      setPosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
       setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
+  };
+
+  const handleTouchEnd = () => {
+    setLastTouchDistance(null);
   };
 
   useEffect(() => {
@@ -699,7 +711,6 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       // Limpia los manejadores de eventos una vez que se suelta el botón del mouse
       document.removeEventListener('mousemove', doDrag);
       document.removeEventListener('mouseup', stopDrag);
-
     };
 
     // Registra los manejadores de eventos para el movimiento y la liberación del mouse
@@ -708,7 +719,6 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     setIsDragging(true);
     setStartDragPoint({ x: e.clientX - position.x, y: e.clientY - position.y });
     console.log('position', e.clientX, e.clientY);
-
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
