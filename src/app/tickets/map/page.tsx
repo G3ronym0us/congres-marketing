@@ -661,7 +661,7 @@ const MapTickets: React.FC = () => {
                   fontSize={24 / scale}
                   fontWeight={`semibold`}
                 >
-                  380.000 COP
+                  500.000 COP
                 </text>
               </g>
             )}

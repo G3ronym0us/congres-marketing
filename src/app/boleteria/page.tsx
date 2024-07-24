@@ -57,7 +57,6 @@ export default function LocationsAndPrices() {
       "price": "$200.000",
       "benefits": [
         "Ingreso a todas las jornadas del CNMP 2024.",
-        "Ingreso al cóctel oficial del CNMP 2024.",
         "Refrigerios.",
         "Libreta y esfero oficial del CNMP 2024.",
         "Certificado de participación digital."

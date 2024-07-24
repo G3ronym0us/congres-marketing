@@ -899,7 +899,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   fontSize={24 / scale}
                   fontWeight={`bold`}
                 >
-                  380.000 COP
+                  500.000 COP
                 </text>
               </g>
             )}

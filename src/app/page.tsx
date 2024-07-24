@@ -4,6 +4,7 @@ import Navbar from '@/components/navbar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faAward,
+  faDownload,
   faFingerprint,
   faPaperPlane,
   faTicket,
@@ -178,40 +179,51 @@ export default function Landing() {
         </div>
 
         <section>
-          <div className="px-4 py-10 text-white bg-gradient-to-r from-black from-20% via-[#4B0012] via-70% md:grid md:grid-cols-2 md:gap-8 md:mx-28">
-            <div className="mb-8 md:mx-10" id="agenda">
-              <h3 className="text-4xl mb-4 font-semibold leading-normal">
-                AGENDA DEL EVENTO
-              </h3>
-              <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
-                En el Congreso Nacional de Marketing Político participarán 10
-                conferencistas nacionales e internacionales en temas
-                relacionados sobre la construcción y ejecución de una campaña
-                ganadora. Cada día contaremos con la intervención de 5
-                conferencistas, y se contará con espacios de descanso en cada
-                jornada y una hora libre para almuerzo.
-              </p>
-              <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
-                En la jornada de la tarde se organizará un debate entre los 5
-                conferencistas correspondientes al día en un tema de
-                trascendencia nacional.
-              </p>
-              <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
-                ¡No puedes dejar de participar!
-              </p>
-            </div>
+        <div className="px-4 py-10 text-white bg-gradient-to-r from-black from-20% via-[#4B0012] via-70% md:grid md:grid-cols-2 md:gap-8 md:mx-28">
+          <div className="mb-8 md:mx-10" id="agenda">
+            <h3 className="text-4xl mb-4 font-semibold leading-normal">
+              AGENDA DEL EVENTO
+            </h3>
+            <p className="text-base md:text-lg font-light text-justify leading-relaxed mb-4 text-gray-300">
+              En el Congreso Nacional de Marketing Político versión Colombia 2024 participarán 9 conferencistas nacionales e internacionales en temas relacionados con Comunicación de Gobierno, Marketing Político y Estrategia electoral.
+            </p>
+            <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
+              Contaremos con 3 jornadas académicas y un cóctel oficial del evento en el que los asistentes podrán interactuar con los conferencistas.
+            </p>
+            <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
+              Entre las jornadas académicas se contará con espacios de descanso en cada jornada y una hora libre para almuerzo.
+            </p>
+            <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
+              Para el cierre del evento habrá un debate entre 5 de los conferencistas en un tema de trascendencia nacional.
+            </p>
+            <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
+              ¡No puedes dejar de participar! Nos vemos pronto.
+            </p>
+            <p className="text-base md:text-xl font-light text-justify leading-relaxed mb-4 text-gray-300">
+              Si quieres conocer el cronograma completo, descárgalo en el siguiente vínculo:
+            </p>
+            <a 
+              href="https://drive.google.com/file/d/1Yz2TXZDGCyKX27GVvqseFetKNce0Ucm-/view?usp=drive_link" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-block text-white text-lg font-semibold bg-[#1C2C67] hover:bg-[#2A3E8F] text-center px-6 py-3 rounded transition duration-300 ease-in-out"
+            >
+              <FontAwesomeIcon icon={faDownload} className="mr-2" />
+              Descargar Cronograma
+            </a>
+          </div>
 
-            <div className="w-full">
-              <div className="relative flex flex-col min-w-0 break-words bg-white mx-20 mb-6 shadow-lg rounded-lg">
-                <img
-                  alt="Agenda del evento"
-                  src={process.env.NEXT_PUBLIC_URL + 'images/agenda-2024.jpeg'}
-                  className="w-full align-middle rounded-t-lg"
-                />
-              </div>
+          <div className="w-full">
+            <div className="relative flex flex-col min-w-0 break-words bg-white mx-20 mb-6 shadow-lg rounded-lg">
+              <img
+                alt="Agenda del evento"
+                src={process.env.NEXT_PUBLIC_URL + 'images/agenda-2024.jpeg'}
+                className="w-full align-middle rounded-t-lg"
+              />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
         <section className="py-12">
           <div
