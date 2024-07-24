@@ -144,7 +144,6 @@ export default function ReserveTickets() {
 
   return (
     <>
-      <Navbar />
       <div className="w-full min-h-screen bg-cover bg-center" style={bgStyle}>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center mb-8">

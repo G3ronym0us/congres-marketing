@@ -5,6 +5,7 @@ import {
   Position,
   SeatRows,
   SeatUsed,
+  traductions,
 } from '@/types/tickets';
 import { numberToString } from 'pdf-lib';
 import React, { useState, useEffect, useRef } from 'react';
@@ -470,7 +471,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       const seatCount = Math.ceil(
         (row.endSeat - row.startSeat + 1) / (row.interval || 1),
       );
-      const seatSpacing = 25; // Increased from 20 to 30 for more separation
+      const seatSpacing = 25;
       const rowWidth = seatCount * seatSpacing;
       const startX =
         row.locality === Locality.LEFT_STALL ? 0 : (1000 - rowWidth) / 2;
@@ -482,19 +483,27 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       let maxY = -Infinity;
 
       for (let i = 0; i < seatCount; i++) {
-        const seatNumber = row.startSeat + i * (row.interval || 1);
-        if (seatNumber > row.endSeat) break;
+        let seatNumber: number;
+        
+        // Invert seat numbering for specific localities
+        if ([Locality.DIAMOND, Locality.GOLD, Locality.VIP, Locality.GENERAL].includes(row.locality)) {
+          seatNumber = row.endSeat - i * (row.interval || 1);
+        } else {
+          seatNumber = row.startSeat + i * (row.interval || 1);
+        }
+        
+        if (seatNumber < row.startSeat || seatNumber > row.endSeat) continue;
 
         let x = startX + i * seatSpacing + (row.offset || 0) * seatSpacing;
         let y = row.y;
 
         if (row.locality === Locality.LEFT_STALL) {
           // Adjust initial position
-          x -= 400; // Move seats to the left
-          y += -180; // Adjust vertical position
+          x -= 400;
+          y += -180;
 
           // Apply rotation transformation
-          const angle = -110 * (Math.PI / 180); // Rotate by -110 degrees
+          const angle = -110 * (Math.PI / 180);
           const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
           const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
 
@@ -504,11 +513,11 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 
         if (row.locality === Locality.RIGHT_STALL) {
           // Adjust initial position
-          x -= 300; // Move seats to the left
-          y += 1000; // Adjust vertical position
+          x -= 300;
+          y += 1000;
 
           // Apply rotation transformation
-          const angle = -70 * (Math.PI / 180); // Rotate by -70 degrees
+          const angle = -70 * (Math.PI / 180);
           const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
           const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
 
@@ -875,20 +884,20 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                 <text
                   x={500 / scale + position.x}
                   y={120 / scale + position.y}
-                  fill={`${localityColors[Locality.DIAMOND]}`}
+                  fill={`${localityColors[Locality.DIAMOND]}E6`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   DIAMANTE
                 </text>
                 <text
                   x={500 / scale + position.x}
                   y={155 / scale + position.y}
-                  fill={`${localityColors[Locality.DIAMOND]}`}
+                  fill={`${localityColors[Locality.DIAMOND]}E6`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   380.000 COP
                 </text>
@@ -917,10 +926,10 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                 <text
                   x={500 / scale + position.x}
                   y={230 / scale + position.y}
-                  fill={`${localityColors[Locality.GOLD as keyof typeof localityColors]}`}
+                  fill={`#D0A113`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   ORO - 380.000 COP
                 </text>
@@ -952,7 +961,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   fill={`${localityColors[Locality.VIP as keyof typeof localityColors]}`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   VIP
                 </text>
@@ -962,7 +971,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   fill={`${localityColors[Locality.VIP as keyof typeof localityColors]}`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   300.000 COP
                 </text>
@@ -994,7 +1003,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   fill={`${localityColors[Locality.GENERAL as keyof typeof localityColors]}`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   GENERAL
                 </text>
@@ -1004,7 +1013,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                   fill={`${localityColors[Locality.GENERAL as keyof typeof localityColors]}`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   200.000 COP
                 </text>
@@ -1032,20 +1041,20 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                 <text
                   x={-175 / scale + position.x}
                   y={300 / scale + position.y}
-                  fill={`${localityColors[Locality.LEFT_STALL as keyof typeof localityColors]}`}
+                  fill={`green`}
                   textAnchor="middle"
                   fontSize={22 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   PLATEA IZQUIERDA
                 </text>
                 <text
                   x={-175 / scale + position.x}
                   y={340 / scale + position.y}
-                  fill={`${localityColors[Locality.LEFT_STALL as keyof typeof localityColors]}`}
+                  fill={`green`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   250.000 COP
                 </text>
@@ -1073,20 +1082,20 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
                 <text
                   x={1170 / scale + position.x}
                   y={300 / scale + position.y}
-                  fill={`${localityColors[Locality.RIGHT_STALL as keyof typeof localityColors]}`}
+                  fill={`green`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   PLATEA DERECHA
                 </text>
                 <text
                   x={1170 / scale + position.x}
                   y={340 / scale + position.y}
-                  fill={`${localityColors[Locality.RIGHT_STALL as keyof typeof localityColors]}`}
+                  fill={`green`}
                   textAnchor="middle"
                   fontSize={24 / scale}
-                  fontWeight={`semibold`}
+                  fontWeight={`bold`}
                 >
                   250.000 COP
                 </text>
@@ -1098,9 +1107,10 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
       <div className="w-full bg-[#737373]">
         <p className="text-center text-lg">
           {localitySelected
-            ? `Localidad seleccionada: ${localitySelected}`
+            ? `Localidad seleccionada: ${traductions[localitySelected]}`
             : 'Haz clic en una localidad para ver los asientos'}
         </p>
+        <p className="text-center text-lg">Nota: Los asientos señalados en rojo ya no están disponibles.</p>
       </div>
     </div>
   );

@@ -55,12 +55,12 @@ export interface SeatRows {
 }
 
 export const localityColors = {
-  [Locality.DIAMOND]: '#150FBF', // Cyan para Diamante
-  [Locality.GOLD]: '#FFD700', // Dorado para Oro
-  [Locality.VIP]: '#FF69B4', // Rosa para VIP
-  [Locality.GENERAL]: '#FFA500', // Naranja para General
-  [Locality.LEFT_STALL]: '#32CD32', // Verde lima para Platea Izquierda
-  [Locality.RIGHT_STALL]: '#32CD32', // Verde lima para Platea Derecha
+  [Locality.DIAMOND]: '#0000FF', // Azul fuerte para Diamante
+  [Locality.GOLD]: '#FFD700', // Dorado (mantenido)
+  [Locality.VIP]: '#FF1493', // Rosa fuerte para VIP
+  [Locality.GENERAL]: '#FF4500', // Naranja-rojo para General
+  [Locality.LEFT_STALL]: '#00FF00', // Verde brillante para Platea Izquierda
+  [Locality.RIGHT_STALL]: '#00FF00', // Verde brillante para Platea Derecha
 };
 
 export interface Ticket {
@@ -210,3 +210,12 @@ export const localities = {
     ],
   },
 };
+
+export const traductions = {
+  [Locality.DIAMOND] : 'DIAMANTE',
+  [Locality.GOLD] : 'ORO',
+  [Locality.VIP] : 'VIP',
+  [Locality.GENERAL] : 'GENERAL',
+  [Locality.RIGHT_STALL] : 'PLATEA DERECHA',
+  [Locality.LEFT_STALL] : 'PLATEA IZQUIERDA', 
+}
