@@ -105,6 +105,28 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     [Locality.LEFT_STALL]: '',
     [Locality.RIGHT_STALL]: '',
   });
+  const [viewBox, setViewBox] = useState({
+    x: -380,
+    y: -100,
+    width: 1800,
+    height: 900,
+  });
+  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+
+  const originalViewBox = isMobile
+    ? { x: -350, y: -200, width: 1700, height: 2200 }
+    : { x: -380, y: -100, width: 1800, height: 900 };
+
+  const mapBounds = {
+    minX: -380, // originalViewBox.x - 50
+    minY: -100, // originalViewBox.y - 50
+    maxX: 1420, // originalViewBox.x + originalViewBox.width + 50
+    maxY: 800, // originalViewBox.y + originalViewBox.height + 50
+  };
+
+  useEffect(() => {
+    setViewBox(originalViewBox);
+  }, [isMobile]);
 
   const seats: SeatRows[] = React.useMemo(() => {
     const rows = [
@@ -560,29 +582,47 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
     };
   }, []);
 
+  const clampViewBox = (vb: typeof viewBox) => {
+    const newVB = { ...vb };
+    newVB.x = Math.max(
+      mapBounds.minX,
+      Math.min(mapBounds.maxX - newVB.width, newVB.x),
+    );
+    newVB.y = Math.max(
+      mapBounds.minY,
+      Math.min(mapBounds.maxY - newVB.height, newVB.y),
+    );
+    newVB.width = Math.min(originalViewBox.width, newVB.width);
+    newVB.height = Math.min(originalViewBox.height, newVB.height);
+    return newVB;
+  };
+
   const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
-    e.stopPropagation();
+    const { deltaY } = e;
+    const { left, top, width, height } =
+      svgRef.current!.getBoundingClientRect();
+    const mouseX = e.clientX - left;
+    const mouseY = e.clientY - top;
 
-    const svgRect = svgRef.current?.getBoundingClientRect();
-    if (!svgRect) return;
+    const zoomFactor = deltaY > 0 ? 1.1 : 0.9;
 
-    const mouseX = e.clientX - svgRect.left;
-    const mouseY = e.clientY - svgRect.top;
+    let newWidth = viewBox.width * zoomFactor;
+    let newHeight = viewBox.height * zoomFactor;
 
-    const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
-    const newScale = Math.min(scale * scaleFactor, minScale);
+    // Limit zoom out to original viewBox size
+    newWidth = Math.min(originalViewBox.width, newWidth);
+    newHeight = Math.min(originalViewBox.height, newHeight);
 
-    if (newScale === scale) return;
+    const mouseXRatio = mouseX / width;
+    const mouseYRatio = mouseY / height;
 
-    const dx = (mouseX / scale) * (1 - scale / newScale);
-    const dy = (mouseY / scale) * (1 - scale / newScale);
+    const newX = viewBox.x - (newWidth - viewBox.width) * mouseXRatio;
+    const newY = viewBox.y - (newHeight - viewBox.height) * mouseYRatio;
 
-    setScale(newScale);
-    setPosition((prev) => ({
-      x: prev.x + dx,
-      y: prev.y + dy,
-    }));
+    setViewBox(
+      clampViewBox({ x: newX, y: newY, width: newWidth, height: newHeight }),
+    );
   };
 
   const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(
@@ -598,13 +638,16 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY,
       );
-      setLastTouchDistance(distance);
+      setLastPosition({ x: distance, y: 0 });
     } else if (e.touches.length === 1) {
-      setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      setLastPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (!isDragging) return;
+
     if (e.touches.length === 2) {
       e.preventDefault();
       const touch1 = e.touches[0];
@@ -614,43 +657,67 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
         touch1.clientY - touch2.clientY,
       );
 
-      if (lastTouchDistance !== null) {
-        const scaleFactor = lastTouchDistance / distance;
-        // Cambiamos esta línea para invertir el comportamiento del zoom
-        const newScale = Math.min(
-          Math.max(scale * scaleFactor, 0.1),
-          minScale,
-        );
+      const zoomFactor = distance / lastPosition.x;
+      const { left, top, width, height } =
+        svgRef.current!.getBoundingClientRect();
+      const centerX = (touch1.clientX + touch2.clientX) / 2 - left;
+      const centerY = (touch1.clientY + touch2.clientY) / 2 - top;
 
-        const svgRect = svgRef.current?.getBoundingClientRect();
-        if (svgRect) {
-          const centerX = (touch1.clientX + touch2.clientX) / 2 - svgRect.left;
-          const centerY = (touch1.clientY + touch2.clientY) / 2 - svgRect.top;
+      const mouseXRatio = centerX / width;
+      const mouseYRatio = centerY / height;
 
-          const dx = (centerX / scale) * (1 - scale / newScale);
-          const dy = (centerY / scale) * (1 - scale / newScale);
+      let newWidth = viewBox.width / zoomFactor;
+      let newHeight = viewBox.height / zoomFactor;
 
-          setScale(newScale);
-          setPosition((prev) => ({
-            x: prev.x + dx,
-            y: prev.y + dy,
-          }));
-        }
-      }
-      setLastTouchDistance(distance);
+      // Limit zoom out to original viewBox size
+      newWidth = Math.min(originalViewBox.width, newWidth);
+      newHeight = Math.min(originalViewBox.height, newHeight);
+
+      const newX = viewBox.x - (newWidth - viewBox.width) * mouseXRatio;
+      const newY = viewBox.y - (newHeight - viewBox.height) * mouseYRatio;
+
+      setViewBox(
+        clampViewBox({ x: newX, y: newY, width: newWidth, height: newHeight }),
+      );
+      setLastPosition({ x: distance, y: 0 });
     } else if (e.touches.length === 1) {
-      const dx = (e.touches[0].clientX - startDragPoint.x) * 1.5;
-      const dy = (e.touches[0].clientY - startDragPoint.y) * 1.5;
-      setPosition((prev) => ({
-        x: prev.x + dx,
-        y: prev.y + dy,
-      }));
-      setStartDragPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      const dx = e.touches[0].clientX - lastPosition.x;
+      const dy = e.touches[0].clientY - lastPosition.y;
+
+      const { width, height } = svgRef.current!.getBoundingClientRect();
+      const scaleX = viewBox.width / width;
+      const scaleY = viewBox.height / height;
+
+      setViewBox((vb) =>
+        clampViewBox({
+          ...vb,
+          x: vb.x - dx * scaleX,
+          y: vb.y - dy * scaleY,
+        }),
+      );
+      setLastPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
   };
 
-  const handleTouchEnd = () => {
-    setLastTouchDistance(null);
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isDragging) return;
+
+    const dx = e.clientX - lastPosition.x;
+    const dy = e.clientY - lastPosition.y;
+
+    const { width, height } = svgRef.current!.getBoundingClientRect();
+    const scaleX = viewBox.width / width;
+    const scaleY = viewBox.height / height;
+
+    setViewBox((vb) =>
+      clampViewBox({
+        ...vb,
+        x: vb.x - dx * scaleX,
+        y: vb.y - dy * scaleY,
+      }),
+    );
+
+    setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
   useEffect(() => {
@@ -690,50 +757,14 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
   }, [isMobile]);
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
-    // Previene el comportamiento por defecto para evitar seleccionar texto u otros elementos por accidente
     e.preventDefault();
-
-    if (scale > 1) return;
-
-    // Calcula el punto inicial del arrastre teniendo en cuenta la posición actual del SVG
-    const startX = e.clientX - position.x;
-    const startY = e.clientY - position.y;
-
-    const doDrag = (moveEvent: MouseEvent) => {
-      // Actualiza la posición basándose en el movimiento del mouse desde el punto inicial
-      setPosition({
-        x: moveEvent.clientX - startX,
-        y: moveEvent.clientY - startY,
-      });
-    };
-
-    const stopDrag = () => {
-      // Limpia los manejadores de eventos una vez que se suelta el botón del mouse
-      document.removeEventListener('mousemove', doDrag);
-      document.removeEventListener('mouseup', stopDrag);
-    };
-
-    // Registra los manejadores de eventos para el movimiento y la liberación del mouse
-    document.addEventListener('mousemove', doDrag);
-    document.addEventListener('mouseup', stopDrag);
     setIsDragging(true);
-    setStartDragPoint({ x: e.clientX - position.x, y: e.clientY - position.y });
-    console.log('position', e.clientX, e.clientY);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!isDragging || scale <= 1) return;
-    const dx = e.clientX - startDragPoint.x;
-    const dy = e.clientY - startDragPoint.y;
-    console.log(dx, dy);
-    setPosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-    setStartDragPoint({ x: e.clientX, y: e.clientY });
+    setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
   };
-
   React.useEffect(() => {
     polygonConstructor(Locality.DIAMOND);
     polygonConstructor(Locality.GOLD);
@@ -792,7 +823,7 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
           ref={svgRef}
           width="100%"
           height="100%"
-          viewBox={isMobile ? '-350 -200 1700 2200' : '-380 -100 1800 900'}
+          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
           xmlns="http://www.w3.org/2000/svg"
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
