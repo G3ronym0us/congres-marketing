@@ -12,6 +12,7 @@ import {
   faTicket,
   faUser,
   faUserGroup,
+  faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useParams } from 'next/navigation';
@@ -23,6 +24,7 @@ export default function Page() {
   const [uuid, setUuid] = useState<string>();
   const [ticket, setTicket] = useState<Seat>();
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     setUuid(params?.document ? (params.document as string) : '');
@@ -44,6 +46,7 @@ export default function Page() {
   const handleDownloadCertificate = async () => {
     if (ticket?.uuid) {
       try {
+        setDownloading(true);
         if (document) {
           const blob = await downloadCertificate(ticket.uuid);
           const url = window.URL.createObjectURL(blob);
@@ -60,6 +63,8 @@ export default function Page() {
         alert(
           'Hubo un error al descargar el certificado. Por favor, inténtelo de nuevo.',
         );
+      } finally {
+        setDownloading(false);
       }
     }
   };
@@ -164,15 +169,19 @@ export default function Page() {
                               <span>{ticket.role}</span>
                             </li>
                           </ul>
-                          <button
+                           <button
                             onClick={handleDownloadCertificate}
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
+                              downloading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            disabled={downloading}
                           >
-                            <FontAwesomeIcon
-                              icon={faDownload}
-                              className="mr-2"
-                            />
-                            Descargar Certificado
+                            {downloading ? (
+                              <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                            ) : (
+                              <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                            )}
+                            {downloading ? 'Descargando...' : 'Descargar Certificado'}
                           </button>
                         </>
                       ) : loading ? (
