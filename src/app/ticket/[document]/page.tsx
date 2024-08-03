@@ -2,10 +2,11 @@
 
 import Footer from '@/components/Footer';
 import Navbar from '@/components/navbar';
-import { getTicket } from '@/services/tickets';
+import { downloadCertificate, getTicket } from '@/services/tickets';
 import { Seat } from '@/types/tickets';
 import {
   faChair,
+  faDownload,
   faFile,
   faLifeRing,
   faTicket,
@@ -19,25 +20,48 @@ import { useEffect, useState } from 'react';
 export default function Page() {
   const params = useParams();
 
-  const [document, setDocument] = useState<string>();
+  const [uuid, setUuid] = useState<string>();
   const [ticket, setTicket] = useState<Seat>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setDocument(params?.document ? (params.document as string) : '');
+    setUuid(params?.document ? (params.document as string) : '');
   }, []);
 
   useEffect(() => {
-    if (document) {
+    if (uuid) {
       setLoading(true);
-      loadTicket(document);
+      loadTicket(uuid);
     }
-  }, [document]);
+  }, [uuid]);
 
   const loadTicket = async (uuid: string) => {
     const ticket = await getTicket(uuid);
     setTicket(ticket);
     setLoading(false);
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (ticket?.uuid) {
+      try {
+        if (document) {
+          const blob = await downloadCertificate(ticket.uuid);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `certificado-${ticket.name}-${ticket.lastname}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error('Error al descargar el certificado:', error);
+        alert(
+          'Hubo un error al descargar el certificado. Por favor, inténtelo de nuevo.',
+        );
+      }
+    }
   };
 
   return (
@@ -98,44 +122,59 @@ export default function Page() {
                   <div className="flex flex-wrap justify-center">
                     <div className="w-full lg:w-9/12 px-4">
                       {ticket ? (
-                        <ul className="mb-6 text-justify text-gray-500">
-                          <li className="text-2xl mb-2">
-                            <FontAwesomeIcon icon={faUser} className="mr-2" />
-                            <span className="font-bold">Nombres: </span>
-                            <span>{ticket.name}</span>
-                          </li>
-                          <li className="text-2xl mb-2">
-                            <FontAwesomeIcon icon={faUser} className="mr-2" />
-                            <span className="font-bold">Apellidos: </span>
-                            <span>{ticket.lastname}</span>
-                          </li>
-                          <li className="text-2xl mb-2">
-                            <FontAwesomeIcon icon={faFile} className="mr-2" />
-                            <span className="font-bold">Documento: </span>
-                            <span>{ticket.document}</span>
-                          </li>
-                          <li className="text-2xl mb-2">
+                        <>
+                          <ul className="mb-6 text-justify text-gray-500">
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon icon={faUser} className="mr-2" />
+                              <span className="font-bold">Nombres: </span>
+                              <span>{ticket.name}</span>
+                            </li>
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon icon={faUser} className="mr-2" />
+                              <span className="font-bold">Apellidos: </span>
+                              <span>{ticket.lastname}</span>
+                            </li>
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon icon={faFile} className="mr-2" />
+                              <span className="font-bold">Documento: </span>
+                              <span>{ticket.document}</span>
+                            </li>
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon
+                                icon={faLifeRing}
+                                className="mr-2"
+                              />
+                              <span className="font-bold">Zona: </span>
+                              <span>{ticket.type}</span>
+                            </li>
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon
+                                icon={faChair}
+                                className="mr-2"
+                              />
+                              <span className="font-bold">Asiento: </span>
+                              <span>{ticket.row + '-' + ticket.number}</span>
+                            </li>
+                            <li className="text-2xl mb-2">
+                              <FontAwesomeIcon
+                                icon={faUserGroup}
+                                className="mr-2"
+                              />
+                              <span className="font-bold">Rol: </span>
+                              <span>{ticket.role}</span>
+                            </li>
+                          </ul>
+                          <button
+                            onClick={handleDownloadCertificate}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                          >
                             <FontAwesomeIcon
-                              icon={faLifeRing}
+                              icon={faDownload}
                               className="mr-2"
                             />
-                            <span className="font-bold">Zona: </span>
-                            <span>{ticket.type}</span>
-                          </li>
-                          <li className="text-2xl mb-2">
-                            <FontAwesomeIcon icon={faChair} className="mr-2" />
-                            <span className="font-bold">Asiento: </span>
-                            <span>{ticket.row + '-' + ticket.number}</span>
-                          </li>
-                          <li className="text-2xl mb-2">
-                            <FontAwesomeIcon
-                              icon={faUserGroup}
-                              className="mr-2"
-                            />
-                            <span className="font-bold">Rol: </span>
-                            <span>{ticket.role}</span>
-                          </li>
-                        </ul>
+                            Descargar Certificado
+                          </button>
+                        </>
                       ) : loading ? (
                         <>
                           <div className="text-2xl font-bold">Cargando ...</div>

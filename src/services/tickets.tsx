@@ -138,3 +138,14 @@ export async function adminSaveTickets(data: AdminCreateTicketInput[]) {
     return handleError(error);
   }
 }
+
+export async function downloadCertificate(uuid: string): Promise<Blob> {
+  try {
+    const response = await api.get(`/tickets/certificate/${uuid}`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
