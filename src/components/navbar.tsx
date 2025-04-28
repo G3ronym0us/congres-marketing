@@ -34,20 +34,20 @@ export default function Navbar(props: any) {
     };
   }, []);
 
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, mobile: boolean) => {
+    // Si el enlace es un ancla, hacer scroll suave
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        if (mobile) onClose();
+      }
+    }
+  };
+
   // Enlaces de navegación con efecto de scroll suave
   const NavLinks = ({ mobile = false }) => {
-    const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-      // Si el enlace es un ancla, hacer scroll suave
-      if (href.startsWith('#')) {
-        e.preventDefault();
-        const element = document.querySelector(href);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          if (mobile) onClose();
-        }
-      }
-    };
-
     return (
       <>
         {[
@@ -66,7 +66,7 @@ export default function Navbar(props: any) {
                 : 'text-white hover:text-blue-300 transition-colors duration-300 text-sm md:text-base lg:text-lg px-2 lg:px-4'
               }
             `}
-            onClick={(e) => handleLinkClick(e, item.alt)}
+            onClick={(e) => handleLinkClick(e, item.alt, mobile)}
           >
             {item.label}
           </Link>
@@ -103,8 +103,9 @@ export default function Navbar(props: any) {
           <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
             <NavLinks />
             <Link
-              href="mailto:cnmpcolombia@gmail.com"
+              href="#contactanos"
               className="ml-2 lg:ml-4 px-4 lg:px-6 py-2 bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white rounded-full hover:from-[#293991] hover:to-[#6d0019] transition-all duration-300 text-sm lg:text-base whitespace-nowrap"
+              onClick={(e) => handleLinkClick(e, '#contactanos', false)}
             >
               Contáctanos
             </Link>
@@ -158,7 +159,8 @@ export default function Navbar(props: any) {
               </div>
               <div className="px-10 w-full mt-auto">
                 <Link
-                  href="mailto:cnmpcolombia@gmail.com"
+                  href="#contactanos"
+                  onClick={(e) => handleLinkClick(e, '#contactanos', true)}
                   className="block w-full text-center px-6 py-4 bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white rounded-full text-xl hover:opacity-90 font-medium"
                 >
                   Contáctanos
