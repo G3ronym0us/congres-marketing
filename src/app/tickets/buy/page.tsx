@@ -1,6 +1,16 @@
 // @ts-nocheck
 'use client';
 
+export default function BuyTickets() {
+  return (
+    <div>
+      <h1>Buy Tickets</h1>
+    </div>
+  );
+}
+
+
+/*
 import InputText from '@/components/form/InputText';
 import Navbar from '@/components/navbar';
 import { randomBytes } from 'crypto';
@@ -447,7 +457,7 @@ export default function BuyTickets() {
           </div>
         </div>
 
-        {/* Barra inferior fija para móviles */}
+        {/* Barra inferior fija para móviles }
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-800 text-white p-4">
           <div className="flex justify-between items-center">
             <p>Boletos: {tickets.length}</p>
@@ -510,5 +520,5 @@ export default function BuyTickets() {
     </>
   );
 }
-
+*/
 

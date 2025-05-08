@@ -1,5 +1,15 @@
 // @ts-nocheck
 'use client';
+
+export default function BuyTickets() {
+  return (
+    <div>
+      <h1>Buy Tickets</h1>
+    </div>
+  );
+}
+/*
+'use client';
 import {
   Position,
   SeatRows,
@@ -1116,3 +1126,4 @@ const MapTickets: React.FC<Props> = ({ toggleModal, seatUseds, isMobile }) => {
 };
 
 export default MapTickets;
+*/
