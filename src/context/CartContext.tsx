@@ -35,7 +35,8 @@ const createEmptyTicket = (type: TicketType, withMemories: boolean, price: numbe
     name: '',
     lastname: '',
     document: '',
-    email: ''
+    email: '',
+    phone: ''
   }
 });
 
