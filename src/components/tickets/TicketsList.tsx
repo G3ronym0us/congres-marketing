@@ -1,3 +1,14 @@
+// @ts-nocheck
+'use client';
+
+export default function BuyTickets() {
+  return (
+    <div>
+      <h1>Buy Tickets</h1>
+    </div>
+  );
+}
+/*
 import { Ticket } from '@/types/tickets';
 import { numberWithDots } from '@/utils/utils';
 import {
@@ -124,3 +135,4 @@ const TicketList: React.FC<Props> = ({
 };
 
 export default TicketList;
+*/
