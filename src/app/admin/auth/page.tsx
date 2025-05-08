@@ -6,7 +6,7 @@ import Image from 'next/image';
 import logo from '../../../../public/images/logo-congress.png';
 import { loginUser } from '@/services/user';
 import { LoginUserInput } from '@/types/user';
-import { AuthContext } from '@/conext/AuthContext';
+import { AuthContext } from '@/context/AuthContext';
 
 const Login = () => {
   const router = useRouter();

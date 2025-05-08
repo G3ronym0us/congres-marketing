@@ -8,7 +8,7 @@ import TicketsTable from '@/components/tickets/table';
 import logo from '../../../../public/images/logo-congress.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableList, faTicketAlt } from '@fortawesome/free-solid-svg-icons';
-import { AuthContext } from '@/conext/AuthContext';
+import { AuthContext } from '@/context/AuthContext';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
