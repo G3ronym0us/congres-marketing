@@ -1,3 +1,14 @@
+// @ts-nocheck
+'use client';
+
+export default function BuyTickets() {
+  return (
+    <div>
+      <h1>Buy Tickets</h1>
+    </div>
+  );
+}
+/*
 import React from 'react';
 import { Locality, localityColors } from '@/types/tickets';
 
@@ -37,3 +48,4 @@ const ConfirmationText: React.FC<Props> = ({ locality }) => {
 };
 
 export default ConfirmationText;
+*/
