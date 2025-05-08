@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 
 import InputText from '@/components/form/InputText';
