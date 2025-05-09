@@ -228,17 +228,23 @@ export default function Landing() {
 
               <div className="w-full lg:w-5/12 px-4 mt-12 lg:mt-0">
                 <div className="relative">
-                  <img
-                    src="/images/2024/conferencistas.png"
-                    alt="Conferencistas 2025"
-                    className="rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                  <iframe
+                    src="https://www.youtube.com/embed/IzsLiH6IRXQ?autoplay=1&mute=1"
+                    title="Video CNMP 2025" 
+                    className="w-full rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                    height="315"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
                   />
+                  {/*
                   <div className="absolute -bottom-4 -right-4 bg-[#1C2C67] text-white px-6 py-3 rounded-lg shadow-lg">
                     <div className="text-sm uppercase tracking-wide">
                       Edición
                     </div>
                     <div className="text-3xl font-bold">2025</div>
                   </div>
+                  */}
                 </div>
               </div>
             </div>
