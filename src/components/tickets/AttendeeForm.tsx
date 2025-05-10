@@ -20,12 +20,18 @@ export default function AttendeeForm({
 }: AttendeeFormProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
+    
+    // Limitar a 10 caracteres para nombre, apellido y documento
+    let limitedValue = value;
+    if (name === 'name' || name === 'lastname' || name === 'document') {
+      limitedValue = value.slice(0, 10);
+    }
+    
     const updatedAttendee: AttendeeData = {
       ...attendee,
-      [name]: value,
+      [name]: limitedValue,
     };
-
+    
     onChange(ticketId, updatedAttendee);
   };
 
@@ -41,7 +47,7 @@ export default function AttendeeForm({
             htmlFor={`nombre-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Nombre *
+            Nombre * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
           </label>
           <input
             type="text"
@@ -49,9 +55,13 @@ export default function AttendeeForm({
             name="name"
             value={attendee.name}
             onChange={handleInputChange}
+            maxLength={10}
             className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
+          <div className="mt-1 text-xs text-right text-gray-400">
+            {attendee.name ? attendee.name.length : 0}/10
+          </div>
         </div>
 
         <div>
@@ -59,17 +69,21 @@ export default function AttendeeForm({
             htmlFor={`apellido-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Apellido *
+            Apellido * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
           </label>
           <input
             type="text"
-            id={`lastname-${ticketId}`}
+            id={`apellido-${ticketId}`}
             name="lastname"
             value={attendee.lastname}
             onChange={handleInputChange}
+            maxLength={10}
             className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
+          <div className="mt-1 text-xs text-right text-gray-400">
+            {attendee.lastname ? attendee.lastname.length : 0}/10
+          </div>
         </div>
 
         <div>
@@ -77,17 +91,21 @@ export default function AttendeeForm({
             htmlFor={`identificacion-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Documento de Identidad *
+            Documento de Identidad * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
           </label>
           <input
             type="text"
-            id={`document-${ticketId}`}
+            id={`identificacion-${ticketId}`}
             name="document"
             value={attendee.document}
             onChange={handleInputChange}
+            maxLength={10}
             className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
+          <div className="mt-1 text-xs text-right text-gray-400">
+            {attendee.document ? attendee.document.length : 0}/10
+          </div>
         </div>
 
         <div>

@@ -12,6 +12,8 @@ import {
   faChevronDown,
   faChevronUp,
   faCheck,
+  faPercentage,
+  faTags,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '@/context/CartContext';
 import {
@@ -24,6 +26,49 @@ import { AttendeeData, TicketType } from '@/types/tickets';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+
+// Estructura para las etapas de descuento
+interface DescuentoEtapa {
+  fechaInicio: Date;
+  fechaFin: Date;
+  porcentaje: number;
+  etiqueta: string;
+}
+
+// Definir las etapas de descuento según la imagen
+const etapasDescuento: DescuentoEtapa[] = [
+  {
+    fechaInicio: new Date('2025-04-26'),
+    fechaFin: new Date('2025-05-03'),
+    porcentaje: 35,
+    etiqueta: 'Venta exclusiva asistentes 2024',
+  },
+  {
+    fechaInicio: new Date('2025-05-03'),
+    fechaFin: new Date('2025-05-10'),
+    porcentaje: 30,
+    etiqueta: 'Descuento especial',
+  },
+  {
+    fechaInicio: new Date('2025-05-10'),
+    fechaFin: new Date('2025-05-20'),
+    porcentaje: 20,
+    etiqueta: 'Descuento',
+  },
+  {
+    fechaInicio: new Date('2025-05-20'),
+    fechaFin: new Date('2025-05-31'),
+    porcentaje: 10,
+    etiqueta: 'Último descuento',
+  },
+  {
+    fechaInicio: new Date('2025-05-31'),
+    fechaFin: new Date('2025-08-03'), // Fecha del evento
+    porcentaje: 0,
+    etiqueta: 'Precio completo',
+  },
+];
+
 export default function Carrito() {
   const router = useRouter();
   const {
@@ -46,6 +91,38 @@ export default function Carrito() {
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
+
+  // Estados para descuentos
+  const [descuentoActual, setDescuentoActual] = useState<DescuentoEtapa | null>(
+    null,
+  );
+  const [totalConDescuento, setTotalConDescuento] = useState(0);
+  const [montoDescuento, setMontoDescuento] = useState(0);
+
+  // Determinar el descuento aplicable según la fecha actual
+  useEffect(() => {
+    const hoy = new Date();
+    const descuentoEncontrado = etapasDescuento.find(
+      (etapa) => hoy >= etapa.fechaInicio && hoy <= etapa.fechaFin,
+    );
+    console.log('Etapas de descuento:', etapasDescuento);
+    console.log('Fecha actual:', hoy);
+    console.log('Descuento encontrado:', descuentoEncontrado);
+    setDescuentoActual(descuentoEncontrado || null);
+  }, []);
+
+  // Calcular total con descuento cuando cambia el total o el descuento
+  useEffect(() => {
+    if (descuentoActual) {
+      const descuento = total * (descuentoActual.porcentaje / 100);
+      const nuevoTotal = total - descuento;
+      setMontoDescuento(descuento);
+      setTotalConDescuento(nuevoTotal);
+    } else {
+      setTotalConDescuento(total);
+      setMontoDescuento(0);
+    }
+  }, [total, descuentoActual]);
 
   // Generar referencia única
   useEffect(() => {
@@ -164,7 +241,7 @@ export default function Carrito() {
         nombre: 'Entrada',
         precio: 0,
         icono: '🎫',
-        incluyeMemorias: false,
+        withMemories: false,
         noPermiteMemorias: false,
       }
     );
@@ -178,10 +255,8 @@ export default function Carrito() {
     console.log('Iniciando proceso de pago');
 
     try {
-      // Calcular total con IVA
-      const totalConIVA = Math.round(total * 1.19);
-      const amountInCents = totalConIVA * 100;
-      console.log('Total con IVA:', totalConIVA);
+      const amountInCents = totalConDescuento * 100;
+      console.log('Total con descuento:', totalConDescuento);
       console.log('Monto en centavos:', amountInCents);
 
       // Obtener los datos del primer asistente para usarlos como datos del pagador
@@ -202,10 +277,12 @@ export default function Carrito() {
         {
           reference: reference,
           amountInCents: amountInCents,
+          discount: descuentoActual ? descuentoActual.porcentaje : 0,
+          discountLabel: descuentoActual ? descuentoActual.etiqueta : '',
           tickets: state.items.flatMap((item) =>
             item.tickets.map((ticket) => ({
               type: item.localidad,
-              includesMemories: ticket.withMemories,
+              withMemories: ticket.withMemories,
               priceInCents: ticket.price * 100,
               memoriesPriceInCents: ticket.withMemories
                 ? ticket.priceMemories * 100
@@ -437,6 +514,19 @@ export default function Carrito() {
                 />
                 Tu carrito de compra
               </h2>
+
+              {/* Banner de descuento si hay un descuento actual */}
+              {descuentoActual && descuentoActual.porcentaje > 0 && (
+                <div className="bg-amber-500/20 border border-amber-400 text-amber-100 p-4 rounded-lg mb-6">
+                  <p className="flex items-center justify-center text-lg font-semibold">
+                    <FontAwesomeIcon icon={faTags} className="mr-2" />
+                    <span className="mr-2">{descuentoActual.etiqueta}:</span>
+                    <span className="bg-amber-500 text-white px-3 py-1 rounded-full">
+                      {descuentoActual.porcentaje}% OFF
+                    </span>
+                  </p>
+                </div>
+              )}
 
               {state.items.length === 0 ? (
                 <div className="text-center py-12">
@@ -688,20 +778,30 @@ export default function Carrito() {
 
                     <div className="border-t border-white/20 my-4"></div>
 
-                    <div className="flex justify-between text-xl font-bold">
-                      <span className="text-white">Total:</span>
-                      <span className="text-blue-300">
-                        {formatoPrecio(total)}
-                      </span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Subtotal:</span>
+                      <span className="text-white">{formatoPrecio(total)}</span>
                     </div>
 
-                    {/* Agregar aquí el total con IVA */}
-                    <div className="flex justify-between text-sm mt-2">
-                      <span className="text-gray-300">
-                        Total con IVA (19%):
-                      </span>
-                      <span className="text-gray-300">
-                        {formatoPrecio(total * 1.19)}
+                    {/* Mostrar descuento si aplica */}
+                    {descuentoActual && descuentoActual.porcentaje > 0 && (
+                      <div className="flex justify-between mt-2 text-amber-300">
+                        <span className="flex items-center">
+                          <FontAwesomeIcon
+                            icon={faPercentage}
+                            className="mr-1"
+                          />
+                          Descuento ({descuentoActual.porcentaje}%):
+                        </span>
+                        <span>-{formatoPrecio(montoDescuento)}</span>
+                      </div>
+                    )}
+
+                    {/* Total con descuento */}
+                    <div className="flex justify-between text-xl font-bold mt-2">
+                      <span className="text-white">Total:</span>
+                      <span className="text-blue-300">
+                        {formatoPrecio(totalConDescuento)}
                       </span>
                     </div>
                   </div>
@@ -715,6 +815,26 @@ export default function Carrito() {
                           <strong>Datos incompletos:</strong> Por favor,
                           completa los datos de todos los asistentes antes de
                           continuar con el pago.
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Mensaje promocional sobre descuentos si aplica */}
+                  {descuentoActual && descuentoActual.porcentaje > 0 && (
+                    <div className="bg-green-900/50 border border-green-600 text-green-200 p-4 rounded-lg mb-6">
+                      <p className="flex items-start">
+                        <FontAwesomeIcon icon={faTags} className="mr-2 mt-1" />
+                        <span>
+                          <strong>¡Promoción activa!</strong> Estás aprovechando
+                          un descuento del {descuentoActual.porcentaje}% en tu
+                          compra.
+                          {descuentoActual.porcentaje < 35 && (
+                            <span className="block mt-1 text-sm">
+                              Los precios aumentarán pronto. ¡No pierdas esta
+                              oportunidad!
+                            </span>
+                          )}
                         </span>
                       </p>
                     </div>
@@ -743,6 +863,62 @@ export default function Carrito() {
                     </div>
                   )}
 
+                  {/* Etapas de descuento informativas */}
+                  <div className="bg-black/30 border border-gray-700 rounded-lg p-4 mb-6">
+                    <h4 className="text-white font-semibold mb-3 flex items-center">
+                      <FontAwesomeIcon icon={faTags} className="mr-2" />
+                      Etapas de descuento
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                      {etapasDescuento.map((etapa, index) => {
+                        // Verificar si es la etapa actual
+                        const fechaHoy = new Date();
+                        const esEtapaActual =
+                          fechaHoy >= etapa.fechaInicio &&
+                          fechaHoy <= etapa.fechaFin;
+
+                        // Formato de fechas
+                        const fechaInicio =
+                          etapa.fechaInicio.toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                          });
+                        const fechaFin = etapa.fechaFin.toLocaleDateString(
+                          'es-ES',
+                          { day: 'numeric', month: 'short' },
+                        );
+
+                        return (
+                          <div
+                            key={index}
+                            className={`p-2 text-center rounded text-sm ${
+                              esEtapaActual
+                                ? 'bg-amber-500/50 border border-amber-400'
+                                : 'bg-white/5'
+                            }`}
+                          >
+                            <div className="text-xs text-gray-300 mb-1">
+                              {fechaInicio} - {fechaFin}
+                            </div>
+                            <div
+                              className={`font-semibold ${esEtapaActual ? 'text-white' : 'text-gray-400'}`}
+                            >
+                              {etapa.porcentaje > 0
+                                ? `${etapa.porcentaje}% OFF`
+                                : 'Precio full'}
+                            </div>
+                            {esEtapaActual && (
+                              <div className="text-xs text-amber-200 mt-1">
+                                Activo ahora
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Botones de acción */}
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <button
@@ -765,7 +941,9 @@ export default function Carrito() {
                             icon={faCreditCard}
                             className="mr-2"
                           />
-                          Pagar Ahora con Wompi
+                          {descuentoActual && descuentoActual.porcentaje > 0
+                            ? `Pagar con ${descuentoActual.porcentaje}% OFF`
+                            : 'Pagar Ahora'}
                         </span>
                       )}
                     </button>

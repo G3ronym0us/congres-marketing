@@ -3,6 +3,7 @@ export interface RedSocial {
   Instagram?: string;
   Facebook?: string;
   X?: string; // Anteriormente Twitter
+  YouTube?: string;
 }
 
 export interface Publicacion {
@@ -17,6 +18,7 @@ export interface FormacionAcademica {
   titulo: string;
   institucion?: string;
   año?: number;
+  lugar?: string;
 }
 
 export interface Conferencista {
@@ -42,8 +44,72 @@ export interface Conferencista {
 
 // Datos de conferencistas internacionales
 export const conferencistas: Conferencista[] = [
+    {
+      id: 1,
+      show: true,
+      alt: "dick-morris",
+      nombre: "Dick",
+      apellido: "Morris",
+      pais: "Estados Unidos",
+      tipo: "internacional",
+      titulo: "Por qué ganó y hacia dónde va Trump",
+      cargo: "Estratega político y autor",
+      apodo: "Leyenda viva de la consultoría política",
+      biografia: "Dick Morris es una leyenda viva de la consultoría política. Autor, analista y estratega de talla mundial, su nombre es sinónimo de visión, audacia e inteligencia electoral. A lo largo de más de cuatro décadas, ha sido el cerebro detrás de algunas de las victorias políticas más emblemáticas de Estados Unidos y ha asesorado a presidentes, líderes internacionales y figuras clave en todos los continentes. Su incursión en la política comenzó en 1978, cuando lideró con éxito la campaña de Bill Clinton para gobernador de Arkansas, sentando las bases de una alianza histórica. Como principal asesor en la Casa Blanca, fue el artífice de la moderación estratégica que rescató a Clinton en uno de sus momentos más críticos, consolidando su legado con una reelección contundente en 1996. Pero su influencia no se detuvo allí. Dick Morris se convirtió en una figura clave en la transformación del Partido Republicano, liderando la estrategia presidencial de Donald Trump en 2016 y 2024. Su lectura certera del momento político y su capacidad para conectar con el sentir del electorado lo posicionaron como uno de los grandes arquitectos del retorno del trumpismo. Su legado no solo está escrito en los libros de historia, sino que sigue vivo en cada campaña que aplica sus enseñanzas. En 2021, volvió a reunirse con Trump en Nueva York, reactivando su papel como pieza fundamental del ajedrez político estadounidense. Dick Morris no es solo un asesor. Es un visionario que ha redefinido las reglas del juego político.",
+      imagen: "https://congress-marketing.s3.us-east-2.amazonaws.com/Fotos+Conferencistas-20250504T032610Z-1-001/Fotos+Conferencistas/DICK+MORRIS+-+ESTADOS+UNIDOS.png",
+      redesSociales: {
+        Instagram: "https://www.instagram.com/realdickmorris",
+        X: "https://x.com/Dickmorristweet"
+      },
+      areasExperiencia: [
+        "Estrategia política",
+        "Campañas presidenciales",
+        "Análisis electoral",
+        "Asesoría en la Casa Blanca"
+      ],
+      premios: [],
+      formacionAcademica: []
+    },
+    {
+      id: 2,
+      show: true,
+      alt: "luis-rosales",
+      nombre: "Luis",
+      apellido: "Rosales",
+      pais: "Argentina",
+      tipo: "internacional",
+      titulo: "El voto latino y Trump",
+      cargo: "Analista político y diplomático",
+      biografia: "Es una de las figuras más destacadas del pensamiento político y diplomático en América Latina. Su formación es impecable: es magíster en Relaciones Internacionales por la Universidad de Belgrano en Buenos Aires, y también por la prestigiosa Fletcher School of Law and Diplomacy en Boston, Massachusetts, una de las instituciones más reconocidas en asuntos internacionales a nivel global. Además de su sólida carrera académica, Rosales ha brillado como periodista, aportando análisis profundo y visión estratégica a la opinión pública. En el ámbito político, fue elegido congresista entre 1989 y 1991, y posteriormente se desempeñó como Secretario de Turismo de Mendoza hasta 1995, marcando una gestión innovadora y eficiente. Su pensamiento moderno, su solvencia intelectual y su experiencia de campo lo convierten en una voz imprescindible en el debate político continental.",
+      imagen: "https://congress-marketing.s3.us-east-2.amazonaws.com/Fotos+Conferencistas-20250504T032610Z-1-001/Fotos+Conferencistas/Luis+Rosales+-+ARGENTINA.png",
+      redesSociales: {
+        Instagram: "https://www.instagram.com/Luisrosales.arg",
+        X: "https://x.com/luisrosalesarg",
+        YouTube: "https://www.youtube.com/luisrosalesarg"
+      },
+      areasExperiencia: [
+        "Relaciones internacionales",
+        "Análisis político",
+        "Periodismo",
+        "Gestión pública"
+      ],
+      formacionAcademica: [
+        {
+          titulo: "Magíster en Relaciones Internacionales",
+          institucion: "Universidad de Belgrano",
+          lugar: "Buenos Aires, Argentina"
+        },
+        {
+          titulo: "Magíster en Relaciones Internacionales",
+          institucion: "Fletcher School of Law and Diplomacy",
+          lugar: "Boston, Massachusetts, Estados Unidos"
+        }
+      ],
+      premios: []
+    }
+  ,
   {
-    id: 1,
+    id: 3,
     show: true,
     alt: 'antonio-sola',
     nombre: 'Antonio Sola',
@@ -77,7 +143,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 2,
+    id: 4,
     show: true,
     alt: 'angel-beccassino',
     nombre: 'Ángel',
@@ -120,7 +186,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 3,
+    id: 5,
     show: true,
     alt: 'david-ross',
     nombre: 'David',
@@ -155,7 +221,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 4,
+    id: 6,
     show: true,
     alt: 'eugenie-richard',
     nombre: 'Eugenie',
@@ -209,7 +275,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 5,
+    id: 7,
     show: true,
     alt: 'fernando-dopazo',
     nombre: 'Fernando',
@@ -237,7 +303,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 6,
+    id: 8,
     show: true,
     alt: 'helios-ruiz',
     nombre: 'Helios',
@@ -307,7 +373,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 7,
+    id: 9,
     show: true,
     alt: 'leandro-fagundez',
     nombre: 'Leandro',
@@ -349,7 +415,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 8,
+    id: 10,
     show: true,
     alt: 'giovanni-berroa',
     nombre: 'Giovanni',
@@ -376,7 +442,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 9,
+    id: 11,
     show: true,
     alt: 'hector-venegas',
     nombre: 'Héctor',
@@ -412,7 +478,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 10,
+    id: 12,
     show: true,
     alt: 'estefania-andreina-herrera-guaita',
     nombre: 'Estefanía Andreina',
@@ -450,7 +516,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 11,
+    id: 13,
     show: true,
     alt: 'solangel-camarena',
     nombre: 'Solangel',
@@ -470,7 +536,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 12,
+    id: 14,
     show: true,
     alt: 'martha-hernandez',
     nombre: 'Martha',
@@ -510,7 +576,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 13,
+    id: 15,
     show: true,
     alt: 'jose-guinand',
     nombre: 'José',
@@ -541,7 +607,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 14,
+    id: 16,
     show: true,
     alt: 'darmi-fuentes',
     nombre: 'Darmi',
@@ -553,7 +619,7 @@ export const conferencistas: Conferencista[] = [
       'https://congress-marketing.s3.us-east-2.amazonaws.com/Fotos+Conferencistas-20250504T032610Z-1-001/Fotos+Conferencistas/DARMI+FUENTES+-+COLOMBIA.png',
   },
   {
-    id: 15,
+    id: 17,
     show: true,
     alt: 'luciana-beccassino',
     nombre: 'Luciana',
@@ -588,7 +654,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 16,
+    id: 18,
     show: true,
     alt: 'jaime-movil',
     nombre: 'Jaime',
@@ -619,7 +685,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 17,
+    id: 19,
     show: true,
     alt: 'erika-caceres',
     nombre: 'Érika',
@@ -639,7 +705,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 18,
+    id: 20,
     show: true,
     alt: 'pedro-alexander',
     nombre: 'Pedro Alexander',
@@ -699,7 +765,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 19,
+    id: 21,
     show: true,
     alt: 'jamer-chica',
     nombre: 'Jamer',
@@ -753,7 +819,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 20,
+    id: 22,
     show: false,
     alt: 'jorge-salim',
     nombre: 'Jorge Salim',
@@ -767,7 +833,7 @@ export const conferencistas: Conferencista[] = [
     },
   },
   {
-    id: 21,
+    id: 23,
     show: true,
     alt: 'arley-bastidas',
     nombre: 'Arley Darío',
@@ -819,7 +885,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 22,
+    id: 24,
     show: true,
     alt: 'heiner-bertel',
     nombre: 'Heiner',
@@ -861,7 +927,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 23,
+    id: 25,
     show: true,
     alt: 'freddy-serrano',
     nombre: 'Freddy',
@@ -905,7 +971,7 @@ export const conferencistas: Conferencista[] = [
     ],
   },
   {
-    id: 24,
+    id: 26,
     show: true,
     alt: 'felipe-reina',
     nombre: 'Felipe',

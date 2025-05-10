@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid'; // Necesitarás instalar esta dependencia: 
 
 // Definir tipos de acciones
 type CartAction = 
-  | { type: 'ADD_ITEM'; payload: { localidad: TicketType, cantidad: number, incluirMemorias: boolean, precio: number, precioMemorias: number } }
+  | { type: 'ADD_ITEM'; payload: { localidad: TicketType, cantidad: number, withMemories: boolean, precio: number, precioMemorias: number } }
   | { type: 'REMOVE_ITEM'; payload: { localidad: TicketType } }
   | { type: 'REMOVE_TICKET'; payload: { ticketId: string } }
   | { type: 'TOGGLE_MEMORIAS'; payload: { ticketId: string; withMemories: boolean } }
@@ -55,8 +55,9 @@ const calcularTotal = (items: CartItem[]): number => {
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const { localidad, cantidad, incluirMemorias, precio, precioMemorias } = action.payload;
-      
+      console.log('ADD_ITEM')
+      const { localidad, cantidad, withMemories, precio, precioMemorias } = action.payload;
+      console.log(localidad, cantidad, withMemories, precio, precioMemorias)
       // Verificar si ya existe un item para esta localidad
       const existingItemIndex = state.items.findIndex(item => item.localidad === localidad);
       
@@ -67,7 +68,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         const newTickets: Ticket[] = [];
         
         for (let i = 0; i < cantidad; i++) {
-          newTickets.push(createEmptyTicket(localidad, incluirMemorias, precio, precioMemorias));
+          newTickets.push(createEmptyTicket(localidad, withMemories, precio, precioMemorias));
         }
         
         newItems = [...state.items];
@@ -80,7 +81,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         const newTickets: Ticket[] = [];
         
         for (let i = 0; i < cantidad; i++) {
-          newTickets.push(createEmptyTicket(localidad, incluirMemorias, precio, precioMemorias));
+          newTickets.push(createEmptyTicket(localidad, withMemories, precio, precioMemorias));
         }
         
         const newItem: CartItem = {
@@ -228,10 +229,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const addItem = (localidad: TicketType, cantidad: number, incluirMemorias: boolean, precio: number, precioMemorias: number) => {
+  const addItem = (localidad: TicketType, cantidad: number, withMemories: boolean, precio: number, precioMemorias: number) => {
     dispatch({ 
       type: 'ADD_ITEM', 
-      payload: { localidad, cantidad, incluirMemorias, precio, precioMemorias }
+      payload: { localidad, cantidad, withMemories, precio, precioMemorias }
     });
   };
 

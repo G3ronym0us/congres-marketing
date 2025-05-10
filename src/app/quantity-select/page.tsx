@@ -39,7 +39,7 @@ export default function SeleccionCantidad() {
     
     // Reset el checkbox de memorias si cambia la localidad a una que ya las incluye
     if (localidadesData[localidad] && localidadesData[localidad].withMemories) {
-      setIncluirMemorias(false);
+      setIncluirMemorias(true);
     }
   }, [localidad]);
 
