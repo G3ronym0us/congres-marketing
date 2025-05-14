@@ -339,7 +339,7 @@ export default function Carrito() {
             amountInCents: amountInCents,
             reference: reference,
             publicKey: process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY,
-            redirectUrl: `${window.location.origin}/confirmation?ref=${reference}`,
+            redirectUrl: `${window.location.origin}/carrito?ref=${reference}`,
             signature: {
               integrity: signature,
             },
