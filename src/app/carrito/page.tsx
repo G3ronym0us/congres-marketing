@@ -419,9 +419,11 @@ export default function Carrito() {
   // Verificar el estado de una transacción
   const verifyTransaction = async (reference: string) => {
     try {
+      console.log('Verificando transacción:', reference);
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}payments/verify/${reference}`,
       );
+      console.log('Respuesta:', response.data);
       const transaction = response.data;
 
       // Manejar diferentes estados
