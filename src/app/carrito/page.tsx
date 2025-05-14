@@ -151,6 +151,66 @@ export default function Carrito() {
     }
   }, []);
 
+  useEffect(() => {
+    // Función para verificar parámetros en la URL
+    const checkUrlParams = () => {
+      // Obtener parámetros de la URL
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refParam = urlParams.get('ref');
+        const statusParam = urlParams.get('status');
+        
+        // Si tenemos una referencia en la URL
+        if (refParam) {
+          setReference(refParam);
+          
+          // Si también tenemos un status, procesarlo directamente
+          if (statusParam) {
+            // Procesar el estado directamente
+            handleTransactionStatus(refParam, statusParam);
+          } else {
+            // Si solo tenemos la referencia, verificarla en el backend
+            verifyTransaction(refParam);
+          }
+        }
+      }
+    };
+    
+    // Ejecutar la verificación cuando se monta el componente
+    checkUrlParams();
+  }, []);
+  
+  // Función para manejar el estado de la transacción
+  const handleTransactionStatus = (ref: string, status: string) => {
+    setLoading(true);
+    const statusUpper = status.toUpperCase();
+    switch(statusUpper) {
+      case 'APPROVED':
+        clearCart();
+        setEnviado(true);
+        setErrorMessage(undefined);
+        break;
+      case 'DECLINED':
+        setErrorMessage('El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.');
+        break;
+      case 'VOIDED':
+        setErrorMessage('La transacción fue anulada. Por favor, intenta nuevamente.');
+        break;
+      case 'ERROR':
+        setErrorMessage('Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.');
+        break;
+      case 'PENDING':
+        setErrorMessage('El pago está en proceso de verificación. Te notificaremos cuando se complete.');
+        break;
+      default:
+        // Verificar en el backend para estar seguros
+        verifyTransaction(ref);
+        break;
+    }
+    
+    setLoading(false);
+  };
+
   // Inicializar el widget de Wompi cuando el script esté cargado
   const handleWompiLoad = () => {
     setWompiReady(true);
