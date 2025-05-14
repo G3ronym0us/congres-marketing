@@ -45,7 +45,7 @@ const calcularTotal = (items: CartItem[]): number => {
   return items.reduce((total, item) => {
     return total + item.tickets.reduce((subtotal, ticket) => {
       const price = ticket.price;
-      const priceMemories = ticket.withMemories ? ticket.priceMemories : 0;
+      const priceMemories = ticket.withMemories && ticket.type !== TicketType.DIAMOND? ticket.priceMemories : 0;
       return subtotal + price + priceMemories;
     }, 0);
   }, 0);
@@ -55,9 +55,7 @@ const calcularTotal = (items: CartItem[]): number => {
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
-      console.log('ADD_ITEM')
       const { localidad, cantidad, withMemories, precio, precioMemorias } = action.payload;
-      console.log(localidad, cantidad, withMemories, precio, precioMemorias)
       // Verificar si ya existe un item para esta localidad
       const existingItemIndex = state.items.findIndex(item => item.localidad === localidad);
       

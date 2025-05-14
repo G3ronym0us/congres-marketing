@@ -52,7 +52,7 @@ const etapasDescuento: DescuentoEtapa[] = [
   {
     fechaInicio: new Date('2025-05-10'),
     fechaFin: new Date('2025-05-20'),
-    porcentaje: 20,
+    porcentaje: 99,
     etiqueta: 'Descuento',
   },
   {
@@ -105,9 +105,6 @@ export default function Carrito() {
     const descuentoEncontrado = etapasDescuento.find(
       (etapa) => hoy >= etapa.fechaInicio && hoy <= etapa.fechaFin,
     );
-    console.log('Etapas de descuento:', etapasDescuento);
-    console.log('Fecha actual:', hoy);
-    console.log('Descuento encontrado:', descuentoEncontrado);
     setDescuentoActual(descuentoEncontrado || null);
   }, []);
 
@@ -133,37 +130,16 @@ export default function Carrito() {
     };
 
     setReference(generateReference());
-    console.log('Referencia generada:', reference);
   }, []);
 
   // Verificar inicialmente si Wompi ya está disponible
   useEffect(() => {
-    console.log('[INIT] Verificando disponibilidad inicial de Wompi');
-    console.log('[INIT] Window definido:', typeof window !== 'undefined');
-
     if (typeof window !== 'undefined') {
-      console.log(
-        '[INIT] WidgetCheckout inicialmente disponible:',
-        !!(window as any).WidgetCheckout,
-      );
       if ((window as any).WidgetCheckout) {
-        console.log(
-          '[INIT] WidgetCheckout ya está disponible, estableciendo wompiReady = true',
-        );
         setWompiReady(true);
       }
     }
 
-    // Revisar variables de entorno
-    console.log(
-      '[INIT] NEXT_PUBLIC_API_URL definido:',
-      !!process.env.NEXT_PUBLIC_API_URL,
-    );
-    console.log(
-      '[INIT] NEXT_PUBLIC_WOMPI_PUBLIC_KEY definido:',
-      !!process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY,
-    );
-    console.log('[INIT] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
     // No mostramos la clave pública completa por seguridad
     if (process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY) {
       const maskedKey =
@@ -172,14 +148,12 @@ export default function Carrito() {
         process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY.substring(
           process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY.length - 4,
         );
-      console.log('[INIT] NEXT_PUBLIC_WOMPI_PUBLIC_KEY (parcial):', maskedKey);
     }
   }, []);
 
   // Inicializar el widget de Wompi cuando el script esté cargado
   const handleWompiLoad = () => {
     setWompiReady(true);
-    console.log('Script de Wompi cargado correctamente');
   };
 
   // Verificar si todos los datos de asistentes están completos
@@ -252,12 +226,9 @@ export default function Carrito() {
     if (!isAllDataComplete) return;
 
     setLoading(true);
-    console.log('Iniciando proceso de pago');
 
     try {
       const amountInCents = totalConDescuento * 100;
-      console.log('Total con descuento:', totalConDescuento);
-      console.log('Monto en centavos:', amountInCents);
 
       // Obtener los datos del primer asistente para usarlos como datos del pagador
       const primerTicket = state.items[0]?.tickets[0];
@@ -271,7 +242,6 @@ export default function Carrito() {
       const documentoPagador = primerTicket.attendee.document;
 
       // 1. Crear tickets en el backend y obtener la firma de integridad
-      console.log('Enviando solicitud al backend para crear tickets');
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}payments`,
         {
@@ -298,14 +268,11 @@ export default function Carrito() {
         },
       );
 
-      console.log('Respuesta del backend:', response.data);
       const { signature, transaction } = response.data;
 
       // 2. Iniciar el proceso de pago con Wompi
       if (wompiReady && (window as any).WidgetCheckout) {
         try {
-          console.log('Inicializando Widget de Wompi');
-
           // Crear configuración para el Widget
           const checkout = new (window as any).WidgetCheckout({
             currency: 'COP',
@@ -319,18 +286,11 @@ export default function Carrito() {
           });
 
           checkout.open(function (result: any) {
-            console.log('Transacción completada:', result);
-            console.log(
-              'Estado de la transacción:',
-              result?.transaction?.status,
-            );
-
             // Verificar el estado de la transacción
             if (
               result.transaction &&
               result.transaction.status === 'APPROVED'
             ) {
-              console.log('Transacción aprobada');
               // Limpiar el carrito y mostrar confirmación
               clearCart();
               setEnviado(true);
@@ -370,7 +330,6 @@ export default function Carrito() {
               verifyTransaction(reference);
             } else if (result.error) {
               // Manejar error del widget
-              console.error('Error del widget:', result.error);
               setErrorMessage(
                 'Error al procesar el pago: ' + result.error.message,
               );
@@ -384,17 +343,14 @@ export default function Carrito() {
             setLoading(false);
           });
         } catch (error) {
-          console.error('Error al inicializar Wompi:', error);
           setLoading(false);
           alert('Error al inicializar el pago. Por favor, intenta de nuevo.');
         }
       } else {
-        console.warn('Wompi no está disponible, usando flujo alternativo');
         setLoading(false);
         alert('Error al procesar la transacción. Por favor, intenta de nuevo.');
       }
     } catch (error) {
-      console.error('Error al iniciar el proceso de pago:', error);
       setLoading(false);
       alert('Error al procesar la transacción. Por favor, intenta de nuevo.');
     }
@@ -402,18 +358,15 @@ export default function Carrito() {
 
   // Verificar el estado de una transacción
   const verifyTransaction = async (reference: string) => {
-    console.log('Verificando transacción:', reference);
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}payments/verify/${reference}`,
       );
-      console.log('Respuesta de verificación:', response.data);
       const transaction = response.data;
 
       // Manejar diferentes estados
       switch (transaction.status) {
         case 'APPROVED':
-          console.log('Transacción verificada como aprobada');
           clearCart();
           setEnviado(true);
           setErrorMessage(undefined);
@@ -447,7 +400,6 @@ export default function Carrito() {
           break;
       }
     } catch (error) {
-      console.error('Error al verificar la transacción:', error);
       setErrorMessage(
         'No pudimos verificar el estado de tu pago. Por favor, contacta a soporte con la referencia: ' +
           reference,
@@ -585,7 +537,7 @@ export default function Carrito() {
                                     return (
                                       total +
                                       ticket.price +
-                                      (ticket.withMemories
+                                      (ticket.withMemories && ticket.type !== TicketType.DIAMOND
                                         ? ticket.priceMemories
                                         : 0)
                                     );
@@ -757,14 +709,13 @@ export default function Carrito() {
                             {ticketsConMemorias.length > 0 && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-300">
-                                  {ticketsConMemorias.length} x{' '}
-                                  {localidadDetails.name} + Memorias
+                                  {`${ticketsConMemorias.length} x ${localidadDetails.name} ${localidadDetails.withMemories ? '(Incluye memorias)' : '+ Memorias'}`}
                                 </span>
                                 <span className="text-white">
                                   {formatoPrecio(
                                     ticketsConMemorias.reduce(
                                       (sum, t) =>
-                                        sum + t.price + t.priceMemories,
+                                        sum + t.price + (t.withMemories && t.type !== TicketType.DIAMOND ? t.priceMemories : 0),
                                       0,
                                     ),
                                   )}
