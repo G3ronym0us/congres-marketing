@@ -27,6 +27,12 @@ export default function AttendeeForm({
       limitedValue = value.slice(0, 10);
     }
     
+    // Limitar a 15 caracteres para teléfono y asegurar que sean solo números
+    if (name === 'phone') {
+      // Filtrar solo dígitos
+      limitedValue = value.replace(/\D/g, '').slice(0, 15);
+    }
+    
     const updatedAttendee: AttendeeData = {
       ...attendee,
       [name]: limitedValue,
@@ -109,6 +115,29 @@ export default function AttendeeForm({
         </div>
 
         <div>
+          <label
+            htmlFor={`telefono-${ticketId}`}
+            className="block text-white text-sm mb-1"
+          >
+            Teléfono * <span className="text-xs text-gray-400">(solo números, máx. 15 dígitos)</span>
+          </label>
+          <input
+            type="tel"
+            id={`telefono-${ticketId}`}
+            name="phone"
+            value={attendee.phone || ''}
+            onChange={handleInputChange}
+            maxLength={15}
+            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+            required
+            pattern="[0-9]*"
+          />
+          <div className="mt-1 text-xs text-right text-gray-400">
+            {attendee.phone ? attendee.phone.length : 0}/15
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
           <label
             htmlFor={`email-${ticketId}`}
             className="block text-white text-sm mb-1"

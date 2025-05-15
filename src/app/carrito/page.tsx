@@ -22,7 +22,7 @@ import {
   PRECIO_MEMORIAS,
 } from '@/data/ticketsData';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
-import { AttendeeData, TicketType } from '@/types/tickets';
+import { AttendeeData, TicketType, Ticket } from '@/types/tickets';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
@@ -38,32 +38,32 @@ interface DescuentoEtapa {
 // Definir las etapas de descuento según la imagen
 const etapasDescuento: DescuentoEtapa[] = [
   {
-    fechaInicio: new Date('2025-04-26'),
-    fechaFin: new Date('2025-05-03'),
+    fechaInicio: new Date('2025-04-27'),
+    fechaFin: new Date('2025-05-04'),
     porcentaje: 35,
     etiqueta: 'Venta exclusiva asistentes 2024',
   },
   {
-    fechaInicio: new Date('2025-05-03'),
-    fechaFin: new Date('2025-05-10'),
+    fechaInicio: new Date('2025-05-04'),
+    fechaFin: new Date('2025-05-11'),
     porcentaje: 30,
     etiqueta: 'Descuento especial',
   },
   {
-    fechaInicio: new Date('2025-05-10'),
-    fechaFin: new Date('2025-05-20'),
-    porcentaje: 99,
+    fechaInicio: new Date('2025-05-11'),
+    fechaFin: new Date('2025-05-21'),
+    porcentaje: 20,
     etiqueta: 'Descuento',
   },
   {
-    fechaInicio: new Date('2025-05-20'),
-    fechaFin: new Date('2025-05-31'),
+    fechaInicio: new Date('2025-05-21'),
+    fechaFin: new Date('2025-06-01'),
     porcentaje: 10,
     etiqueta: 'Último descuento',
   },
   {
-    fechaInicio: new Date('2025-05-31'),
-    fechaFin: new Date('2025-08-03'), // Fecha del evento
+    fechaInicio: new Date('2025-06-01'),
+    fechaFin: new Date('2025-08-04'), // Fecha del evento
     porcentaje: 0,
     etiqueta: 'Precio completo',
   },
@@ -159,11 +159,11 @@ export default function Carrito() {
         const urlParams = new URLSearchParams(window.location.search);
         const refParam = urlParams.get('ref');
         const statusParam = urlParams.get('status');
-        
+
         // Si tenemos una referencia en la URL
         if (refParam) {
           setReference(refParam);
-          
+
           // Si también tenemos un status, procesarlo directamente
           if (statusParam) {
             // Procesar el estado directamente
@@ -175,39 +175,47 @@ export default function Carrito() {
         }
       }
     };
-    
+
     // Ejecutar la verificación cuando se monta el componente
     checkUrlParams();
   }, []);
-  
+
   // Función para manejar el estado de la transacción
   const handleTransactionStatus = (ref: string, status: string) => {
     setLoading(true);
     const statusUpper = status.toUpperCase();
-    switch(statusUpper) {
+    switch (statusUpper) {
       case 'APPROVED':
         clearCart();
         setEnviado(true);
         setErrorMessage(undefined);
         break;
       case 'DECLINED':
-        setErrorMessage('El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.');
+        setErrorMessage(
+          'El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.',
+        );
         break;
       case 'VOIDED':
-        setErrorMessage('La transacción fue anulada. Por favor, intenta nuevamente.');
+        setErrorMessage(
+          'La transacción fue anulada. Por favor, intenta nuevamente.',
+        );
         break;
       case 'ERROR':
-        setErrorMessage('Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.');
+        setErrorMessage(
+          'Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.',
+        );
         break;
       case 'PENDING':
-        setErrorMessage('El pago está en proceso de verificación. Te notificaremos cuando se complete.');
+        setErrorMessage(
+          'El pago está en proceso de verificación. Te notificaremos cuando se complete.',
+        );
         break;
       default:
         // Verificar en el backend para estar seguros
         verifyTransaction(ref);
         break;
     }
-    
+
     setLoading(false);
   };
 
@@ -225,7 +233,8 @@ export default function Carrito() {
           ticket.attendee.name &&
           ticket.attendee.lastname &&
           ticket.attendee.document &&
-          ticket.attendee.email,
+          ticket.attendee.email &&
+          ticket.attendee.phone,
       ),
     );
 
@@ -291,15 +300,23 @@ export default function Carrito() {
       const amountInCents = totalConDescuento * 100;
 
       // Obtener los datos del primer asistente para usarlos como datos del pagador
-      const primerTicket = state.items[0]?.tickets[0];
-      if (!primerTicket) {
+      if (state.items.length === 0) {
         throw new Error('No hay tickets en el carrito');
       }
 
-      const nombrePagador = primerTicket.attendee.name;
-      const apellidoPagador = primerTicket.attendee.lastname;
-      const emailPagador = primerTicket.attendee.email;
-      const documentoPagador = primerTicket.attendee.document;
+      const ticketsData = [];
+
+      state.items.forEach((item) => {
+        item.tickets.forEach((ticket) => {
+          ticketsData.push({
+            type: ticket.type,
+            withMemories: ticket.withMemories,
+            price: ticket.price,
+            priceMemories: ticket.priceMemories,
+            attendee: ticket.attendee,
+          });
+        });
+      });
 
       // 1. Crear tickets en el backend y obtener la firma de integridad
       const response = await axios.post(
@@ -307,24 +324,20 @@ export default function Carrito() {
         {
           reference: reference,
           amountInCents: amountInCents,
-          discount: descuentoActual ? descuentoActual.porcentaje : 0,
-          discountLabel: descuentoActual ? descuentoActual.etiqueta : '',
-          tickets: state.items.flatMap((item) =>
-            item.tickets.map((ticket) => ({
-              type: item.localidad,
+          tickets: state.items.flatMap((item) => {
+            return item.tickets.map((ticket) => ({
+              type: ticket.type,
               withMemories: ticket.withMemories,
-              priceInCents: ticket.price * 100,
-              memoriesPriceInCents: ticket.withMemories
-                ? ticket.priceMemories * 100
-                : 0,
-              attendeeData: {
-                name: ticket.attendee.name,
-                lastname: ticket.attendee.lastname,
-                email: ticket.attendee.email,
-                document: ticket.attendee.document,
-              },
-            })),
-          ),
+              price: ticket.price,
+              priceMemories: ticket.priceMemories,
+              attendee: ticket.attendee,
+            }));
+          }),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
       );
 
@@ -599,7 +612,8 @@ export default function Carrito() {
                                     return (
                                       total +
                                       ticket.price +
-                                      (ticket.withMemories && ticket.type !== TicketType.DIAMOND
+                                      (ticket.withMemories &&
+                                      ticket.type !== TicketType.DIAMOND
                                         ? ticket.priceMemories
                                         : 0)
                                     );
@@ -700,7 +714,8 @@ export default function Carrito() {
                                       <span className="text-white mr-4">
                                         {formatoPrecio(
                                           ticket.price +
-                                            (ticket.withMemories
+                                            (ticket.withMemories &&
+                                            ticket.type !== TicketType.DIAMOND
                                               ? ticket.priceMemories
                                               : 0),
                                         )}
@@ -777,7 +792,12 @@ export default function Carrito() {
                                   {formatoPrecio(
                                     ticketsConMemorias.reduce(
                                       (sum, t) =>
-                                        sum + t.price + (t.withMemories && t.type !== TicketType.DIAMOND ? t.priceMemories : 0),
+                                        sum +
+                                        t.price +
+                                        (t.withMemories &&
+                                        t.type !== TicketType.DIAMOND
+                                          ? t.priceMemories
+                                          : 0),
                                       0,
                                     ),
                                   )}
