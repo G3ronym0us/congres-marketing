@@ -75,7 +75,7 @@ export default function Dashboard() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         menuItems={menuItems}
-        user={auth?.user || { email: 'Administrador' }}
+        user={auth?.user || { username: 'Administrador' }}
         onLogout={handleLogout}
         logo={logo.src}
       />

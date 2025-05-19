@@ -28,7 +28,7 @@ const Sidebar = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
   menuItems: any[];
-  user: any;
+  user: { username: string };
   onLogout: () => void;
   logo: string;
 }) => {
@@ -84,7 +84,7 @@ const Sidebar = ({
               </div>
               <div>
                 <p className="text-sm text-blue-100">Sesión iniciada como:</p>
-                <p className="font-medium text-white">{user?.email || 'Usuario'}</p>
+                <p className="font-medium text-white">{user?.username || 'Usuario'}</p>
               </div>
             </div>
           </div>

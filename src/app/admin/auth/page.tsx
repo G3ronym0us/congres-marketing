@@ -37,7 +37,7 @@ const Login = () => {
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="w-96 p-6 bg-white rounded shadow">
+      <div className="w-96 p-6 bg-white text-black rounded shadow">
         <div className="flex justify-center mb-4">
           <Image src={logo} className={`inline`} alt="" />
         </div>

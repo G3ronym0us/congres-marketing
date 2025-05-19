@@ -19,7 +19,7 @@ const handleError = (error: any) => {
 
 export async function getMe(token: string) {
   try {
-    const response = await api.get('/auth/refresh', {
+    const response = await api.get('/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

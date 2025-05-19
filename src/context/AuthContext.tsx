@@ -14,8 +14,8 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  user: { token: string, username: string } | null;
+  setUser: React.Dispatch<React.SetStateAction<{ token: string, username: string } | null>>;
   login: (token: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -28,11 +28,12 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ token: string, username: string } | null>(null);
 
   const fetchUser = useCallback(async (token: string) => {
     try {
       const me = await getMe(token);
+      console.log(me);
       setUser({ token, ...me });
     } catch (error) {
       console.error('Error fetching user data:', error);
