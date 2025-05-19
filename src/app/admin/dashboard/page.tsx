@@ -7,7 +7,7 @@ import ReserveTickets from '@/components/tickets/reserve';
 import TicketsTable from '@/components/tickets/table';
 import Navbar from '@/components/NavbarAdmin'; // Importamos nuestro nuevo componente de navbar
 import Sidebar from '@/components/SIdebarAdmin'; // Importamos nuestro nuevo componente de sidebar
-import logo from '../../../../public/images/logo-congress.png';
+import logo from '../../../../public/images/2025/logo.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTableList,
