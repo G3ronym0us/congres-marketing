@@ -21,7 +21,7 @@ const Login = () => {
     setError('');
 
     const payload: LoginUserInput = {
-      email: username,
+      username,
       password,
     };
 

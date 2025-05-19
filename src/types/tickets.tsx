@@ -4,8 +4,15 @@ export enum TicketType {
   DIAMOND = 'diamond',
   VIP = 'vip',
   GENERAL = 'general',
-  STREAMING = 'streaming'
+  STREAMING = 'streaming',
 }
+
+export enum TicketStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  RESERVED = 'RESERVED',
+}
+
 export interface Seat {
   id: number;
   uuid: string;
@@ -80,19 +87,39 @@ export interface UpdateTicketInput {
   role?: string;
 }
 
+export interface FilterGetTicketsInput {
+  status?: TicketStatus[];
+  type?: TicketType[];
+}
+
 export interface AdminCreateTicketInput {
-  type: TicketType;
-  seatNumber: number;
-  seatRow: string;
   reference: string;
+  type: TicketType;
+  name?: string;
+  lastname?: string;
+  document?: string;
+  email?: string;
+  phone?: string;
+  withMemories: boolean;
+}
+
+export interface AdminEditTicketInput {
+  uuid: string;
+  name?: string;
+  lastname?: string;
+  document?: string;
+  email?: string;
+  phone?: string;
+  type?: TicketType;
+  withMemories?: boolean;
 }
 
 export const traductions = {
-  [TicketType.DIAMOND] : 'DIAMANTE',
-  [TicketType.VIP] : 'VIP',
-  [TicketType.GENERAL] : 'GENERAL',
-  [TicketType.STREAMING] : 'STREAMING',
-}
+  [TicketType.DIAMOND]: 'DIAMANTE',
+  [TicketType.VIP]: 'VIP',
+  [TicketType.GENERAL]: 'GENERAL',
+  [TicketType.STREAMING]: 'STREAMING',
+};
 
 export interface FormDataType {
   name: string;
@@ -112,13 +139,24 @@ export interface AttendeeData {
   phone: string;
 }
 
-export interface Ticket {
+export interface CartTicket {
   id: string; // ID único por ticket
   type: TicketType; // El tipo de localidad
   withMemories: boolean;
   price: number;
   priceMemories: number;
   attendee: AttendeeData; // Cada ticket tiene UN asistente
+}
+export interface Ticket {
+  uuid: string; // ID único por ticket
+  reference: string;
+  type: TicketType; // El tipo de localidad
+  withMemories: boolean;
+  name: string;
+  lastname: string;
+  document: string;
+  email: string;
+  phone: string;
 }
 
 export interface LocalidadDetalle {
@@ -129,12 +167,13 @@ export interface LocalidadDetalle {
   icon: string;
   features: string[];
   withMemories: boolean;
+  pushable: boolean;
   noPermiteMemorias?: boolean;
 }
 
 export interface CartItem {
   localidad: TicketType;
-  tickets: Ticket[]; // Lista de tickets individuales
+  tickets: CartTicket[]; // Lista de tickets individuales
 }
 
 export interface CartState {

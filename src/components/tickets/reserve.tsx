@@ -1,282 +1,351 @@
 'use client';
 
-// @ts-nocheck
-'use client';
-
-export default function BuyTickets() {
-  return (
-    <div>
-      <h1>Buy Tickets</h1>
-    </div>
-  );
-}
-
-/*
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/navbar';
-import MapTickets from '@/components/tickets/Map';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCircleArrowLeft,
-  faCirclePlus,
-  faEdit,
-  faRemove,
+  faTicketAlt,
+  faChair,
+  faMapMarkerAlt,
+  faCheckCircle,
+  faExclamationCircle,
+  faUserPlus,
   faSave,
+  faTrash,
+  faEdit,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
 import { BeatLoader } from 'react-spinners';
 import {
   AdminCreateTicketInput,
-  localities,
-  Locality,
   SeatUsed,
   Ticket,
+  TicketType,
 } from '@/types/tickets';
-import { adminSaveTickets, getTicketsApproved } from '@/services/tickets';
+import { adminSaveTickets } from '@/services/tickets';
 import { generateRandomString } from '@/utils/utils';
+import { localidadesData } from '@/data/ticketsData';
+import TicketModal from './Modals/CreateTicket';
 
-export default function ReserveTickets() {
-  const [locality, setLocality] = useState<Locality>();
-  const [pay, setPay] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const ReserveTickets = () => {
+  // Estados para el formulario
   const [loading, setLoading] = useState<boolean>(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [seatRow, setSeatRow] = useState<string | undefined>(undefined);
-  const [seatNumber, setSeatNumber] = useState<number | undefined>(undefined);
-  const [seatsUseds, setSeatsUseds] = useState<SeatUsed[]>([]);
-  const [ticketEdit, setTicketEdit] = useState<AdminCreateTicketInput>();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [ticketEdit, setTicketEdit] = useState<number | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false); // Para modal de confirmación
+  const [ticketStats, setTicketStats] = useState({
+    total: 0,
+    available: 0,
+    reserved: 0,
+  });
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    getSeatsUseds();
-  }, []);
-
-  const getSeatsUseds = async () => {
-    const response = await getTicketsApproved();
-    setSeatsUseds(response);
-  };
-
-  const reserveTicket = async () => {
+  // Función para reservar todos los tickets
+  const handleReserveTickets = async (ticket: AdminCreateTicketInput) => {
     setLoading(true);
+    try {
+      const response = await adminSaveTickets(ticket);
 
-    const response = await adminSaveTickets(tickets);
-
-    if (response.status === 'ok') {
-      getSeatsUseds();
-      clearForm();
-      setTickets([]);
-      setPay(false);
-      setLoading(false);
+      if (response.status === 'ok') {
+        Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Tickets Reservados',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsOpen(false);
+      } else {
+        throw new Error('Error al reservar tickets');
+      }
+    } catch (error) {
+      console.error('Error al reservar tickets:', error);
       Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Asientos Reservados',
-        showConfirmButton: false,
-        timer: 1500,
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron reservar los tickets',
       });
-    } else {
+    } finally {
       setLoading(false);
     }
   };
 
-  const clearForm = () => {
-    setSeatNumber(undefined);
-    setSeatRow(undefined);
-    setLocality(undefined);
-    setTicketEdit(undefined);
+  // Función para editar un ticket existente
+  const editTicket = (index: number) => {
+    const ticket = tickets[index];
+    setTicketEdit(index);
+    setIsOpen(true);
   };
 
-  const toggleModal = (row: string, number: number, locality: Locality) => {
-    setSeatRow(row);
-    setSeatNumber(number);
-    setLocality(locality);
-    setIsOpen(!isOpen);
+  // Función para eliminar un ticket
+  const deleteTicket = (index: number) => {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción no se puede revertir',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newTickets = [...tickets];
+        newTickets.splice(index, 1);
+
+        Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Ticket eliminado',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    });
   };
 
-  const handleSeat = async () => {
-    if (ticketEdit) {
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>{
-          return ticket === ticketEdit
-            ? {
-                ...ticket,
-                type: locality || ticket.type,
-                seatNumber: seatNumber || ticket.seatNumber,
-                seatRow: seatRow || ticket.seatRow,
-                amount: locality ? localities[locality].amount : ticket.amount,
-              }
-            : ticket}
-        )
-      );
-    } else {
-      if (!locality || !seatNumber || !seatRow) return;
-      const reference = await generateRandomString(20);
-      const newTicket = {
-        type: locality,
-        seatNumber,
-        seatRow,
-        amount: localities[locality].amount,
-        reference
-      };
-      setTickets([...tickets, newTicket]);
-    }
-    clearForm();
-    setPay(true);
-    setIsOpen(false);
-  };
-
-  const editSeat = (ticket: AdminCreateTicketInput) => {
-    setTicketEdit(ticket);
-    setLocality(undefined);
-    setSeatRow(undefined);
-    setSeatNumber(undefined);
-    setPay(false);
-  };
-
-  const deleteTicket = (ticket: AdminCreateTicketInput) => {
-    setTickets(tickets.filter((t) => t !== ticket));
-  };
-
-  const bgStyle = {
-    height: '100%',
-    backgroundImage: `url('${process.env.NEXT_PUBLIC_URL}images/locality-bg.png')`,
+  // Función para abrir el modal de agregar ticket
+  const openAddTicketModal = () => {
+    setTicketEdit(null);
+    setErrors({});
+    setIsOpen(true);
   };
 
   return (
-    <>
-      <div className="w-full min-h-screen bg-cover bg-center" style={bgStyle}>
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <img
-              src={`${process.env.NEXT_PUBLIC_URL}images/locality-title.png`}
-              className="w-full max-w-md mx-auto"
-              alt="Mapa de Localidades"
+    <div className="space-y-6">
+      {/* Resumen de tickets */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 flex items-center">
+          <div className="rounded-full bg-blue-100 p-3 mr-4 flex-shrink-0">
+            <FontAwesomeIcon
+              icon={faTicketAlt}
+              className="text-blue-600 h-5 w-5"
             />
           </div>
-
-          <div className="mb-20 lg:mb-0">
-            {!pay && (
-              <div
-                className={`map-container bg-gray-200 overflow-hidden ${
-                  isMobile ? 'h-[600px]' : ''
-                }`}
-              >
-                <MapTickets
-                  toggleModal={toggleModal}
-                  seatUseds={seatsUseds}
-                  isMobile={isMobile}
-                />
-              </div>
-            )}
-            <div className="">
-              {pay && (
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h2 className="text-2xl font-bold mb-4">Boletos Reservados</h2>
-                  {tickets.map((ticket, index) => (
-                    <div key={index} className="mb-4 p-4 border rounded text-black">
-                      <p>
-                        <span className="font-bold">Zona:</span> {ticket.type}
-                      </p>
-                      <p>
-                        <span className="font-bold">Asiento:</span>{' '}
-                        {ticket.seatRow + ticket.seatNumber}
-                      </p>
-                      <div className="mt-2">
-                        <button
-                          onClick={() => editSeat(ticket)}
-                          className="mr-2 text-blue-500 hover:text-blue-700"
-                        >
-                          <FontAwesomeIcon icon={faEdit} className="mr-1" />
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => deleteTicket(ticket)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <FontAwesomeIcon icon={faRemove} className="mr-1" />
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="mt-4">
-                    {loading ? (
-                      <BeatLoader color="#478acf" size={30} />
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setPay(false)}
-                          className="mr-2 bg-gray-500 text-white px-4 py-2 rounded"
-                        >
-                          <FontAwesomeIcon icon={faCirclePlus} className="mr-2" />
-                          Reservar más
-                        </button>
-                        <button
-                          onClick={reserveTicket}
-                          className="bg-blue-500 text-white px-4 py-2 rounded"
-                        >
-                          <FontAwesomeIcon icon={faSave} className="mr-2" />
-                          Confirmar Reserva
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+          <div>
+            <p className="text-sm text-gray-600">Total Asientos</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {ticketStats.total}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 flex items-center">
+          <div className="rounded-full bg-green-100 p-3 mr-4 flex-shrink-0">
+            <FontAwesomeIcon
+              icon={faChair}
+              className="text-green-600 h-5 w-5"
+            />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Disponibles</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {ticketStats.available}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 flex items-center">
+          <div className="rounded-full bg-purple-100 p-3 mr-4 flex-shrink-0">
+            <FontAwesomeIcon
+              icon={faMapMarkerAlt}
+              className="text-purple-600 h-5 w-5"
+            />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Reservados</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {ticketStats.reserved}
+            </p>
           </div>
         </div>
       </div>
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-10 text-black mx-5 lg:mx-0">
-          <div
-            className="fixed inset-0 bg-gray-900 bg-opacity-50"
-            onClick={() => setIsOpen(!isOpen)}
-          ></div>
-          <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
-            <div className="flex justify-end">
+
+      {/* Contenedor principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Formulario de tickets */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <FontAwesomeIcon
+                icon={faTicketAlt}
+                className="mr-2 text-blue-600"
+              />
+              Reservar Tickets
+            </h3>
+
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Para reservar tickets, por favor agrega los datos del asistente
+                y el tipo de ticket deseado.
+              </p>
+
               <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={openAddTicketModal}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
               >
-                <FontAwesomeIcon icon={faTimes} />
+                <FontAwesomeIcon icon={faUserPlus} className="mr-2" />
+                Agregar Nuevo Ticket
               </button>
             </div>
-            <div className="uppercase mb-6 text-lg text-center text-blue-500">
-              Confirmar Reserva de Asiento
-            </div>
-            <div className="grid grid-cols-1">
-              <div className="px-2 mb-4 text-justify text-md text-black">
-                {`¿Estás seguro que deseas reservar el asiento `}
-                <span className="font-bold text-blue-700">
-                  {seatRow + '-' + seatNumber}
-                </span>
-                {`?`}
-              </div>
-              <div className="px-2">
-                <button
-                  onClick={handleSeat}
-                  className="bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4"
-                >
-                  Confirmar
-                </button>
+
+            {/* Información de precios */}
+            <div className="mt-8">
+              <h4 className="font-semibold text-gray-700 mb-3">
+                Precios por Localidad
+              </h4>
+              <div className="space-y-3">
+                {Object.values(TicketType).map(
+                  (type: TicketType, index: number) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <span
+                          className={`w-3 h-3 rounded-full bg-${localidadesData[type].color}-500 mr-2`}
+                        ></span>
+                        <span className="font-medium">
+                          {localidadesData[type].name}
+                        </span>
+                      </div>
+                      <span className="font-bold">
+                        ${localidadesData[type].price}.00
+                      </span>
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Lista de Tickets */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <FontAwesomeIcon
+                icon={faTicketAlt}
+                className="mr-2 text-blue-600"
+              />
+              Tickets Agregados
+            </h3>
+
+            {tickets.length > 0 ? (
+              <div className="space-y-4 mb-6">
+                {tickets.map((ticket, index) => (
+                  <div
+                    key={index}
+                    className="p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between">
+                      <div className="mb-3 sm:mb-0">
+                        <div className="flex items-center mb-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              ticket.type === TicketType.VIP
+                                ? 'bg-purple-100 text-purple-800'
+                                : ticket.type === TicketType.GENERAL
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-green-100 text-green-800'
+                            } inline-block mr-2`}
+                          >
+                            {ticket.type}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            ${localidadesData[ticket.type]?.price}.00
+                          </span>
+                        </div>
+                        <p className="font-medium">
+                          {`${ticket.name} ${ticket.lastname}`.trim() ||
+                            'Sin nombre'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {ticket.email || 'Sin correo'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Doc: {ticket.document || 'Sin documento'}
+                        </p>
+                      </div>
+                      <div className="flex sm:flex-col justify-end space-x-2 sm:space-x-0 sm:space-y-2">
+                        <button
+                          onClick={() => editTicket(index)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                          title="Editar"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button
+                          onClick={() => deleteTicket(index)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Eliminar"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 px-4 bg-gray-50 rounded-lg mb-6">
+                <FontAwesomeIcon
+                  icon={faExclamationCircle}
+                  className="text-gray-400 text-4xl mb-3"
+                />
+                <p className="text-lg text-gray-600 font-medium mb-2">
+                  No hay tickets agregados
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Agrega tickets utilizando el botón en el panel izquierdo
+                </p>
+                <button
+                  onClick={openAddTicketModal}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors inline-flex items-center"
+                >
+                  <FontAwesomeIcon icon={faUserPlus} className="mr-2" />
+                  Agregar Ticket
+                </button>
+              </div>
+            )}
+
+            {tickets.length > 0 && (
+              <div className="mt-6">
+                <div className="border-t border-gray-200 pt-4 pb-2">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-600">Tickets:</span>
+                    <span className="font-medium">{tickets.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-600">Precio por Ticket:</span>
+                    <span className="font-medium">Varía por tipo</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
+                    <span className="font-bold text-lg">Total:</span>
+                    <span className="font-bold text-lg text-blue-600">
+                      $
+                      {tickets.reduce((sum, ticket) => {
+                        const price = localidadesData[ticket.type]?.price || 0;
+                        return sum + price;
+                      }, 0)}
+                      .00
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal para agregar ticket */}
+      {isOpen && (
+        <TicketModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onSave={handleReserveTickets}
+        />
       )}
-    </>
+    </div>
   );
-}*/
+};
+
+export default ReserveTickets;

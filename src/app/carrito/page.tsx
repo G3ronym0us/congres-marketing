@@ -22,10 +22,11 @@ import {
   PRECIO_MEMORIAS,
 } from '@/data/ticketsData';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
-import { AttendeeData, TicketType, Ticket } from '@/types/tickets';
+import { AttendeeData, TicketType } from '@/types/tickets';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { generateReference } from '@/utils/utils';
 
 // Estructura para las etapas de descuento
 interface DescuentoEtapa {
@@ -123,13 +124,8 @@ export default function Carrito() {
 
   // Generar referencia única
   useEffect(() => {
-    const generateReference = () => {
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 10);
-      return `CNP-${timestamp}-${randomStr}`;
-    };
-
-    setReference(generateReference());
+    const reference = generateReference();
+    setReference(reference);
   }, []);
 
   // Verificar inicialmente si Wompi ya está disponible

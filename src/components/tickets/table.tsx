@@ -2,8 +2,6 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import logo from '../../../../public/images/logo-congress.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faEdit,
@@ -11,63 +9,75 @@ import {
   faMailBulk,
   faTimes,
   faTrash,
+  faSearch,
+  faCheck,
+  faExclamationCircle,
+  faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
 import validator from 'validator';
 import InputText from '@/components/form/InputText';
-import Cookies from 'js-cookie';
 import {
   deleteTickets,
   downloadTicket,
   getTicketsApproved,
   resendEmailTicket,
   updateTickets,
+  adminSaveTickets,
+  adminEditTicket,
 } from '@/services/tickets';
-
-type Ticket = {
-  uuid: string;
-  id: number;
-  name: string;
-  lastname: string;
-  email: string;
-  document: string;
-  type: string;
-  role: string;
-  number: number;
-  row: string;
-};
-
-type TicketError = {
-  name?: string;
-  lastname?: string;
-  email?: string;
-  document?: string;
-};
+import {
+  TicketStatus,
+  TicketType,
+  FilterGetTicketsInput,
+  AdminCreateTicketInput,
+  AdminEditTicketInput,
+} from '@/types/tickets';
+import TicketModal from './Modals/CreateTicket';
+import EditTicketModal from './Modals/EditTicket';
+import { Ticket } from '@/types/tickets';
 
 const TicketsTable = () => {
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [data, setData] = React.useState([]);
+  const [data, setData] = React.useState<Ticket[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
-  // Datos de ejemplo
-
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [name, setName] = React.useState('');
   const [lastname, setLastname] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [documentUser, setDocumentUser] = React.useState('');
 
-  const [errors, setErrors]: any = React.useState({});
-  const [ticketEdit, setTicketEdit]: any = React.useState({});
+  const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
+
+  const [filters, setFilters] = React.useState<FilterGetTicketsInput>({
+    status: [TicketStatus.PAID, TicketStatus.RESERVED],
+  });
 
   React.useEffect(() => {
     getTickets();
   }, []);
 
   const getTickets = async () => {
-    const tickets = await getTicketsApproved();
-    setData(tickets);
+    setIsLoading(true);
+    try {
+      const tickets = await getTicketsApproved(filters);
+      setData(tickets);
+    } catch (error) {
+      console.error('Error obteniendo tickets:', error);
+      Swal.fire({
+        position: 'top-end',
+        icon: 'error',
+        title: 'Error al cargar tickets',
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredData = data.filter((item: Ticket) => {
@@ -75,7 +85,8 @@ const TicketsTable = () => {
     return (
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.document?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -91,21 +102,32 @@ const TicketsTable = () => {
   };
 
   const resendEmail = async (uuid: string) => {
-    const response = await resendEmailTicket(uuid);
+    try {
+      const response = await resendEmailTicket(uuid);
 
-    if (response.status === 'ok') {
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Correo enviado',
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    } else {
+      if (response.status === 'ok') {
+        Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Correo enviado',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      } else {
+        Swal.fire({
+          position: 'top-end',
+          icon: 'error',
+          title: 'Correo no enviado',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    } catch (error) {
+      console.error('Error enviando email:', error);
       Swal.fire({
         position: 'top-end',
         icon: 'error',
-        title: 'Correo no enviado',
+        title: 'Error al enviar correo',
         showConfirmButton: false,
         timer: 1500,
       });
@@ -113,86 +135,86 @@ const TicketsTable = () => {
   };
 
   const downloadPDF = async (ticket: Ticket) => {
-    const response = await downloadTicket(ticket.uuid);
+    try {
+      const response = await downloadTicket(ticket.uuid);
 
-    if (response) {
-      const url = window.URL.createObjectURL(response);
-      const link = document.createElement('a');
-      link.href = url;
-      const ticketName = ticket.name
-        ? `${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}`
-        : ticket.uuid;
-      link.setAttribute('download', `CNMP_COLOMBIA_BOLETO(${ticketName}).pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } else {
-      console.error('Error downloading PDF');
+      if (response) {
+        const url = window.URL.createObjectURL(response);
+        const link = document.createElement('a');
+        link.href = url;
+        const ticketName = ticket.name
+          ? `${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}`
+          : ticket.uuid;
+        link.setAttribute(
+          'download',
+          `CNMP_COLOMBIA_BOLETO(${ticketName}).pdf`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else {
+        console.error('Error downloading PDF');
+        Swal.fire({
+          position: 'top-end',
+          icon: 'error',
+          title: 'Error al descargar PDF',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    } catch (error) {
+      console.error('Error descargando PDF:', error);
+      Swal.fire({
+        position: 'top-end',
+        icon: 'error',
+        title: 'Error al descargar PDF',
+        showConfirmButton: false,
+        timer: 1500,
+      });
     }
   };
 
   const deleteTicket = async (uuid: string) => {
-    const response = await deleteTickets(uuid);
+    // Confirmar antes de eliminar
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción no se puede revertir',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
 
-    if (response.status === 'ok') {
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Ticket Eliminado',
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      getTickets();
-    } else {
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Ticket no eliminado',
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-  };
+    if (result.isConfirmed) {
+      try {
+        const response = await deleteTickets(uuid);
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-
-    const newErrors: TicketError = {};
-
-    if (name.trim() === '') newErrors.name = 'Los nombres son requeridos';
-    if (lastname.trim() === '')
-      newErrors.lastname = 'Los apellidos son requeridos';
-    if (!validator.isEmail(email)) newErrors.email = 'El email no es valido';
-    if (documentUser.trim() === '')
-      newErrors.document = 'El documento no es valido';
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      const data: Ticket = {
-        ...ticketEdit,
-        name: name ?? ticketEdit.name,
-        lastname: lastname ?? ticketEdit.lastname,
-        email: email ?? ticketEdit.email,
-        document: documentUser ?? ticketEdit.document,
-      };
-
-      const response = await updateTickets(data);
-
-      if (response.status === 'ok') {
-        Swal.fire({
-          position: 'top-end',
-          icon: 'success',
-          title: 'Ticket editado',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-        getTickets();
-        setIsOpen(!isOpen);
-      } else {
+        if (response.status === 'ok') {
+          Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: 'Ticket Eliminado',
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          getTickets();
+        } else {
+          Swal.fire({
+            position: 'top-end',
+            icon: 'error',
+            title: 'Ticket no eliminado',
+            showConfirmButton: false,
+            timer: 1500,
+          });
+        }
+      } catch (error) {
+        console.error('Error eliminando ticket:', error);
         Swal.fire({
           position: 'top-end',
           icon: 'error',
-          title: 'Ticket no editado',
+          title: 'Error al eliminar ticket',
           showConfirmButton: false,
           timer: 1500,
         });
@@ -201,178 +223,354 @@ const TicketsTable = () => {
   };
 
   const editTicket = (ticket: Ticket) => {
-    setIsOpen(!isOpen);
+    setIsOpenEdit(true);
     setTicketEdit(ticket);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setDocumentUser(ticket.document);
-    setEmail(ticket.email);
+  };
+
+  const handleReserveTickets = async (ticket: AdminCreateTicketInput) => {
+    setIsLoading(true);
+    try {
+      const response = await adminSaveTickets(ticket);
+
+      if (response.status === 'ok') {
+        Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Tickets Reservados',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsOpen(false);
+        getTickets();
+      } else {
+        throw new Error('Error al reservar tickets');
+      }
+    } catch (error) {
+      console.error('Error al reservar tickets:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron reservar los tickets',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditTicket = async (ticket: AdminEditTicketInput) => {
+    setIsLoading(true);
+    try {
+      const response = await adminEditTicket(ticket);
+
+      if (response.status === 'ok') {
+        Swal.fire({
+          position: 'top-end',
+          icon: 'success',
+          title: 'Tickets Reservados',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        setIsOpenEdit(false);
+        getTickets();
+      } else {
+        throw new Error('Error al reservar tickets');
+      }
+    } catch (error) {
+      console.error('Error al reservar tickets:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron reservar los tickets',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <>
-      <div className="bg-gray-100 w-full py-10 px-20 text-black">
-        <div className=" bg-white p-4 mt-10 rounded-lg">
-          <div className=" mt-4 w-full">
-            <input
-              type="text"
-              placeholder="Buscar"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            />
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      {/* Cabecera con búsqueda */}
+      <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Lista de Tickets
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative flex-grow">
+              <FontAwesomeIcon
+                icon={faSearch}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Buscar ticket..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+              />
+            </div>
+            <button
+              onClick={() => setIsOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
+            >
+              <FontAwesomeIcon icon={faPlus} className="mr-2" />
+              <span>Nuevo Ticket</span>
+            </button>
           </div>
-          <table className="min-w-full bg-white m-2 text-center">
+        </div>
+      </div>
+
+      {/* Tabla de tickets - Versión escritorio */}
+      <div className="hidden md:block overflow-x-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <FontAwesomeIcon
+              icon={faExclamationCircle}
+              className="text-gray-400 text-4xl mb-2"
+            />
+            <p>No hay tickets disponibles</p>
+          </div>
+        ) : (
+          <table className="min-w-full bg-white">
             <thead>
-              <tr>
-                <th className="py-2">Documento</th>
-                <th className="py-2">Nombre</th>
-                <th className="py-2">Localidad</th>
-                <th className="py-2">Asiento</th>
-                <th className="py-2">Opciones</th>
+              <tr className="bg-gray-50 text-gray-600 text-sm leading-normal">
+                <th className="py-3 px-6 text-center">Documento</th>
+                <th className="py-3 px-6 text-center">Nombre</th>
+                <th className="py-3 px-6 text-center">Email</th>
+                <th className="py-3 px-6 text-center">Localidad</th>
+                <th className="py-3 px-6 text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-gray-600 text-sm">
               {currentItems.map((item: Ticket) => (
-                <tr key={item.id}>
-                  <td className="py-2">{item.document}</td>
-                  <td className="py-2">
-                    {!item.name
-                      ? 'Reservada'
-                      : item.lastname?.toUpperCase() + ', ' + item.name}
+                <tr
+                  key={item.uuid}
+                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="py-3 px-6 text-left whitespace-nowrap font-medium">
+                    {item.document}
                   </td>
-                  <td className="py-2">{item.type}</td>
-                  <td className="py-2">{item.row + `-` + item.number}</td>
-                  <td className="py-2">
-                    <FontAwesomeIcon
-                      onClick={() => resendEmail(item.uuid)}
-                      icon={faMailBulk}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => downloadPDF(item)}
-                      icon={faFileDownload}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => editTicket(item)}
-                      icon={faEdit}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => deleteTicket(item.uuid)}
-                      icon={faTrash}
-                      className="text-red-500 cursor-pointer"
-                    />
+                  <td className="py-3 px-6 text-left">
+                    <div className="font-medium">
+                      {!item.name
+                        ? 'Reservada'
+                        : item.lastname?.toUpperCase() + ', ' + item.name}
+                    </div>
+                  </td>
+                  <td className="py-3 px-6 text-left text-gray-500">
+                    {item.email}
+                  </td>
+                  <td className="py-3 px-6 text-center">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs text-center ${
+                        item.type === TicketType.VIP
+                          ? 'bg-purple-100 text-purple-800'
+                          : item.type === TicketType.GENERAL
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {item.type.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="py-3 px-6 text-center">
+                    <div className="flex item-center justify-center space-x-4">
+                      <button
+                        onClick={() => resendEmail(item.uuid)}
+                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                        title="Reenviar correo"
+                      >
+                        <FontAwesomeIcon icon={faMailBulk} />
+                      </button>
+                      <button
+                        onClick={() => downloadPDF(item)}
+                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                        title="Descargar PDF"
+                      >
+                        <FontAwesomeIcon icon={faFileDownload} />
+                      </button>
+                      <button
+                        onClick={() => editTicket(item)}
+                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                        title="Editar ticket"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => deleteTicket(item.uuid)}
+                        className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
+                        title="Eliminar ticket"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="mt-6 text-right pr-6">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => handleChangePage(i + 1)}
-                className={`px-3 py-1 border ${
-                  currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-white'
-                }`}
+        )}
+      </div>
+
+      {/* Vista móvil de tickets - Tarjetas */}
+      <div className="md:hidden">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <FontAwesomeIcon
+              icon={faExclamationCircle}
+              className="text-gray-400 text-4xl mb-2"
+            />
+            <p>No hay tickets disponibles</p>
+          </div>
+        ) : (
+          <div className="space-y-4 p-4">
+            {currentItems.map((item: Ticket) => (
+              <div
+                key={item.uuid}
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
               >
-                {i + 1}
-              </button>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">
+                      {!item.name
+                        ? 'Reservada'
+                        : item.lastname?.toUpperCase() + ', ' + item.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">{item.email}</p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs ${
+                      item.type === TicketType.VIP
+                        ? 'bg-purple-100 text-purple-800'
+                        : item.type === TicketType.GENERAL
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {item.type}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div className="text-sm">
+                    <span className="text-gray-500">Doc:</span>
+                    <span className="font-medium ml-1">{item.document}</span>
+                  </div>
+
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => resendEmail(item.uuid)}
+                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                      aria-label="Reenviar correo"
+                    >
+                      <FontAwesomeIcon icon={faMailBulk} />
+                    </button>
+                    <button
+                      onClick={() => downloadPDF(item)}
+                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                      aria-label="Descargar PDF"
+                    >
+                      <FontAwesomeIcon icon={faFileDownload} />
+                    </button>
+                    <button
+                      onClick={() => editTicket(item)}
+                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
+                      aria-label="Editar ticket"
+                    >
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button
+                      onClick={() => deleteTicket(item.uuid)}
+                      className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
+                      aria-label="Eliminar ticket"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-10 text-black">
-          <div
-            className="fixed inset-0 bg-gray-900 bg-opacity-50"
-            onClick={() => setIsOpen(!isOpen)}
-          ></div>
-          <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
-            <div className="flex justify-end">
+
+      {/* Paginación */}
+      {!isLoading && data.length > 0 && (
+        <div className="p-4 flex items-center justify-center sm:justify-end">
+          <div className="flex flex-wrap justify-center gap-1">
+            {totalPages > 5 && currentPage > 3 && (
               <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => handleChangePage(1)}
+                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
               >
-                <FontAwesomeIcon icon={faTimes} />
+                1
               </button>
-            </div>
-            <div className="uppercase mb-6 text-lg text-center text-blue-500">
-              Editar Ticket
-            </div>
-            <div className="grid grid-cols-1">
-              <form className="grid grid-cols-1" onSubmit={handleSubmit}>
-                <div className="px-2 mb-4 text-justify text-md">
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Nombres</label>
-                    <InputText
-                      value={name}
-                      error={errors.name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                    {errors.name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                    )}
-                  </div>
+            )}
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Apellidos</label>
-                    <InputText
-                      value={lastname}
-                      error={errors.lastname}
-                      onChange={(e) => setLastname(e.target.value)}
-                    />
-                    {errors.lastname && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.lastname}
-                      </p>
-                    )}
-                  </div>
+            {totalPages > 5 && currentPage > 3 && (
+              <span className="px-2 py-1 text-gray-500">...</span>
+            )}
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Correo</label>
-                    <InputText
-                      value={email}
-                      error={errors.email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((page) => {
+                if (totalPages <= 5) return true;
+                return page >= currentPage - 1 && page <= currentPage + 1;
+              })
+              .map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handleChangePage(page)}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  } transition-colors`}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              ))}
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Documento:</label>
-                    <InputText
-                      value={documentUser}
-                      error={errors.document}
-                      onChange={(e) => setDocumentUser(e.target.value)}
-                    />
-                    {errors.document && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.document}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="px-2">
-                  <button
-                    onClick={handleSubmit}
-                    className="bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4"
-                  >
-                    Confirmar
-                  </button>
-                </div>
-              </form>
-            </div>
+            {totalPages > 5 && currentPage < totalPages - 2 && (
+              <span className="px-2 py-1 text-gray-500">...</span>
+            )}
+
+            {totalPages > 5 && currentPage < totalPages - 2 && (
+              <button
+                onClick={() => handleChangePage(totalPages)}
+                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              >
+                {totalPages}
+              </button>
+            )}
           </div>
         </div>
       )}
-    </>
+
+      {isOpen && (
+        <TicketModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onSave={handleReserveTickets}
+        />
+      )}
+      {isOpenEdit && ticketEdit && (
+        <EditTicketModal
+          isOpen={isOpenEdit}
+          onClose={() => setIsOpenEdit(false)}
+          onSave={handleEditTicket}
+          ticket={ticketEdit}
+        />
+      )}
+    </div>
   );
 };
 

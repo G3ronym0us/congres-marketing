@@ -15,7 +15,8 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
       'Acceso a las memorias del evento',
       'Certificación de participación digital'
     ],
-    withMemories: true
+    withMemories: true,
+    pushable: true,
   },
   [TicketType.VIP]: {
     name: 'Localidad V.I.P.',
@@ -29,7 +30,8 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
       'Ingreso al cóctel oficial del evento',
       'Certificación de participación digital'
     ],
-    withMemories: false
+    withMemories: false,
+    pushable: true
   },
   [TicketType.GENERAL]: {
     name: 'Localidad General',
@@ -42,7 +44,8 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
       'Derecho a 4 coffee break en el evento',
       'Certificación de participación digital'
     ],
-    withMemories: false
+    withMemories: false,
+    pushable: true
   },
   [TicketType.STREAMING]: {
     name: 'Streaming del Evento',
@@ -51,12 +54,12 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     border: 'border-white/20',
     icon: '🌐',
     features: [
-      'Ingreso virtual a todas las jornadas del CNMP 2024',
+      'Ingreso virtual a todas las jornadas del CNMP 2025',
       'Acceso por grupo cerrado de Facebook',
       'Certificación de participación digital'
     ],
     withMemories: false,
-    noPermiteMemorias: true
+    pushable: true
   },
   // Añadimos opción solo memorias (no usamos el enum porque no es un tipo de ticket estándar)
   'memorias': {
@@ -71,8 +74,10 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
       'Material adicional exclusivo',
       'Acceso digital permanente'
     ],
-    withMemories: true
-  }
+    withMemories: true,
+    pushable: true,
+    noPermiteMemorias: true,
+  },
 };
 
 export const PRECIO_MEMORIAS = 250000;

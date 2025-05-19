@@ -6,6 +6,8 @@ import {
   BoldIntegrityHashInput,
   UpdateTicketInput,
   AdminCreateTicketInput,
+  FilterGetTicketsInput,
+  AdminEditTicketInput,
 } from '@/types/tickets'; // Asegúrate de que estas importaciones sean correctas
 
 const token = Cookies.get('token');
@@ -56,11 +58,35 @@ export async function getIntegrityHash(data: BoldIntegrityHashInput) {
   }
 }
 
-export async function getTicketsApproved() {
+export async function getTicketsApproved(filter: FilterGetTicketsInput) {
   try {
     const response = await api.get('/admin/tickets', {
+      params: filter,
       headers: { Authorization: `Bearer ${token}` },
+      paramsSerializer: params => {
+        // Crear un array para almacenar los pares clave-valor
+        const queryParams: string[] = [];
+        
+        // Procesar los arrays correctamente
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            // Para cada valor en el array, añadir un parámetro con el mismo nombre
+            value.forEach(val => {
+              if (val !== undefined && val !== null) {
+                queryParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+              }
+            });
+          } else if (value !== undefined && value !== null) {
+            // Para valores no-array, añadir el parámetro normalmente
+            queryParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+          }
+        });
+        
+        // Unir todos los pares con &
+        return queryParams.join('&');
+      }
     });
+    
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -126,9 +152,22 @@ export async function resendEmailTicket(
   }
 }
 
-export async function adminSaveTickets(data: AdminCreateTicketInput[]) {
+export async function adminSaveTickets(data: AdminCreateTicketInput) {
   try {
     const response = await api.post('/admin/tickets/create', data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function adminEditTicket(data: AdminEditTicketInput) {
+  try {
+    const response = await api.post('/admin/tickets/update', data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

@@ -35,7 +35,8 @@ export default function DetallesCompra() {
         'Acceso a las memorias del evento',
         'Certificación de participación digital'
       ],
-      withMemories: true
+      withMemories: true,
+      pushable: true    
     },
     vip: {
       name: 'Localidad V.I.P.',
@@ -49,7 +50,8 @@ export default function DetallesCompra() {
         'Ingreso al cóctel oficial del evento',
         'Certificación de participación digital'
       ],
-      withMemories: false
+      withMemories: false,
+      pushable: true
     },
     general: {
       name: 'Localidad General',
@@ -62,7 +64,8 @@ export default function DetallesCompra() {
         'Derecho a 4 coffee break en el evento',
         'Certificación de participación digital'
       ],
-      withMemories: false
+      withMemories: false,
+      pushable: true
     },
     streaming: {
       name: 'Streaming del Evento',
@@ -76,7 +79,8 @@ export default function DetallesCompra() {
         'Certificación de participación digital'
       ],
       withMemories: false,
-      noPermiteMemorias: true
+      noPermiteMemorias: true,
+      pushable: true
     }
   };
 
