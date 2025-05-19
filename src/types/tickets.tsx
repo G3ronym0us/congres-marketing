@@ -157,6 +157,7 @@ export interface Ticket {
   document: string;
   email: string;
   phone: string;
+  qrUrl: string;
 }
 
 export interface LocalidadDetalle {

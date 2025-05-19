@@ -3,7 +3,7 @@
 import Footer from '@/components/Footer';
 import Navbar from '@/components/navbar';
 import { downloadCertificate, getTicket } from '@/services/tickets';
-import { Seat, traductions } from '@/types/tickets';
+import { Seat, Ticket, traductions } from '@/types/tickets';
 import {
   faChair,
   faDownload,
@@ -28,7 +28,7 @@ export default function TicketDetailPage() {
   const params = useParams();
 
   const [uuid, setUuid] = useState<string>();
-  const [ticket, setTicket] = useState<Seat>();
+  const [ticket, setTicket] = useState<Ticket>();
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
@@ -241,7 +241,7 @@ export default function TicketDetailPage() {
                       <div className="bg-white p-4 rounded-lg inline-block shadow-md">
                         {/* Este div simula el código QR - En un caso real sería generado dinámicamente */}
                         <div className="w-40 h-40 bg-gray-200 flex items-center justify-center text-gray-400">
-                          Código QR
+                          <img src={ticket.qrUrl} alt="Código QR" />
                         </div>
                       </div>
                       <p className="mt-4 text-gray-600 text-sm">
