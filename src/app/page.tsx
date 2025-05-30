@@ -15,7 +15,12 @@ import TestimonialSection from '@/components/testimonials/TestimonialSection';
 import TicketsSection from '@/components/tickets/TicketsSections';
 import ContactSection from '@/components/contactSection';
 import ConferencistasSection from '@/components/ConferencistasSection';
+import { TicketType } from '@/types/tickets';
+import { useRouter } from 'next/navigation';
+
 export default function Landing() {
+  const router = useRouter();
+
   const [days, setDays] = useState(0);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
@@ -66,9 +71,10 @@ export default function Landing() {
     'O simplemente… eres alguien que no le tiene miedo al poder, sino a no saber usarlo.',
   ];
 
-  // Mensaje para los tooltips de compra
-  const mensajeCompra =
-    'Para realizar la compra, comunícate directamente con los administradores al WhatsApp: +57 318 120 0000';
+    const handleButtonClick = (localidadId: TicketType) => {
+      // Redireccionar a la página de detalles de compra con la localidad seleccionada
+      router.push(`/quantity-select?localidad=${localidadId}`);
+    };
 
   return (
     <>
@@ -160,20 +166,12 @@ export default function Landing() {
                 <div className="flex flex-col md:flex-row gap-4 mt-8 justify-center md:justify-start">
                   <div className="relative inline-block">
                     <button
-                      className="text-white font-semibold bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-center px-8 py-4 rounded-lg shadow-lg opacity-75 cursor-not-allowed"
-                      onMouseEnter={() => setShowTooltip(true)}
-                      onMouseLeave={() => setShowTooltip(false)}
-                      onClick={(e) => e.preventDefault()}
-                      title={mensajeCompra}
+                      className="text-white font-semibold bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-center px-8 py-4 rounded-lg shadow-lg "
+                      onClick={() => handleButtonClick(TicketType.DIAMOND)}
                     >
                       <FontAwesomeIcon icon={faTicket} className="mr-2" />
                       Inscríbete Ahora
                     </button>
-                    {showTooltip && (
-                      <div className="absolute z-50 w-72 px-4 py-2 mt-2 text-white bg-gray-900 rounded-lg shadow-lg">
-                        <p className="text-sm">{mensajeCompra}</p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -304,10 +302,10 @@ export default function Landing() {
         </section>
         
         {/* Entradas */}
-        <TicketsSection />
+        <TicketsSection handleButtonClick={handleButtonClick} />
         
         {/* Testimonios */}
-        <TestimonialSection mensajeCompra={mensajeCompra} />
+        <TestimonialSection handleButtonClick={handleButtonClick} />
 
         {/* Aliados */}
         <section

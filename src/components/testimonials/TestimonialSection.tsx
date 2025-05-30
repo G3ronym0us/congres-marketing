@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCarouselTouchEvents } from '@/hooks/useCarouselTouchEvents';
+import { TicketType } from '@/types/tickets';
 
 const testimonials = [
   {
@@ -43,8 +44,11 @@ const testimonials = [
   }
 ];
 
-export default function TestimonialsSection({ mensajeCompra }: { mensajeCompra: string }) {
-  const [showTooltip, setShowTooltip] = useState(false);
+interface TestimonialsSectionProps {
+  handleButtonClick: (localidadId: TicketType) => void;
+}
+
+export default function TestimonialsSection({ handleButtonClick }: TestimonialsSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const displayCount = 3; // Número de testimonios visibles en desktop
   
@@ -193,18 +197,10 @@ export default function TestimonialsSection({ mensajeCompra }: { mensajeCompra: 
           <div className="relative inline-block mt-6">
             <button
               className="bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-8 rounded-lg hover:shadow-lg transition-all duration-300"
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
-              onClick={(e) => e.preventDefault()}
-              title={mensajeCompra}
+              onClick={() => handleButtonClick(TicketType.DIAMOND)}
             >
               Reserva tu lugar
             </button>
-            {showTooltip && (
-              <div className="absolute z-10 w-72 px-4 py-2 mt-2 text-white bg-gray-900 rounded-lg shadow-lg">
-                <p className="text-sm">{mensajeCompra}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

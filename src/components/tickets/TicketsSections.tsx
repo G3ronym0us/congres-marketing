@@ -7,14 +7,13 @@ import { useRouter } from 'next/navigation';
 import { TicketType } from '@/types/tickets';
 import { useCart } from '@/context/CartContext';
 
-export default function TicketsSection() {
+interface TicketsSectionProps {
+  handleButtonClick: (localidadId: TicketType) => void;
+}
+
+export default function TicketsSection({ handleButtonClick }: TicketsSectionProps) {
   const router = useRouter();
   const { state } = useCart();
-
-  const handleButtonClick = (localidadId: TicketType) => {
-    // Redireccionar a la página de detalles de compra con la localidad seleccionada
-    router.push(`/quantity-select?localidad=${localidadId}`);
-  };
 
   const handleCartClick = () => {
     router.push('/carrito');
