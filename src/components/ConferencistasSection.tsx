@@ -6,6 +6,7 @@ import {
   getInternationalWithTitle,
   getNationalWithTitle,
 } from '@/services/user';
+import { Lecturer } from '@/types/lecturer';
 
 const ConferencistasSection = () => {
   const [internationalLecturers, setInternationalLecturers] = useState<
