@@ -17,6 +17,7 @@ import {
   faCalendarAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
+import Lecturers from '@/components/admin/Lecturers';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: faChartBar },
     { id: 'table', label: 'Tabla de Tickets', icon: faTableList },
+    { id: 'lecturers', label: 'Conferencistas', icon: faUser },
   ];
 
   // Cierra el sidebar automáticamente cuando la pantalla se hace grande
@@ -151,10 +153,10 @@ export default function Dashboard() {
             </div>
           )}
           
-          {/* Reservar Tickets */}
-          {activeTab === 'reserve' && (
+          {/* Conferencistas */}
+          {activeTab === 'lecturers' && (
             <div>
-              <ReserveTickets />
+              <Lecturers />
             </div>
           )}
         </main>
