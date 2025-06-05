@@ -119,3 +119,11 @@ export async function uploadImage(id: number, file: File): Promise<Lecturer> {
   });
   return response;
 }
+
+export async function getLecturerByAlt(alt: string): Promise<Lecturer> {
+  const response = await api.get(`/lecturers/alt/${alt}`).then((res) => res.data).catch((err) => {
+    console.error('Error fetching lecturer by alt:', err);
+    return [];
+  });
+  return response;
+}

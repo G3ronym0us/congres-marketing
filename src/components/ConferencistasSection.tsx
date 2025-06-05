@@ -7,8 +7,10 @@ import {
   getNationalWithTitle,
 } from '@/services/user';
 import { Lecturer } from '@/types/lecturer';
+import { useRouter } from 'next/navigation';
 
 const ConferencistasSection = () => {
+  const router = useRouter();
   const [internationalLecturers, setInternationalLecturers] = useState<
     Lecturer[]
   >([]);
@@ -90,7 +92,7 @@ const ConferencistasSection = () => {
       : 'w-64 flex-shrink-0 snap-center bg-gradient-to-br from-[#1C2C67]/20 to-[#4B0012]/20 backdrop-filter backdrop-blur-sm p-4 rounded-xl border border-gray-800';
 
     return (
-      <div className={cardClass}>
+      <div className={`cursor-pointer ${cardClass}`} onClick={() => router.push(`/lecturer/${lecturer.alt}`)}>
         <div className={isLarge ? 'p-6' : ''}>
           <div className="flex items-center mb-3">
             <h3
