@@ -86,7 +86,8 @@ const TicketsTable = () => {
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.phone?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -341,6 +342,7 @@ const TicketsTable = () => {
                 <th className="py-3 px-6 text-center">Documento</th>
                 <th className="py-3 px-6 text-center">Nombre</th>
                 <th className="py-3 px-6 text-center">Email</th>
+                <th className="py-3 px-6 text-center">Teléfono</th>
                 <th className="py-3 px-6 text-center">Localidad</th>
                 <th className="py-3 px-6 text-center">Acciones</th>
               </tr>
@@ -363,6 +365,9 @@ const TicketsTable = () => {
                   </td>
                   <td className="py-3 px-6 text-left text-gray-500">
                     {item.email}
+                  </td>
+                  <td className="py-3 px-6 text-left text-gray-500">
+                    {item.phone || 'No registrado'}
                   </td>
                   <td className="py-3 px-6 text-center">
                     <span
@@ -445,6 +450,7 @@ const TicketsTable = () => {
                         : item.lastname?.toUpperCase() + ', ' + item.name}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">{item.email}</p>
+                    <p className="text-sm text-gray-500">{item.phone || 'No registrado'}</p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs ${

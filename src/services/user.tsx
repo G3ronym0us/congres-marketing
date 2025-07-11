@@ -4,13 +4,14 @@ import { LoginUserInput } from '@/types/user';
 import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
 
-const token = Cookies.get('token');
-
 // Crear una instancia de Axios con configuración común
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true, // Importante para CORS con credenciales
 });
+
+// Función para obtener el token dinámicamente
+const getToken = () => Cookies.get('token');
 
 // Función de ayuda para manejar errores
 const handleError = (error: any) => {
@@ -32,9 +33,18 @@ export async function getMe(token: string) {
 export async function loginUser(user: LoginUserInput) {
   try {
     const response = await api.post('/auth/login', user);
-    return response.data;
-  } catch (error) {
-    return handleError(error);
+    
+    // La respuesta real del backend: { status: "ok", token: "..." }
+    return {
+      status: response.data.status || 'ok',
+      token: response.data.token
+    };
+  } catch (error: any) {
+    console.error('Login error:', error.response?.data || error.message);
+    return {
+      status: 'fail',
+      error: error.response?.data?.message || 'Credenciales inválidas'
+    };
   }
 }
 

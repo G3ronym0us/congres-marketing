@@ -40,6 +40,7 @@ const TicketModal: React.FC<TicketModalProps> = ({
       lastname: '',
       email: '',
       document: '',
+      phone: '',
       type: 'General' as TicketType,
       withMemories: false,
     },
@@ -219,6 +220,37 @@ const TicketModal: React.FC<TicketModalProps> = ({
               <p className="text-red-500 text-xs mt-1 flex items-center">
                 <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
                 {errors.document.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Teléfono
+            </label>
+            <Controller
+              name="phone"
+              control={control}
+              rules={{
+                pattern: {
+                  value: /^\+?[1-9]\d{1,14}$/,
+                  message: 'El formato de teléfono no es válido (ej: +57123456789)',
+                },
+              }}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="tel"
+                  className={`w-full border ${errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  placeholder="+57123456789"
+                  aria-invalid={errors.phone ? 'true' : 'false'}
+                />
+              )}
+            />
+            {errors.phone && (
+              <p className="text-red-500 text-xs mt-1 flex items-center">
+                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
+                {errors.phone.message}
               </p>
             )}
           </div>

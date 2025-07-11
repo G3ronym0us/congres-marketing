@@ -33,37 +33,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUser = useCallback(async (token: string) => {
     try {
       const me = await getMe(token);
-      console.log(me);
+      console.log('User data from /auth/me:', me);
       setUser({ token, ...me });
+      // Guardar en localStorage para persistencia
+      localStorage.setItem('user', JSON.stringify(me));
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // En caso de error, limpiar tokens
+      Cookies.remove('token');
+      localStorage.removeItem('user');
       setUser(null);
     }
   }, []);
 
+  // Verificar si hay un token guardado al inicializar
   useEffect(() => {
     const token = Cookies.get('token');
     if (token) {
+      // Intentar obtener datos frescos del servidor
       fetchUser(token);
     }
   }, [fetchUser]);
 
   const login = useCallback(async (token: string) => {
-    Cookies.set('token', token);
-    await fetchUser(token);
+    try {
+      // Establecer el token en las cookies
+      Cookies.set('token', token, {
+        expires: 1, // 1 día
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production'
+      });
+      
+      // Obtener datos del usuario desde /auth/me
+      await fetchUser(token);
+    } catch (error) {
+      console.error('Error during login:', error);
+      // En caso de error, limpiar el token
+      Cookies.remove('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      throw error;
+    }
   }, [fetchUser]);
 
   const logout = useCallback(() => {
     Cookies.remove('token');
+    localStorage.removeItem('user');
     setUser(null);
   }, []);
 
   const refreshUser = useCallback(async () => {
     const token = Cookies.get('token');
-    if (token) {
-      await fetchUser(token);
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser({ token, ...userData });
+      } catch (error) {
+        console.error('Error refreshing user:', error);
+        logout();
+      }
     }
-  }, [fetchUser]);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, login, logout, refreshUser }}>

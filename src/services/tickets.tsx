@@ -10,12 +10,13 @@ import {
   AdminEditTicketInput,
 } from '@/types/tickets'; // Asegúrate de que estas importaciones sean correctas
 
-const token = Cookies.get('token');
-
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
 });
+
+// Función para obtener el token dinámicamente
+const getToken = () => Cookies.get('token');
 
 const handleError = (error: any) => {
   console.error('API Error:', error.response?.data || error.message);
@@ -60,6 +61,7 @@ export async function getIntegrityHash(data: BoldIntegrityHashInput) {
 
 export async function getTicketsApproved(filter: FilterGetTicketsInput) {
   try {
+    const token = getToken();
     const response = await api.get('/admin/tickets', {
       params: filter,
       headers: { Authorization: `Bearer ${token}` },
@@ -95,6 +97,7 @@ export async function getTicketsApproved(filter: FilterGetTicketsInput) {
 
 export async function updateTickets(data: UpdateTicketInput) {
   try {
+    const token = getToken();
     const response = await api.post('admin/tickets/update', data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -108,6 +111,7 @@ export async function updateTickets(data: UpdateTicketInput) {
 
 export async function deleteTickets(uuid: string) {
   try {
+    const token = getToken();
     const response = await api.post(
       'admin/tickets/delete',
       { uuid },
@@ -125,6 +129,7 @@ export async function deleteTickets(uuid: string) {
 
 export async function downloadTicket(uuid: string): Promise<Blob> {
   try {
+    const token = getToken();
     const response = await api.get(`/admin/ticket/download/${uuid}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -141,6 +146,7 @@ export async function resendEmailTicket(
   uuid: string,
 ): Promise<{ status: string }> {
   try {
+    const token = getToken();
     const response = await api.get(`/admin/ticket/email/resend/${uuid}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -154,6 +160,7 @@ export async function resendEmailTicket(
 
 export async function adminSaveTickets(data: AdminCreateTicketInput) {
   try {
+    const token = getToken();
     const response = await api.post('/admin/tickets/create', data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -167,6 +174,7 @@ export async function adminSaveTickets(data: AdminCreateTicketInput) {
 
 export async function adminEditTicket(data: AdminEditTicketInput) {
   try {
+    const token = getToken();
     const response = await api.post('/admin/tickets/update', data, {
       headers: {
         Authorization: `Bearer ${token}`,

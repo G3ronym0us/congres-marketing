@@ -14,14 +14,17 @@ import {
   faTicketAlt,
   faChartBar,
   faUser,
-  faCalendarAlt
+  faCalendarAlt,
+  faComments
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
 import Lecturers from '@/components/admin/Lecturers';
+import TestimonialsAdmin from '@/app/admin/testimonials/page';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
     totalTickets: 568,
     attendees: 324,
@@ -30,11 +33,28 @@ export default function Dashboard() {
   const auth = useContext(AuthContext);
   const router = useRouter();
 
+  // Esperar a que el contexto de autenticación se inicialice
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAuthLoading(false);
+    }, 1000); // Dar tiempo para que se cargue la autenticación
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Verificar autenticación después de que se cargue
+  useEffect(() => {
+    if (!isAuthLoading && !auth?.user) {
+      router.push('/admin/auth');
+    }
+  }, [isAuthLoading, auth?.user, router]);
+
   // Elementos del menú principal
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: faChartBar },
     { id: 'table', label: 'Tabla de Tickets', icon: faTableList },
     { id: 'lecturers', label: 'Conferencistas', icon: faUser },
+    { id: 'testimonials', label: 'Testimonios', icon: faComments },
   ];
 
   // Cierra el sidebar automáticamente cuando la pantalla se hace grande
@@ -63,10 +83,29 @@ export default function Dashboard() {
     switch(activeTab) {
       case 'dashboard': return 'Dashboard de Administración';
       case 'table': return 'Gestión de Tickets';
+      case 'lecturers': return 'Gestión de Conferencistas';
+      case 'testimonials': return 'Gestión de Testimonios';
       case 'reserve': return 'Reservar Tickets';
       default: return 'Panel de Administración';
     }
   };
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-screen bg-gray-50 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario autenticado después del loading, no renderizar nada (se redirigirá)
+  if (!auth?.user) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -157,6 +196,13 @@ export default function Dashboard() {
           {activeTab === 'lecturers' && (
             <div>
               <Lecturers />
+            </div>
+          )}
+          
+          {/* Testimonios */}
+          {activeTab === 'testimonials' && (
+            <div>
+              <TestimonialsAdmin />
             </div>
           )}
         </main>

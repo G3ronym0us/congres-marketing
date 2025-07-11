@@ -22,6 +22,7 @@ type Ticket = {
   lastname: string;
   email: string;
   document: string;
+  phone: string;
   type: string;
   role: string;
   number: number;
@@ -49,6 +50,7 @@ const Tickets = () => {
   const [lastname, setLastname] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [documentUser, setDocumentUser] = React.useState("");
+  const [phone, setPhone] = React.useState("");
 
   const [errors, setErrors]: any = React.useState({});
   const [ticketEdit, setTicketEdit]: any = React.useState({});
@@ -82,7 +84,8 @@ const Tickets = () => {
     return (
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.document?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.phone?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -204,6 +207,7 @@ const Tickets = () => {
         lastname: lastname ?? ticketEdit.lastname,
         email: email ?? ticketEdit.email,
         document: documentUser ?? ticketEdit.document,
+        phone: phone ?? ticketEdit.phone,
       };
 
       const url =
@@ -246,6 +250,7 @@ const Tickets = () => {
     setLastname(ticket.lastname);
     setDocumentUser(ticket.document);
     setEmail(ticket.email);
+    setPhone(ticket.phone || "");
   };
 
   return (
@@ -266,6 +271,7 @@ const Tickets = () => {
               <tr>
                 <th className="py-2">Documento</th>
                 <th className="py-2">Nombre</th>
+                <th className="py-2">Teléfono</th>
                 <th className="py-2">Localidad</th>
                 <th className="py-2">Asiento</th>
                 <th className="py-2">Opciones</th>
@@ -280,6 +286,7 @@ const Tickets = () => {
                       ? "Reservada"
                       : item.lastname?.toUpperCase() + ", " + item.name}
                   </td>
+                  <td className="py-2">{item.phone || 'No registrado'}</td>
                   <td className="py-2">{item.type}</td>
                   <td className="py-2">{item.row + `-` + item.number}</td>
                   <td className="py-2">
@@ -396,6 +403,14 @@ const Tickets = () => {
                         {errors.document}
                       </p>
                     )}
+                  </div>
+
+                  <div className="grid grid-cols-1 mb-4">
+                    <label className="text-black">Teléfono:</label>
+                    <InputText
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="px-2">

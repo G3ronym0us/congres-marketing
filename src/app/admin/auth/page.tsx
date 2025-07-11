@@ -14,24 +14,33 @@ const Login = () => {
 
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState(''); 
+  const [error, setError] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false); 
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const payload: LoginUserInput = {
-      username,
-      password,
-    };
+    try {
+      const payload: LoginUserInput = {
+        username,
+        password,
+      };
+      const response = await loginUser(payload);
 
-    const response = await loginUser(payload);
-
-    if (response.status === 'fail') {
-      setError(response.error);
-    } else if (response.status === 'ok') {
-      await auth?.login(response.token);
-      router.push('/admin/dashboard');
+      if (response.status === 'fail') {
+        setError(response.error || 'Credenciales inválidas');
+      } else if (response.status === 'ok') {
+        console.log('response', response);
+        await auth?.login(response.token);
+        router.push('/admin/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Error de conexión. Intente nuevamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,9 +88,20 @@ const Login = () => {
           <div className="flex justify-center">
             <button
               type="submit"
-              className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
+              disabled={isLoading}
+              className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Iniciar sesión
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar sesión'
+              )}
             </button>
           </div>
         </form>

@@ -4,59 +4,44 @@
 import { useState, useEffect } from 'react';
 import { useCarouselTouchEvents } from '@/hooks/useCarouselTouchEvents';
 import { TicketType } from '@/types/tickets';
-
-const testimonials = [
-  {
-    quote: "Fui como candidato. Salí como ganador.",
-    name: "Carlos Gómez",
-    role: "Alcalde electo 2023",
-    image: "/images/testimonio1.jpg" // Puedes reemplazar con imágenes reales o usar null
-  },
-  {
-    quote: "Ver a Beccassino, Sola y Guinand juntos fue un masterclass de realidad política.",
-    name: "Valentina Ruiz",
-    role: "Consultora Electoral",
-    image: "/images/testimonio2.jpg"
-  },
-  {
-    quote: "Volví con una nueva campaña… y con una nueva forma de pensar el poder.",
-    name: "Andrés Páez",
-    role: "Director de comunicaciones",
-    image: "/images/testimonio3.jpg"
-  },
-  {
-    quote: "La experiencia de aprendizaje más intensiva de mi carrera. Las conexiones que hice fueron invaluables.",
-    name: "Natalia Herrera",
-    role: "Community Manager",
-    image: "/images/testimonio4.jpg"
-  },
-  {
-    quote: "Como consultora política, este congreso me proporcionó herramientas clave para diseñar campañas más efectivas.",
-    name: "Érica Cáceres",
-    role: "Consultora Política",
-    image: "/images/testimonio5.jpg"
-  },
-  {
-    quote: "Salí con muchas ideas nuevas para aplicar en mis próximos proyectos. El nivel de los ponentes fue extraordinario.",
-    name: "Alexcevith Acosta",
-    role: "Ingeniero Civil Ex Director CAS",
-    image: "/images/testimonio6.jpg"
-  }
-];
+import { Testimonial } from '@/types/testimonials';
+import { getActiveTestimonials } from '@/services/testimonials';
 
 interface TestimonialsSectionProps {
   handleButtonClick: (localidadId: TicketType) => void;
 }
 
 export default function TestimonialsSection({ handleButtonClick }: TestimonialsSectionProps) {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const displayCount = 3; // Número de testimonios visibles en desktop
   
   // Usar el custom hook para el carrusel táctil
   useCarouselTouchEvents('.testimonials-carousel');
   
+  // Cargar testimonios desde la API
+  useEffect(() => {
+    const loadTestimonials = async () => {
+      try {
+        const data = await getActiveTestimonials();
+        setTestimonials(data);
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
+        // En caso de error, usar testimonios vacíos o mostrar mensaje
+        setTestimonials([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTestimonials();
+  }, []);
+  
   // Cambiar automáticamente los testimonios cada 5 segundos
   useEffect(() => {
+    if (testimonials.length === 0) return;
+    
     const interval = setInterval(() => {
       setActiveIndex((prevIndex) => 
         prevIndex >= testimonials.length - displayCount ? 0 : prevIndex + 1
@@ -64,12 +49,38 @@ export default function TestimonialsSection({ handleButtonClick }: TestimonialsS
     }, 5000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [testimonials.length]);
   
   // Cambiar el índice activo
   const handleDotClick = (index: number) => {
     setActiveIndex(index);
   };
+
+  // Si está cargando, mostrar skeleton o loading
+  if (loading) {
+    return (
+      <section id="testimonios" className="py-16 bg-black">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+              Lo que dicen los que ya estuvieron
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Más que opiniones, son pruebas de que el CNMP transforma la manera de hacer política.
+            </p>
+          </div>
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Si no hay testimonios, no mostrar la sección
+  if (testimonials.length === 0) {
+    return null;
+  }
 
   return (
     <section id="testimonios" className="py-16 bg-black">
@@ -90,28 +101,28 @@ export default function TestimonialsSection({ handleButtonClick }: TestimonialsS
               <div className="flex space-x-4 w-max pl-4">
                 {testimonials.map((testimonial, index) => (
                   <div
-                    key={index}
+                    key={testimonial.id}
                     className="w-80 flex-shrink-0 snap-center bg-gradient-to-br from-[#1C2C67]/20 to-[#4B0012]/20 backdrop-filter backdrop-blur-sm p-6 rounded-xl"
                   >
                     <div className="text-2xl text-blue-300 mb-4">🎤</div>
                     <p className="text-gray-300 mb-6 text-lg italic h-28 line-clamp-3">
-                      "{testimonial.quote}"
+                      "{testimonial.content}"
                     </p>
                     <div className="flex items-center">
                       {testimonial.image ? (
                         <img
                           src={testimonial.image}
-                          alt={testimonial.name}
+                          alt={`${testimonial.firstName} ${testimonial.lastName}`}
                           className="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#1C2C67] to-[#4B0012] flex items-center justify-center">
-                          <span className="text-white font-bold">{testimonial.name.charAt(0)}</span>
+                          <span className="text-white font-bold">{testimonial.firstName.charAt(0)}</span>
                         </div>
                       )}
                       <div className="ml-4">
-                        <h4 className="text-white font-semibold">{testimonial.name}</h4>
-                        <p className="text-gray-400 text-sm">{testimonial.role}</p>
+                        <h4 className="text-white font-semibold">{testimonial.firstName} {testimonial.lastName}</h4>
+                        <p className="text-gray-400 text-sm">{testimonial.position}</p>
                       </div>
                     </div>
                   </div>
@@ -142,28 +153,28 @@ export default function TestimonialsSection({ handleButtonClick }: TestimonialsS
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {testimonials.slice(activeIndex, activeIndex + displayCount).map((testimonial, index) => (
               <div
-                key={index}
+                key={testimonial.id}
                 className="bg-gradient-to-br from-[#1C2C67]/20 to-[#4B0012]/20 backdrop-filter backdrop-blur-sm p-6 rounded-xl transform transition-all duration-500"
               >
                 <div className="text-2xl text-blue-300 mb-4">🎤</div>
                 <p className="text-gray-300 mb-6 text-lg italic min-h-[100px]">
-                  "{testimonial.quote}"
+                  "{testimonial.content}"
                 </p>
                 <div className="flex items-center">
                   {testimonial.image ? (
                     <img
                       src={testimonial.image}
-                      alt={testimonial.name}
+                      alt={`${testimonial.firstName} ${testimonial.lastName}`}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#1C2C67] to-[#4B0012] flex items-center justify-center">
-                      <span className="text-white font-bold">{testimonial.name.charAt(0)}</span>
+                      <span className="text-white font-bold">{testimonial.firstName.charAt(0)}</span>
                     </div>
                   )}
                   <div className="ml-4">
-                    <h4 className="text-white font-semibold">{testimonial.name}</h4>
-                    <p className="text-gray-400 text-sm">{testimonial.role}</p>
+                    <h4 className="text-white font-semibold">{testimonial.firstName} {testimonial.lastName}</h4>
+                    <p className="text-gray-400 text-sm">{testimonial.position}</p>
                   </div>
                 </div>
               </div>
