@@ -410,6 +410,7 @@ const Tickets = () => {
                     <InputText
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      error=""
                     />
                   </div>
                 </div>
