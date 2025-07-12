@@ -15,6 +15,7 @@ import TestimonialSection from '@/components/testimonials/TestimonialSection';
 import TicketsSection from '@/components/tickets/TicketsSections';
 import ContactSection from '@/components/contactSection';
 import ConferencistasSection from '@/components/ConferencistasSection';
+import ScheduleSection from '@/components/ScheduleSection';
 import { TicketType } from '@/types/tickets';
 import { useRouter } from 'next/navigation';
 
@@ -251,6 +252,9 @@ export default function Landing() {
         
         {/* Conferencistas Section (componente modularizado) */}
         <ConferencistasSection />
+        
+        {/* Cronograma Section */}
+        <ScheduleSection />
         
         {/* Dirigido a */}
         <section id="dirigido-a" className="py-16 bg-black">
