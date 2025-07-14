@@ -317,7 +317,7 @@ export default function Landing() {
           className="py-16 bg-gradient-to-b from-black to-[#0f1424]"
         >
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-6">
                 Aliarse con el poder transforma tu marca
               </h2>
@@ -349,6 +349,41 @@ export default function Landing() {
                     Visibilidad ante 2.5 millones
                   </h3>
                   <p className="text-gray-400">de personas en redes sociales</p>
+                </div>
+              </div>
+
+              {/* Logos de Aliados */}
+              <div className="mb-12">
+                <h3 className="text-2xl font-semibold text-white text-center mb-8">
+                  Nuestros Aliados Estratégicos
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center justify-items-center">
+                  {/* ACEIPOL */}
+                  <div className="bg-white/5 backdrop-filter backdrop-blur-sm p-6 rounded-lg flex items-center justify-center h-32 w-full">
+                    <img
+                      src="https://congress-marketing.s3.us-east-2.amazonaws.com/aliados/ACEIPOL-BLANCO-Horizontal.png"
+                      alt="ACEIPOL"
+                      className="max-h-20 max-w-full object-contain filter brightness-100"
+                    />
+                  </div>
+
+                  {/* Canal TRO */}
+                  <div className="bg-white/5 backdrop-filter backdrop-blur-sm p-6 rounded-lg flex items-center justify-center h-32 w-full">
+                    <img
+                      src="https://congress-marketing.s3.us-east-2.amazonaws.com/aliados/Canal-TRO-30a%C3%B1os-Blanco.png"
+                      alt="Canal TRO 30 años"
+                      className="max-h-20 max-w-full object-contain filter brightness-100"
+                    />
+                  </div>
+
+                  {/* Federación Colombiana de Municipios */}
+                  <div className="bg-white/5 backdrop-filter backdrop-blur-sm p-6 rounded-lg flex items-center justify-center h-32 w-full">
+                    <img
+                      src="https://congress-marketing.s3.us-east-2.amazonaws.com/aliados/Federaci%C3%B3n-Colombiana-de-Municipios.png"
+                      alt="Federación Colombiana de Municipios"
+                      className="max-h-20 max-w-full object-contain filter brightness-100"
+                    />
+                  </div>
                 </div>
               </div>
 
