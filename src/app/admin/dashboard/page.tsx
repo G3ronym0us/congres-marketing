@@ -15,14 +15,21 @@ import {
   faChartBar,
   faUser,
   faCalendarAlt,
-  faComments
+  faComments,
+  faEnvelope
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
 import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
+import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
+
+  // Handle navigation for special routes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
@@ -55,6 +62,7 @@ export default function Dashboard() {
     { id: 'table', label: 'Tabla de Tickets', icon: faTableList },
     { id: 'lecturers', label: 'Conferencistas', icon: faUser },
     { id: 'testimonials', label: 'Testimonios', icon: faComments },
+    { id: 'broadcasts', label: 'Email Broadcasts', icon: faEnvelope },
   ];
 
   // Cierra el sidebar automáticamente cuando la pantalla se hace grande
@@ -85,6 +93,7 @@ export default function Dashboard() {
       case 'table': return 'Gestión de Tickets';
       case 'lecturers': return 'Gestión de Conferencistas';
       case 'testimonials': return 'Gestión de Testimonios';
+      case 'broadcasts': return 'Email Broadcasts';
       case 'reserve': return 'Reservar Tickets';
       default: return 'Panel de Administración';
     }
@@ -114,7 +123,7 @@ export default function Dashboard() {
         isOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         menuItems={menuItems}
         user={auth?.user || { username: 'Administrador' }}
         onLogout={handleLogout}
@@ -203,6 +212,13 @@ export default function Dashboard() {
           {activeTab === 'testimonials' && (
             <div>
               <TestimonialsAdmin />
+            </div>
+          )}
+          
+          {/* Email Broadcasts */}
+          {activeTab === 'broadcasts' && (
+            <div>
+              <BroadcastsAdmin />
             </div>
           )}
         </main>
