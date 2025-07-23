@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import Cookies from 'js-cookie';
-import { EmailBroadcast, CreateEmailBroadcastRequest, EmailAttachment } from '../types/emailBroadcast';
+import { EmailBroadcast, CreateEmailBroadcastRequest, ResendEmailBroadcastRequest, EmailAttachment } from '../types/emailBroadcast';
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -69,11 +69,9 @@ class EmailBroadcastService {
     }
   }
 
-  async resendBroadcast(id: number, specificEmail?: string): Promise<void> {
+  async resendBroadcast(id: number, resendData?: ResendEmailBroadcastRequest): Promise<void> {
     try {
-      const data = specificEmail ? { specific_email: specificEmail } : {};
-      
-      await api.post(`/email-broadcasts/${id}/resend`, data, {
+      await api.post(`/email-broadcasts/${id}/resend`, resendData || {}, {
         headers: getAuthHeaders(),
       });
     } catch (error) {

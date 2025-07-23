@@ -25,13 +25,26 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
     content: '',
     type: 'ALL_USERS',
     specific_email: '',
+    include_ticket: false,
+    force_regenerate_ticket: false,
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const checked = 'checked' in e.target ? e.target.checked : false;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleTicketCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked,
+      // If unchecking include_ticket, also uncheck force_regenerate_ticket
+      ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {})
     }));
   };
 
@@ -53,16 +66,16 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
       }
 
       if (selectedFiles.length > 0) {
-        await emailBroadcastService.createBroadcastWithAttachments(
-          {
-            title: formData.title,
-            sender_name: formData.sender_name,
-            content: formData.content,
-            type: formData.type,
-            specific_email: formData.specific_email || undefined,
-          },
-          selectedFiles
-        );
+        const broadcastData = {
+          title: formData.title,
+          sender_name: formData.sender_name,
+          content: formData.content,
+          type: formData.type,
+          specific_email: formData.specific_email || undefined,
+          include_ticket: formData.include_ticket,
+          force_regenerate_ticket: formData.force_regenerate_ticket,
+        };
+        await emailBroadcastService.createBroadcastWithAttachments(broadcastData, selectedFiles);
       } else {
         await emailBroadcastService.createBroadcast(formData);
       }
@@ -82,6 +95,8 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
         content: '',
         type: 'ALL_USERS',
         specific_email: '',
+        include_ticket: false,
+        force_regenerate_ticket: false,
       });
       setSelectedFiles([]);
       
@@ -131,6 +146,22 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
                   📎 {file.name}
                 </div>
               ))}
+            </div>
+          )}
+
+          {(formData.include_ticket || formData.force_regenerate_ticket) && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm font-medium text-gray-700 mb-2">Opciones de Boleto:</div>
+              {formData.include_ticket && (
+                <div className="text-sm text-gray-600">
+                  🎫 Incluir boleto del usuario
+                </div>
+              )}
+              {formData.force_regenerate_ticket && (
+                <div className="text-sm text-gray-600">
+                  🔄 Regenerar PDF y QR codes
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -254,6 +285,53 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
                 acceptedTypes={['pdf', 'doc', 'docx', 'jpg', 'png', 'webp']}
                 maxFiles={3}
               />
+            </div>
+
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Opciones de Boleto
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center group">
+                  <input
+                    type="checkbox"
+                    name="include_ticket"
+                    checked={formData.include_ticket}
+                    onChange={handleTicketCheckboxChange}
+                    className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <span className="flex items-center">
+                    🎫 Incluir Boleto
+                    <span 
+                      className="ml-2 text-gray-400 cursor-help"
+                      title="Adjuntar automáticamente el boleto del usuario al email"
+                    >
+                      ℹ️
+                    </span>
+                  </span>
+                </label>
+                
+                {formData.include_ticket && (
+                  <label className="flex items-center ml-6 group">
+                    <input
+                      type="checkbox"
+                      name="force_regenerate_ticket"
+                      checked={formData.force_regenerate_ticket}
+                      onChange={handleTicketCheckboxChange}
+                      className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <span className="flex items-center">
+                      🔄 Forzar Regeneración
+                      <span 
+                        className="ml-2 text-gray-400 cursor-help"
+                        title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
+                      >
+                        ℹ️
+                      </span>
+                    </span>
+                  </label>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-between pt-4 border-t">

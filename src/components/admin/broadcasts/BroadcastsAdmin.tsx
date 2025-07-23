@@ -115,7 +115,7 @@ const BroadcastsAdmin = () => {
 
     if (result.isConfirmed) {
       try {
-        await emailBroadcastService.resendBroadcast(broadcast.id);
+        await emailBroadcastService.resendBroadcast(broadcast.id, {});
         Swal.fire({
           icon: 'success',
           title: 'Reenviado',

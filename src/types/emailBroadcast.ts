@@ -22,6 +22,14 @@ export interface CreateEmailBroadcastRequest {
   type: 'ALL_USERS' | 'SPECIFIC_EMAIL';
   specific_email?: string;
   attachments?: string[];
+  include_ticket?: boolean;
+  force_regenerate_ticket?: boolean;
+}
+
+export interface ResendEmailBroadcastRequest {
+  specific_email?: string;
+  include_ticket?: boolean;
+  force_regenerate_ticket?: boolean;
 }
 
 export interface EmailAttachment {

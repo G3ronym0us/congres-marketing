@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faEnvelope, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
-import { EmailBroadcast } from '../../../types/emailBroadcast';
+import { EmailBroadcast, ResendEmailBroadcastRequest } from '../../../types/emailBroadcast';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
 import Swal from 'sweetalert2';
 
@@ -24,6 +24,10 @@ export default function BroadcastDetailModal({
 }: BroadcastDetailModalProps) {
   const [resendEmail, setResendEmail] = useState('');
   const [resending, setResending] = useState(false);
+  const [resendData, setResendData] = useState<ResendEmailBroadcastRequest>({
+    include_ticket: false,
+    force_regenerate_ticket: false,
+  });
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -57,11 +61,30 @@ export default function BroadcastDetailModal({
     return Math.round((broadcast.sent_count / broadcast.total_recipients) * 100);
   };
 
+  const handleResendTicketCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setResendData(prev => ({
+      ...prev,
+      [name]: checked,
+      // If unchecking include_ticket, also uncheck force_regenerate_ticket
+      ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {})
+    }));
+  };
+
   const handleCustomResend = async () => {
     setResending(true);
     try {
-      await emailBroadcastService.resendBroadcast(broadcast.id, resendEmail || undefined);
+      const requestData: ResendEmailBroadcastRequest = {
+        ...resendData,
+        specific_email: resendEmail || undefined,
+      };
+
+      await emailBroadcastService.resendBroadcast(broadcast.id, requestData);
       setResendEmail('');
+      setResendData({
+        include_ticket: false,
+        force_regenerate_ticket: false,
+      });
       
       Swal.fire({
         icon: 'success',
@@ -200,6 +223,54 @@ export default function BroadcastDetailModal({
                     placeholder="Dejar vacío para reenviar a todos los destinatarios originales"
                   />
                 </div>
+
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Opciones de Boleto
+                  </label>
+                  <div className="space-y-3">
+                    <label className="flex items-center group">
+                      <input
+                        type="checkbox"
+                        name="include_ticket"
+                        checked={resendData.include_ticket}
+                        onChange={handleResendTicketCheckboxChange}
+                        className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="flex items-center">
+                        🎫 Incluir Boleto
+                        <span 
+                          className="ml-2 text-gray-400 cursor-help"
+                          title="Adjuntar automáticamente el boleto del usuario al email"
+                        >
+                          ℹ️
+                        </span>
+                      </span>
+                    </label>
+                    
+                    {resendData.include_ticket && (
+                      <label className="flex items-center ml-6 group">
+                        <input
+                          type="checkbox"
+                          name="force_regenerate_ticket"
+                          checked={resendData.force_regenerate_ticket}
+                          onChange={handleResendTicketCheckboxChange}
+                          className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="flex items-center">
+                          🔄 Forzar Regeneración
+                          <span 
+                            className="ml-2 text-gray-400 cursor-help"
+                            title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
+                          >
+                            ℹ️
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex gap-3">
                   <button
                     onClick={handleCustomResend}
@@ -210,7 +281,14 @@ export default function BroadcastDetailModal({
                     {resending ? 'Reenviando...' : 'Reenviar Broadcast'}
                   </button>
                   <button
-                    onClick={onResend}
+                    onClick={() => {
+                      // Reset ticket options before calling onResend
+                      setResendData({
+                        include_ticket: false,
+                        force_regenerate_ticket: false,
+                      });
+                      onResend();
+                    }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
                   >
                     Reenviar a Todos
