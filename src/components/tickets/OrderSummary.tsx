@@ -1,6 +1,7 @@
 'use client';
 
 import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { discountUtils } from '@/services/discountCode';
 
 interface OrderSummaryProps {
   ticketPrice: number;
@@ -8,6 +9,7 @@ interface OrderSummaryProps {
   includeMemories: boolean;
   memoriesAlreadyIncluded: boolean;
   isOnlyMemories?: boolean;
+  appliedDiscount?: { code: string; percentage: number } | null;
 }
 
 export default function OrderSummary({ 
@@ -15,12 +17,20 @@ export default function OrderSummary({
   quantity, 
   includeMemories, 
   memoriesAlreadyIncluded,
-  isOnlyMemories = false
+  isOnlyMemories = false,
+  appliedDiscount
 }: OrderSummaryProps) {
-  // Calcular el total
+  // Calcular el total base
   const basePrice = isOnlyMemories ? 0 : ticketPrice;
   const memoriesPrice = (includeMemories && !memoriesAlreadyIncluded) || isOnlyMemories ? PRECIO_MEMORIAS : 0;
-  const total = (basePrice + memoriesPrice) * quantity;
+  const subtotal = (basePrice + memoriesPrice) * quantity;
+  
+  // Calcular descuento si está aplicado
+  const discountAmount = appliedDiscount 
+    ? discountUtils.getDiscountAmount(subtotal, appliedDiscount.percentage)
+    : 0;
+  
+  const total = subtotal - discountAmount;
   
   return (
     <div className="bg-white/5 p-6 rounded-xl mb-8">
@@ -44,6 +54,20 @@ export default function OrderSummary({
         <span className="text-gray-300">Cantidad:</span>
         <span className="text-white">{quantity}</span>
       </div>
+      
+      {appliedDiscount && (
+        <>
+          <div className="border-t border-white/20 my-3"></div>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-300">Subtotal:</span>
+            <span className="text-white">{formatoPrecio(subtotal)}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-green-400">Descuento ({appliedDiscount.code} - {appliedDiscount.percentage}%):</span>
+            <span className="text-green-400">-{formatoPrecio(discountAmount)}</span>
+          </div>
+        </>
+      )}
       
       <div className="border-t border-white/20 my-4"></div>
       

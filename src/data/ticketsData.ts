@@ -61,6 +61,36 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     withMemories: false,
     pushable: true
   },
+  [TicketType.ALLIED]: {
+    name: 'Entrada Aliado',
+    price: 0,
+    color: 'bg-gradient-to-br from-green-600/50 to-green-800/50',
+    border: 'border-green-400',
+    icon: '🤝',
+    features: [
+      'Ingreso gratuito como aliado estratégico',
+      'Acceso a todas las conferencias del evento',
+      'Derecho a coffee breaks',
+      'Certificación de participación digital'
+    ],
+    withMemories: false,
+    pushable: false
+  },
+  [TicketType.JOURNALIST]: {
+    name: 'Entrada Prensa',
+    price: 0,
+    color: 'bg-gradient-to-br from-gray-600/50 to-gray-800/50',
+    border: 'border-gray-400',
+    icon: '🎤',
+    features: [
+      'Acceso gratuito para cobertura periodística',
+      'Ingreso a todas las conferencias del evento',
+      'Acceso especial para entrevistas',
+      'Certificación de participación digital'
+    ],
+    withMemories: false,
+    pushable: false
+  },
   // Añadimos opción solo memorias (no usamos el enum porque no es un tipo de ticket estándar)
   'memorias': {
     name: 'Memorias del Evento',

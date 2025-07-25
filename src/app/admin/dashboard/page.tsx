@@ -16,12 +16,14 @@ import {
   faUser,
   faCalendarAlt,
   faComments,
-  faEnvelope
+  faEnvelope,
+  faPercentage
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
 import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
 import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
+import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAdmin';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
@@ -63,6 +65,7 @@ export default function Dashboard() {
     { id: 'lecturers', label: 'Conferencistas', icon: faUser },
     { id: 'testimonials', label: 'Testimonios', icon: faComments },
     { id: 'broadcasts', label: 'Email Broadcasts', icon: faEnvelope },
+    { id: 'discount-codes', label: 'Códigos de Descuento', icon: faPercentage },
   ];
 
   // Cierra el sidebar automáticamente cuando la pantalla se hace grande
@@ -94,6 +97,7 @@ export default function Dashboard() {
       case 'lecturers': return 'Gestión de Conferencistas';
       case 'testimonials': return 'Gestión de Testimonios';
       case 'broadcasts': return 'Email Broadcasts';
+      case 'discount-codes': return 'Códigos de Descuento';
       case 'reserve': return 'Reservar Tickets';
       default: return 'Panel de Administración';
     }
@@ -219,6 +223,13 @@ export default function Dashboard() {
           {activeTab === 'broadcasts' && (
             <div>
               <BroadcastsAdmin />
+            </div>
+          )}
+          
+          {/* Códigos de Descuento */}
+          {activeTab === 'discount-codes' && (
+            <div>
+              <DiscountCodesAdmin />
             </div>
           )}
         </main>

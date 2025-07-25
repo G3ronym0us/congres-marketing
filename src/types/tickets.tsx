@@ -5,6 +5,8 @@ export enum TicketType {
   VIP = 'vip',
   GENERAL = 'general',
   STREAMING = 'streaming',
+  ALLIED = 'allied',
+  JOURNALIST = 'journalist',
 }
 
 export enum TicketStatus {
@@ -119,6 +121,8 @@ export const traductions = {
   [TicketType.VIP]: 'VIP',
   [TicketType.GENERAL]: 'GENERAL',
   [TicketType.STREAMING]: 'STREAMING',
+  [TicketType.ALLIED]: 'ALIADO',
+  [TicketType.JOURNALIST]: 'PRENSA',
 };
 
 export interface FormDataType {
@@ -180,4 +184,5 @@ export interface CartItem {
 export interface CartState {
   items: CartItem[];
   total: number;
+  appliedDiscount?: { code: string; percentage: number } | null;
 }

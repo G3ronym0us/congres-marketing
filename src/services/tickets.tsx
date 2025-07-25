@@ -1,5 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
-import Cookies from 'js-cookie';
+import apiClient, { handleError } from '@/utils/apiClient';
 import {
   Seat,
   Ticket,
@@ -8,24 +7,11 @@ import {
   AdminCreateTicketInput,
   FilterGetTicketsInput,
   AdminEditTicketInput,
-} from '@/types/tickets'; // Asegúrate de que estas importaciones sean correctas
-
-const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,
-});
-
-// Función para obtener el token dinámicamente
-const getToken = () => Cookies.get('token');
-
-const handleError = (error: any) => {
-  console.error('API Error:', error.response?.data || error.message);
-  throw error;
-};
+} from '@/types/tickets';
 
 export const getTicket = async (uuid: string) => {
   try {
-    const response = await api.get(`/tickets/${uuid}`);
+    const response = await apiClient.get(`/tickets/${uuid}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -34,7 +20,7 @@ export const getTicket = async (uuid: string) => {
 
 export const getSeatsUsed = async (): Promise<Seat[]> => {
   try {
-    const response = await api.get('/tickets/approved');
+    const response = await apiClient.get('/tickets/approved');
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -43,7 +29,7 @@ export const getSeatsUsed = async (): Promise<Seat[]> => {
 
 export async function saveTickets(data: Ticket[]) {
   try {
-    const response = await api.post('/tickets/save', data);
+    const response = await apiClient.post('/tickets/save', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -52,7 +38,7 @@ export async function saveTickets(data: Ticket[]) {
 
 export async function getIntegrityHash(data: BoldIntegrityHashInput) {
   try {
-    const response = await api.post('/tickets/generate-integrity-hash', data);
+    const response = await apiClient.post('/tickets/generate-integrity-hash', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -61,10 +47,8 @@ export async function getIntegrityHash(data: BoldIntegrityHashInput) {
 
 export async function getTicketsApproved(filter: FilterGetTicketsInput) {
   try {
-    const token = getToken();
-    const response = await api.get('/admin/tickets', {
+    const response = await apiClient.get('/admin/tickets', {
       params: filter,
-      headers: { Authorization: `Bearer ${token}` },
       paramsSerializer: params => {
         // Crear un array para almacenar los pares clave-valor
         const queryParams: string[] = [];
@@ -97,12 +81,7 @@ export async function getTicketsApproved(filter: FilterGetTicketsInput) {
 
 export async function updateTickets(data: UpdateTicketInput) {
   try {
-    const token = getToken();
-    const response = await api.post('admin/tickets/update', data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.post('admin/tickets/update', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -111,16 +90,7 @@ export async function updateTickets(data: UpdateTicketInput) {
 
 export async function deleteTickets(uuid: string) {
   try {
-    const token = getToken();
-    const response = await api.post(
-      'admin/tickets/delete',
-      { uuid },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+    const response = await apiClient.post('admin/tickets/delete', { uuid });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -129,11 +99,7 @@ export async function deleteTickets(uuid: string) {
 
 export async function downloadTicket(uuid: string): Promise<Blob> {
   try {
-    const token = getToken();
-    const response = await api.get(`/admin/ticket/download/${uuid}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await apiClient.get(`/admin/ticket/download/${uuid}`, {
       responseType: 'blob',
     });
     return response.data;
@@ -146,12 +112,7 @@ export async function resendEmailTicket(
   uuid: string,
 ): Promise<{ status: string }> {
   try {
-    const token = getToken();
-    const response = await api.get(`/admin/ticket/email/resend/${uuid}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(`/admin/ticket/email/resend/${uuid}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -160,12 +121,7 @@ export async function resendEmailTicket(
 
 export async function adminSaveTickets(data: AdminCreateTicketInput) {
   try {
-    const token = getToken();
-    const response = await api.post('/admin/tickets/create', data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.post('/admin/tickets/create', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -174,12 +130,7 @@ export async function adminSaveTickets(data: AdminCreateTicketInput) {
 
 export async function adminEditTicket(data: AdminEditTicketInput) {
   try {
-    const token = getToken();
-    const response = await api.post('/admin/tickets/update', data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.post('/admin/tickets/update', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -188,7 +139,7 @@ export async function adminEditTicket(data: AdminEditTicketInput) {
 
 export async function downloadCertificate(uuid: string): Promise<Blob> {
   try {
-    const response = await api.get(`/tickets/certificate/${uuid}`, {
+    const response = await apiClient.get(`/tickets/certificate/${uuid}`, {
       responseType: 'blob',
     });
     return response.data;

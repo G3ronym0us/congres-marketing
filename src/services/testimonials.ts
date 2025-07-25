@@ -1,27 +1,10 @@
-import axios, { AxiosInstance } from 'axios';
-import Cookies from 'js-cookie';
+import apiClient, { handleError } from '@/utils/apiClient';
 import {
   Testimonial,
   CreateTestimonialInput,
   UpdateTestimonialInput,
   TestimonialFilters,
 } from '@/types/testimonials';
-
-const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,
-});
-
-const handleError = (error: any) => {
-  console.error('API Error:', error.response?.data || error.message);
-  throw error;
-};
-
-// Get authorization header with token
-const getAuthHeaders = () => {
-  const token = Cookies.get('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 // Public endpoints
 export const getTestimonials = async (filters?: TestimonialFilters): Promise<Testimonial[]> => {
@@ -34,7 +17,7 @@ export const getTestimonials = async (filters?: TestimonialFilters): Promise<Tes
       params.append('search', filters.search);
     }
     
-    const response = await api.get(`/testimonials?${params.toString()}`);
+    const response = await apiClient.get(`/testimonials?${params.toString()}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -43,7 +26,7 @@ export const getTestimonials = async (filters?: TestimonialFilters): Promise<Tes
 
 export const getActiveTestimonials = async (): Promise<Testimonial[]> => {
   try {
-    const response = await api.get('/testimonials/active');
+    const response = await apiClient.get('/testimonials/active');
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -52,7 +35,7 @@ export const getActiveTestimonials = async (): Promise<Testimonial[]> => {
 
 export const getTestimonialById = async (id: number): Promise<Testimonial> => {
   try {
-    const response = await api.get(`/testimonials/${id}`);
+    const response = await apiClient.get(`/testimonials/${id}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -62,9 +45,7 @@ export const getTestimonialById = async (id: number): Promise<Testimonial> => {
 // Protected endpoints (require authentication)
 export const createTestimonial = async (data: CreateTestimonialInput): Promise<Testimonial> => {
   try {
-    const response = await api.post('/testimonials', data, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.post('/testimonials', data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -73,9 +54,7 @@ export const createTestimonial = async (data: CreateTestimonialInput): Promise<T
 
 export const updateTestimonial = async (id: number, data: UpdateTestimonialInput): Promise<Testimonial> => {
   try {
-    const response = await api.patch(`/testimonials/${id}`, data, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.patch(`/testimonials/${id}`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -84,9 +63,7 @@ export const updateTestimonial = async (id: number, data: UpdateTestimonialInput
 
 export const toggleTestimonialActive = async (id: number): Promise<Testimonial> => {
   try {
-    const response = await api.patch(`/testimonials/${id}/toggle-active`, {}, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.patch(`/testimonials/${id}/toggle-active`, {});
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -98,9 +75,8 @@ export const uploadTestimonialImage = async (id: number, file: File): Promise<Te
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await api.post(`/testimonials/${id}/upload-image`, formData, {
+    const response = await apiClient.post(`/testimonials/${id}/upload-image`, formData, {
       headers: {
-        ...getAuthHeaders(),
         'Content-Type': 'multipart/form-data',
       },
     });
@@ -112,9 +88,7 @@ export const uploadTestimonialImage = async (id: number, file: File): Promise<Te
 
 export const deleteTestimonialImage = async (id: number): Promise<Testimonial> => {
   try {
-    const response = await api.delete(`/testimonials/${id}/image`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await apiClient.delete(`/testimonials/${id}/image`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -123,9 +97,7 @@ export const deleteTestimonialImage = async (id: number): Promise<Testimonial> =
 
 export const deleteTestimonial = async (id: number): Promise<void> => {
   try {
-    await api.delete(`/testimonials/${id}`, {
-      headers: getAuthHeaders(),
-    });
+    await apiClient.delete(`/testimonials/${id}`);
   } catch (error) {
     return handleError(error);
   }

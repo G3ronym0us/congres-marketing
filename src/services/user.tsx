@@ -1,27 +1,13 @@
 import { CreateLecturerData, Lecturer, UpdateLecturerData } from '@/types/lecturer';
 import { UpdateTicketInput } from '@/types/tickets';
 import { LoginUserInput } from '@/types/user';
-import axios, { AxiosInstance } from 'axios';
+import apiClient, { handleError } from '@/utils/apiClient';
 import Cookies from 'js-cookie';
-
-// Crear una instancia de Axios con configuración común
-const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true, // Importante para CORS con credenciales
-});
-
-// Función para obtener el token dinámicamente
-const getToken = () => Cookies.get('token');
-
-// Función de ayuda para manejar errores
-const handleError = (error: any) => {
-  console.error('API Error:', error.response?.data || error.message);
-  throw error;
-};
 
 export async function getMe(token: string) {
   try {
-    const response = await api.get('/auth/me', {
+    // Para esta función específica necesitamos pasar el token manualmente
+    const response = await apiClient.get('/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -32,7 +18,7 @@ export async function getMe(token: string) {
 
 export async function loginUser(user: LoginUserInput) {
   try {
-    const response = await api.post('/auth/login', user);
+    const response = await apiClient.post('/auth/login', user);
     
     // La respuesta real del backend: { status: "ok", token: "..." }
     return {
@@ -50,7 +36,7 @@ export async function loginUser(user: LoginUserInput) {
 
 export async function getInternationalWithTitle(): Promise<Lecturer[]> {
   try {
-    const response = await api
+    const response = await apiClient
       .get('/lecturers/internationals')
       .then((res) => res.data)
       .catch((err) => {
@@ -65,7 +51,7 @@ export async function getInternationalWithTitle(): Promise<Lecturer[]> {
 
 export async function getNationalWithTitle(): Promise<Lecturer[]> {
   try {
-    const response = await api
+    const response = await apiClient
       .get('/lecturers/nationals')
       .then((res) => res.data)
       .catch((err) => {
@@ -79,7 +65,7 @@ export async function getNationalWithTitle(): Promise<Lecturer[]> {
 }
 
 export async function getAll(): Promise<Lecturer[]> {
-  const response = await api.get('/lecturers').then((res) => res.data).catch((err) => {
+  const response = await apiClient.get('/lecturers').then((res) => res.data).catch((err) => {
     console.error('Error fetching lecturers:', err);
     return [];
   });
@@ -87,7 +73,7 @@ export async function getAll(): Promise<Lecturer[]> {
 }
 
 export async function create(lecturer: CreateLecturerData): Promise<Lecturer> {
-  const response = await api.post('/lecturers', lecturer).then((res) => res.data).catch((err) => {
+  const response = await apiClient.post('/lecturers', lecturer).then((res) => res.data).catch((err) => {
     console.error('Error creating lecturer:', err);
     return err;
   });
@@ -96,7 +82,7 @@ export async function create(lecturer: CreateLecturerData): Promise<Lecturer> {
 
 export async function update(id: number, lecturer: UpdateLecturerData): Promise<Lecturer> {
   console.log(lecturer);
-  const response = await api.patch(`/lecturers/${id}`, lecturer).then((res) => res.data).catch((err) => {
+  const response = await apiClient.patch(`/lecturers/${id}`, lecturer).then((res) => res.data).catch((err) => {
     console.error('Error updating lecturer:', err);
     return [];
   });
@@ -104,7 +90,7 @@ export async function update(id: number, lecturer: UpdateLecturerData): Promise<
 }
 
 export async function deleteLecturer(id: number): Promise<void> {
-  const response = await api.delete(`/lecturers/${id}`).then((res) => res.data).catch((err) => {
+  const response = await apiClient.delete(`/lecturers/${id}`).then((res) => res.data).catch((err) => {
     console.error('Error deleting lecturer:', err);
     return [];
   });
@@ -112,7 +98,7 @@ export async function deleteLecturer(id: number): Promise<void> {
 }
 
 export async function toggleShow(id: number): Promise<Lecturer> {
-  const response = await api.patch(`/lecturers/${id}/toggle-show`).then((res) => res.data).catch((err) => {
+  const response = await apiClient.patch(`/lecturers/${id}/toggle-show`).then((res) => res.data).catch((err) => {
     console.error('Error toggling visibility:', err);
     return [];
   });
@@ -123,7 +109,7 @@ export async function uploadImage(id: number, file: File): Promise<Lecturer> {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await api.post(`/lecturers/${id}/upload-image`, formData).then((res) => res.data).catch((err) => {
+  const response = await apiClient.post(`/lecturers/${id}/upload-image`, formData).then((res) => res.data).catch((err) => {
     console.error('Error uploading image:', err);
     return [];
   });
@@ -131,7 +117,7 @@ export async function uploadImage(id: number, file: File): Promise<Lecturer> {
 }
 
 export async function getLecturerByAlt(alt: string): Promise<Lecturer> {
-  const response = await api.get(`/lecturers/alt/${alt}`).then((res) => res.data).catch((err) => {
+  const response = await apiClient.get(`/lecturers/alt/${alt}`).then((res) => res.data).catch((err) => {
     console.error('Error fetching lecturer by alt:', err);
     return [];
   });

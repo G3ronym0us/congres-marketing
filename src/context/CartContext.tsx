@@ -14,6 +14,8 @@ import {
   CartTicket as Ticket,
   TicketType,
 } from '@/types/tickets';
+import { AppliedDiscount } from '@/types/discountCode';
+import { discountUtils } from '@/services/discountCode';
 import { v4 as uuidv4 } from 'uuid'; // Necesitarás instalar esta dependencia: npm install uuid @types/uuid
 
 // Definir tipos de acciones
@@ -38,6 +40,8 @@ type CartAction =
       type: 'UPDATE_ATTENDEE';
       payload: { ticketId: string; attendee: AttendeeData };
     }
+  | { type: 'APPLY_DISCOUNT'; payload: { discount: AppliedDiscount } }
+  | { type: 'REMOVE_DISCOUNT' }
   | { type: 'RESTORE_CART'; payload: CartState }
   | { type: 'CLEAR_CART' };
 
@@ -45,6 +49,7 @@ type CartAction =
 const initialState: CartState = {
   items: [],
   total: 0,
+  appliedDiscount: null,
 };
 
 // Clave para almacenar el carrito en localStorage
@@ -72,8 +77,8 @@ const createEmptyTicket = (
 });
 
 // Función para calcular el total del carrito
-const calcularTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => {
+const calcularTotal = (items: CartItem[], appliedDiscount?: { code: string; percentage: number } | null): number => {
+  const subtotal = items.reduce((total, item) => {
     return (
       total +
       item.tickets.reduce((subtotal, ticket) => {
@@ -86,6 +91,13 @@ const calcularTotal = (items: CartItem[]): number => {
       }, 0)
     );
   }, 0);
+
+  if (appliedDiscount) {
+    const discountAmount = discountUtils.getDiscountAmount(subtotal, appliedDiscount.percentage);
+    return subtotal - discountAmount;
+  }
+
+  return subtotal;
 };
 
 // Reducer para manejar las acciones del carrito
@@ -137,7 +149,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems),
+        total: calcularTotal(newItems, state.appliedDiscount),
       };
 
       // Guardar en localStorage
@@ -154,7 +166,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems),
+        total: calcularTotal(newItems, state.appliedDiscount),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -177,7 +189,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems),
+        total: calcularTotal(newItems, state.appliedDiscount),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -200,7 +212,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems),
+        total: calcularTotal(newItems, state.appliedDiscount),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -225,6 +237,34 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
 
+      return newState;
+    }
+
+    case 'APPLY_DISCOUNT': {
+      const newState = {
+        ...state,
+        appliedDiscount: {
+          code: action.payload.discount.code,
+          percentage: action.payload.discount.discountPercentage,
+        },
+        total: calcularTotal(state.items, {
+          code: action.payload.discount.code,
+          percentage: action.payload.discount.discountPercentage,
+        }),
+      };
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
+    case 'REMOVE_DISCOUNT': {
+      const newState = {
+        ...state,
+        appliedDiscount: null,
+        total: calcularTotal(state.items, null),
+      };
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
       return newState;
     }
 
@@ -256,6 +296,8 @@ interface CartContextType {
   removeTicket: (ticketId: string) => void;
   toggleMemorias: (ticketId: string, withMemories: boolean) => void;
   updateAttendee: (ticketId: string, attendee: AttendeeData) => void;
+  applyDiscount: (discount: AppliedDiscount) => void;
+  removeDiscount: () => void;
   clearCart: () => void;
 }
 
@@ -312,6 +354,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     });
   };
 
+  const applyDiscount = (discount: AppliedDiscount) => {
+    dispatch({ type: 'APPLY_DISCOUNT', payload: { discount } });
+  };
+
+  const removeDiscount = () => {
+    dispatch({ type: 'REMOVE_DISCOUNT' });
+  };
+
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
   };
@@ -325,6 +375,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         removeTicket,
         toggleMemorias,
         updateAttendee,
+        applyDiscount,
+        removeDiscount,
         clearCart,
       }}
     >

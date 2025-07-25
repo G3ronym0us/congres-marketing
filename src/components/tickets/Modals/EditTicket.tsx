@@ -69,6 +69,11 @@ const EditTicketModal: React.FC<TicketModalProps> = ({
 
   // Toggle para memorias
   const toggleMemories = () => {
+    // No permitir memorias en tickets gratuitos (allied, journalist)
+    const currentType = watch('type');
+    if (currentType && localidadesData[currentType] && localidadesData[currentType].price === 0) {
+      return; // No hacer nada si es un ticket gratuito
+    }
     setValue('withMemories', !watch('withMemories'), { shouldValidate: true });
   };
 
@@ -280,40 +285,55 @@ const EditTicketModal: React.FC<TicketModalProps> = ({
           <Controller
             name="withMemories"
             control={control}
-            render={({ field: { value } }) => (
-              <div
-                className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                  value
-                    ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
-                onClick={toggleMemories}
-                role="checkbox"
-                aria-checked={value}
-                tabIndex={0}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    toggleMemories();
-                  }
-                }}
-              >
-                <div className="flex items-center">
+            render={({ field: { value } }) => {
+              const currentType = watch('type');
+              const isDisabled = currentType && localidadesData[currentType] && localidadesData[currentType].price === 0;
+              
+              return (
+                <div
+                  className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                    isDisabled
+                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
+                      : value
+                      ? 'border-blue-300 bg-blue-50 cursor-pointer'
+                      : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                  }`}
+                  onClick={!isDisabled ? toggleMemories : undefined}
+                  role="checkbox"
+                  aria-checked={value}
+                  aria-disabled={isDisabled}
+                  tabIndex={isDisabled ? -1 : 0}
+                  onKeyPress={(e) => {
+                    if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
+                      toggleMemories();
+                    }
+                  }}
+                >
+                  <div className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faMemory}
+                      className={`mr-2 ${
+                        isDisabled ? 'text-gray-300' : value ? 'text-blue-500' : 'text-gray-400'
+                      }`}
+                    />
+                    <span
+                      className={`font-medium ${
+                        isDisabled ? 'text-gray-400' : value ? 'text-blue-700' : 'text-gray-700'
+                      }`}
+                    >
+                      Agregar Memorias
+                      {isDisabled && <span className="text-xs text-gray-400 ml-2">(No disponible para tickets gratuitos)</span>}
+                    </span>
+                  </div>
                   <FontAwesomeIcon
-                    icon={faMemory}
-                    className={`mr-2 ${value ? 'text-blue-500' : 'text-gray-400'}`}
+                    icon={value ? faToggleOn : faToggleOff}
+                    className={`text-xl ${
+                      isDisabled ? 'text-gray-300' : value ? 'text-blue-500' : 'text-gray-400'
+                    }`}
                   />
-                  <span
-                    className={`font-medium ${value ? 'text-blue-700' : 'text-gray-700'}`}
-                  >
-                    Agregar Memorias
-                  </span>
                 </div>
-                <FontAwesomeIcon
-                  icon={value ? faToggleOn : faToggleOff}
-                  className={`text-xl ${value ? 'text-blue-500' : 'text-gray-400'}`}
-                />
-              </div>
-            )}
+              );
+            }}
           />
 
           <div className="flex flex-col sm:flex-row gap-3 pt-4">

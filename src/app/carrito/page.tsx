@@ -23,6 +23,9 @@ import {
 } from '@/data/ticketsData';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
 import { AttendeeData, TicketType } from '@/types/tickets';
+import { discountCodeService, discountUtils } from '@/services/discountCode';
+import { AppliedDiscount } from '@/types/discountCode';
+import DiscountCodeInput from '@/components/tickets/DiscountCodeInput';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
@@ -79,6 +82,8 @@ export default function Carrito() {
     toggleMemorias,
     updateAttendee,
     clearCart,
+    applyDiscount,
+    removeDiscount,
   } = useCart();
   const [total, setTotal] = useState(0);
   const [expandedSections, setExpandedSections] = useState<
@@ -109,15 +114,18 @@ export default function Carrito() {
     setDescuentoActual(descuentoEncontrado || null);
   }, []);
 
-  // Calcular total con descuento cuando cambia el total o el descuento
+  // Calcular total con descuentos cuando cambia el total o los descuentos
   useEffect(() => {
-    if (descuentoActual) {
-      const descuento = total * (descuentoActual.porcentaje / 100);
-      const nuevoTotal = total - descuento;
-      setMontoDescuento(descuento);
-      setTotalConDescuento(nuevoTotal);
+    // El total del context ya incluye el descuento por código
+    let totalFinal = total;
+    
+    // Aplicar descuento por fecha sobre el total ya con descuento de código
+    if (descuentoActual && descuentoActual.porcentaje > 0) {
+      const descuentoFecha = totalFinal * (descuentoActual.porcentaje / 100);
+      setMontoDescuento(descuentoFecha);
+      setTotalConDescuento(totalFinal - descuentoFecha);
     } else {
-      setTotalConDescuento(total);
+      setTotalConDescuento(totalFinal);
       setMontoDescuento(0);
     }
   }, [total, descuentoActual]);
@@ -240,7 +248,7 @@ export default function Carrito() {
   // Actualizar total cuando cambia el estado del carrito
   useEffect(() => {
     setTotal(state.total);
-  }, [state]);
+  }, [state.total]);
 
   const handleVolver = () => {
     router.push('/quantity-select');
@@ -273,6 +281,22 @@ export default function Carrito() {
     updateAttendee(ticketId, attendee);
   };
 
+  const handleDiscountApplied = (discount: { code: string; percentage: number }) => {
+    const appliedDiscount: AppliedDiscount = {
+      code: discount.code,
+      discountPercentage: discount.percentage,
+      discountAmount: 0, // Se calculará en el context
+      originalAmount: 0, // Se calculará en el context
+      finalAmount: 0, // Se calculará en el context
+    };
+    
+    applyDiscount(appliedDiscount);
+  };
+
+  const handleDiscountRemoved = () => {
+    removeDiscount();
+  };
+
   // Obtener detalles de un tipo de localidad
   const getLocalidadDetails = (localidad: string) => {
     return (
@@ -284,6 +308,18 @@ export default function Carrito() {
         noPermiteMemorias: false,
       }
     );
+  };
+
+  // Calcular subtotal sin descuento de códigos para mostrar el desglose
+  const getSubtotalSinDescuentoCodigo = () => {
+    let subtotal = 0;
+    state.items.forEach((item) => {
+      item.tickets.forEach((ticket) => {
+        subtotal +=
+          ticket.price + (ticket.withMemories && ticket.type !== TicketType.DIAMOND ? ticket.priceMemories : 0);
+      });
+    });
+    return subtotal;
   };
 
   // Nueva función para iniciar el proceso de pago con Wompi
@@ -320,6 +356,7 @@ export default function Carrito() {
         {
           reference: reference,
           amountInCents: amountInCents,
+          discountCode: state.appliedDiscount?.code || null,
           tickets: state.items.flatMap((item) => {
             return item.tickets.map((ticket) => ({
               type: ticket.type,
@@ -809,10 +846,24 @@ export default function Carrito() {
 
                     <div className="flex justify-between">
                       <span className="text-gray-300">Subtotal:</span>
-                      <span className="text-white">{formatoPrecio(total)}</span>
+                      <span className="text-white">{formatoPrecio(state.appliedDiscount ? getSubtotalSinDescuentoCodigo() : total)}</span>
                     </div>
 
-                    {/* Mostrar descuento si aplica */}
+                    {/* Mostrar descuento de código si aplica */}
+                    {state.appliedDiscount && (
+                      <div className="flex justify-between mt-2 text-green-400">
+                        <span className="flex items-center">
+                          <FontAwesomeIcon
+                            icon={faPercentage}
+                            className="mr-1"
+                          />
+                          Descuento ({state.appliedDiscount.code} - {state.appliedDiscount.percentage}%):
+                        </span>
+                        <span>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.appliedDiscount.percentage))}</span>
+                      </div>
+                    )}
+
+                    {/* Mostrar descuento por fecha si aplica */}
                     {descuentoActual && descuentoActual.porcentaje > 0 && (
                       <div className="flex justify-between mt-2 text-amber-300">
                         <span className="flex items-center">
@@ -820,19 +871,29 @@ export default function Carrito() {
                             icon={faPercentage}
                             className="mr-1"
                           />
-                          Descuento ({descuentoActual.porcentaje}%):
+                          Descuento temporal ({descuentoActual.porcentaje}%):
                         </span>
                         <span>-{formatoPrecio(montoDescuento)}</span>
                       </div>
                     )}
 
-                    {/* Total con descuento */}
+                    {/* Total con descuentos */}
                     <div className="flex justify-between text-xl font-bold mt-2">
                       <span className="text-white">Total:</span>
                       <span className="text-blue-300">
                         {formatoPrecio(totalConDescuento)}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Componente de código de descuento */}
+                  <div className="mb-8">
+                    <DiscountCodeInput
+                      onDiscountApplied={handleDiscountApplied}
+                      onDiscountRemoved={handleDiscountRemoved}
+                      appliedDiscount={state.appliedDiscount}
+                      disabled={loading}
+                    />
                   </div>
 
                   {/* Aviso de datos faltantes */}
