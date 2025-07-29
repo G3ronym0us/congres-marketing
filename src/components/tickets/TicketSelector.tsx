@@ -12,8 +12,8 @@ export default function TicketSelector({ selectedTicket, onTicketSelect }: Ticke
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       {Object.entries(localidadesData).map(([key, datos]) => {
-        // Omitir la opción de "solo memorias" en el selector
-        if (key === 'memorias') return null;
+        // Omitir la opción de "solo memorias" y tickets no públicos en el selector
+        if (key === 'memorias' || !datos.pushable) return null;
         
         return (
           <div 

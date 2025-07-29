@@ -91,6 +91,21 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     withMemories: false,
     pushable: false
   },
+  [TicketType.STAFF]: {
+    name: 'Entrada Staff',
+    price: 0,
+    color: 'bg-gradient-to-br from-red-600/50 to-red-800/50',
+    border: 'border-red-400',
+    icon: '👥',
+    features: [
+      'Acceso como personal del evento',
+      'Ingreso a todas las conferencias del evento',
+      'Acceso a áreas restringidas del staff',
+      'Certificación de participación digital'
+    ],
+    withMemories: false,
+    pushable: false
+  },
   // Añadimos opción solo memorias (no usamos el enum porque no es un tipo de ticket estándar)
   'memorias': {
     name: 'Memorias del Evento',

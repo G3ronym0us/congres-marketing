@@ -7,6 +7,7 @@ export enum TicketType {
   STREAMING = 'streaming',
   ALLIED = 'allied',
   JOURNALIST = 'journalist',
+  STAFF = 'staff',
 }
 
 export enum TicketStatus {
@@ -123,6 +124,7 @@ export const traductions = {
   [TicketType.STREAMING]: 'STREAMING',
   [TicketType.ALLIED]: 'ALIADO',
   [TicketType.JOURNALIST]: 'PRENSA',
+  [TicketType.STAFF]: 'STAFF',
 };
 
 export interface FormDataType {
