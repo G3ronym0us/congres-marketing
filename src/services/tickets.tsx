@@ -147,3 +147,12 @@ export async function downloadCertificate(uuid: string): Promise<Blob> {
     return handleError(error);
   }
 }
+
+export async function getTicketsMetrics() {
+  try {
+    const response = await apiClient.get('/tickets/metrics');
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
