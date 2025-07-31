@@ -19,10 +19,12 @@ import {
   faEnvelope,
   faPercentage,
   faRefresh,
-  faCheckCircle
+  faCheckCircle,
+  faDownload
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
 import { useMetrics } from '@/hooks/useMetrics';
+import apiClient from '@/utils/apiClient';
 import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
 import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
@@ -30,6 +32,7 @@ import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAd
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
   // Handle navigation for special routes
   const handleTabChange = (tabId: string) => {
@@ -97,6 +100,43 @@ export default function Dashboard() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Función para descargar el reporte PDF
+  const downloadPDFReport = async () => {
+    try {
+      setIsDownloadingPDF(true);
+      
+      const response = await apiClient.get('/tickets/report/download', {
+        responseType: 'blob',
+      });
+
+      // Crear un blob URL del PDF
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crear elemento de descarga temporal
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generar nombre del archivo con fecha actual
+      const currentDate = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+      link.download = `reporte-tickets-cnmp-${currentDate}.pdf`;
+      
+      // Trigger descarga
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error downloading PDF report:', error);
+      alert('Error al descargar el reporte. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
   // Título dinámico para la navbar
   const getPageTitle = () => {
     switch(activeTab) {
@@ -157,17 +197,30 @@ export default function Dashboard() {
           {/* Dashboard View */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              {/* Refresh Button */}
+              {/* Action Buttons */}
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-800">Dashboard de Métricas</h2>
-                <button
-                  onClick={refetch}
-                  disabled={metricsLoading}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  <FontAwesomeIcon icon={faRefresh} className={`h-4 w-4 mr-2 ${metricsLoading ? 'animate-spin' : ''}`} />
-                  Actualizar
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={downloadPDFReport}
+                    disabled={isDownloadingPDF || metricsLoading}
+                    className="inline-flex items-center px-4 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FontAwesomeIcon 
+                      icon={faDownload} 
+                      className={`h-4 w-4 mr-2 ${isDownloadingPDF ? 'animate-pulse' : ''}`} 
+                    />
+                    {isDownloadingPDF ? 'Generando...' : 'Descargar Reporte PDF'}
+                  </button>
+                  <button
+                    onClick={refetch}
+                    disabled={metricsLoading || isDownloadingPDF}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <FontAwesomeIcon icon={faRefresh} className={`h-4 w-4 mr-2 ${metricsLoading ? 'animate-spin' : ''}`} />
+                    Actualizar
+                  </button>
+                </div>
               </div>
 
               {/* Error State */}
