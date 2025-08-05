@@ -164,6 +164,7 @@ export interface Ticket {
   email: string;
   phone: string;
   qrUrl: string;
+  certificateUrl?: string; // URL del certificado (solo si está habilitado)
 }
 
 export interface LocalidadDetalle {

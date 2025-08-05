@@ -156,3 +156,21 @@ export async function getTicketsMetrics() {
     return handleError(error);
   }
 }
+
+export async function getCertificateStatus(): Promise<{ enabled: boolean }> {
+  try {
+    const response = await apiClient.get('/admin/certificates/status');
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function toggleCertificates(enabled: boolean): Promise<{ enabled: boolean }> {
+  try {
+    const response = await apiClient.put('/admin/certificates/toggle', { enabled });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}

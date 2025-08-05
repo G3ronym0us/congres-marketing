@@ -255,29 +255,46 @@ export default function TicketDetailPage() {
                         <FontAwesomeIcon icon={faDownload} className="text-[#4B0012] text-2xl mr-2" />
                         <h3 className="text-xl font-semibold text-gray-800">Certificado de Asistencia</h3>
                       </div>
-                      <p className="text-gray-700 mb-6">
-                        Podrás descargar tu certificado oficial de asistencia al CNMP 2025 después del evento. 
-                        El certificado estará disponible una vez hayas registrado tu asistencia.
-                      </p>
-                      <button
-                        onClick={handleDownloadCertificate}
-                        className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white px-6 py-3 rounded-lg flex items-center justify-center w-full md:w-auto transition-all ${
-                          true ? 'opacity-75 cursor-wait' : 'hover:shadow-lg'
-                        }`}
-                        disabled={true}
-                      >
-                        {downloading ? (
-                          <>
-                            <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-                            <span>Descargando...</span>
-                          </>
-                        ) : (
-                          <>
+                      {ticket.certificateUrl ? (
+                        <>
+                          <p className="text-gray-700 mb-6">
+                            Tu certificado oficial de asistencia al CNMP 2025 está disponible para descarga.
+                          </p>
+                          <button
+                            onClick={handleDownloadCertificate}
+                            className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white px-6 py-3 rounded-lg flex items-center justify-center w-full md:w-auto transition-all ${
+                              downloading ? 'opacity-75 cursor-wait' : 'hover:shadow-lg'
+                            }`}
+                            disabled={downloading}
+                          >
+                            {downloading ? (
+                              <>
+                                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                                <span>Descargando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                                <span>Descargar Certificado</span>
+                              </>
+                            )}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-gray-700 mb-6">
+                            El certificado oficial de asistencia estará disponible después del evento.
+                            Mantente atento para recibir notificaciones sobre su disponibilidad.
+                          </p>
+                          <button
+                            className="bg-gray-400 text-white px-6 py-3 rounded-lg flex items-center justify-center w-full md:w-auto transition-all cursor-not-allowed opacity-60"
+                            disabled={true}
+                          >
                             <FontAwesomeIcon icon={faDownload} className="mr-2" />
-                            <span>Descargar Certificado</span>
-                          </>
-                        )}
-                      </button>
+                            <span>Certificado no disponible</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

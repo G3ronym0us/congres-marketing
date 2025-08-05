@@ -20,7 +20,8 @@ import {
   faPercentage,
   faRefresh,
   faCheckCircle,
-  faDownload
+  faDownload,
+  faCertificate
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthContext } from '@/context/AuthContext';
 import { useMetrics } from '@/hooks/useMetrics';
@@ -29,6 +30,7 @@ import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
 import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
 import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAdmin';
+import CertificatesAdmin from '@/components/admin/certificates/CertificatesAdmin';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('table');
@@ -77,6 +79,7 @@ export default function Dashboard() {
     { id: 'testimonials', label: 'Testimonios', icon: faComments },
     { id: 'broadcasts', label: 'Email Broadcasts', icon: faEnvelope },
     { id: 'discount-codes', label: 'Códigos de Descuento', icon: faPercentage },
+    { id: 'certificates', label: 'Certificados', icon: faCertificate },
   ];
 
   // Cierra el sidebar automáticamente cuando la pantalla se hace grande
@@ -146,6 +149,7 @@ export default function Dashboard() {
       case 'testimonials': return 'Gestión de Testimonios';
       case 'broadcasts': return 'Email Broadcasts';
       case 'discount-codes': return 'Códigos de Descuento';
+      case 'certificates': return 'Gestión de Certificados';
       case 'reserve': return 'Reservar Tickets';
       default: return 'Panel de Administración';
     }
@@ -371,6 +375,13 @@ export default function Dashboard() {
           {activeTab === 'discount-codes' && (
             <div>
               <DiscountCodesAdmin />
+            </div>
+          )}
+
+          {/* Certificados */}
+          {activeTab === 'certificates' && (
+            <div>
+              <CertificatesAdmin />
             </div>
           )}
         </main>
