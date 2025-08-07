@@ -11,6 +11,8 @@ export interface EmailBroadcast {
   sent_count: number;
   failed_count: number;
   error_message?: string;
+  include_certificate?: boolean;
+  force_regenerate_certificate?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,12 +26,16 @@ export interface CreateEmailBroadcastRequest {
   attachments?: string[];
   include_ticket?: boolean;
   force_regenerate_ticket?: boolean;
+  include_certificate?: boolean;
+  force_regenerate_certificate?: boolean;
 }
 
 export interface ResendEmailBroadcastRequest {
   specific_email?: string;
   include_ticket?: boolean;
   force_regenerate_ticket?: boolean;
+  include_certificate?: boolean;
+  force_regenerate_certificate?: boolean;
 }
 
 export interface EmailAttachment {

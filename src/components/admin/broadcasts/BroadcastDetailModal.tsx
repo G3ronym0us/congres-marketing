@@ -27,6 +27,8 @@ export default function BroadcastDetailModal({
   const [resendData, setResendData] = useState<ResendEmailBroadcastRequest>({
     include_ticket: false,
     force_regenerate_ticket: false,
+    include_certificate: false,
+    force_regenerate_certificate: false,
   });
 
   const getStatusBadge = (status: string) => {
@@ -67,7 +69,9 @@ export default function BroadcastDetailModal({
       ...prev,
       [name]: checked,
       // If unchecking include_ticket, also uncheck force_regenerate_ticket
-      ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {})
+      ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {}),
+      // If unchecking include_certificate, also uncheck force_regenerate_certificate
+      ...(name === 'include_certificate' && !checked ? { force_regenerate_certificate: false } : {})
     }));
   };
 
@@ -84,6 +88,8 @@ export default function BroadcastDetailModal({
       setResendData({
         include_ticket: false,
         force_regenerate_ticket: false,
+        include_certificate: false,
+        force_regenerate_certificate: false,
       });
       
       Swal.fire({
@@ -226,48 +232,99 @@ export default function BroadcastDetailModal({
 
                 <div className="border-t pt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Opciones de Boleto
+                    Opciones de Adjuntos Automáticos
                   </label>
-                  <div className="space-y-3">
-                    <label className="flex items-center group">
-                      <input
-                        type="checkbox"
-                        name="include_ticket"
-                        checked={resendData.include_ticket}
-                        onChange={handleResendTicketCheckboxChange}
-                        className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                      />
-                      <span className="flex items-center">
-                        🎫 Incluir Boleto
-                        <span 
-                          className="ml-2 text-gray-400 cursor-help"
-                          title="Adjuntar automáticamente el boleto del usuario al email"
-                        >
-                          ℹ️
-                        </span>
-                      </span>
-                    </label>
-                    
-                    {resendData.include_ticket && (
-                      <label className="flex items-center ml-6 group">
-                        <input
-                          type="checkbox"
-                          name="force_regenerate_ticket"
-                          checked={resendData.force_regenerate_ticket}
-                          onChange={handleResendTicketCheckboxChange}
-                          className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                        <span className="flex items-center">
-                          🔄 Forzar Regeneración
-                          <span 
-                            className="ml-2 text-gray-400 cursor-help"
-                            title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
-                          >
-                            ℹ️
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-600 mb-3">Boletos</h4>
+                      <div className="space-y-3">
+                        <label className="flex items-center group">
+                          <input
+                            type="checkbox"
+                            name="include_ticket"
+                            checked={resendData.include_ticket}
+                            onChange={handleResendTicketCheckboxChange}
+                            className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="flex items-center">
+                            🎫 Incluir Boleto
+                            <span 
+                              className="ml-2 text-gray-400 cursor-help"
+                              title="Adjuntar automáticamente el boleto del usuario al email"
+                            >
+                              ℹ️
+                            </span>
                           </span>
-                        </span>
-                      </label>
-                    )}
+                        </label>
+                        
+                        {resendData.include_ticket && (
+                          <label className="flex items-center ml-6 group">
+                            <input
+                              type="checkbox"
+                              name="force_regenerate_ticket"
+                              checked={resendData.force_regenerate_ticket}
+                              onChange={handleResendTicketCheckboxChange}
+                              className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="flex items-center">
+                              🔄 Regenerar Boleto
+                              <span 
+                                className="ml-2 text-gray-400 cursor-help"
+                                title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
+                              >
+                                ℹ️
+                              </span>
+                            </span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-600 mb-3">Certificados</h4>
+                      <div className="space-y-3">
+                        <label className="flex items-center group">
+                          <input
+                            type="checkbox"
+                            name="include_certificate"
+                            checked={resendData.include_certificate}
+                            onChange={handleResendTicketCheckboxChange}
+                            className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                          />
+                          <span className="flex items-center">
+                            🏆 Incluir Certificado
+                            <span 
+                              className="ml-2 text-gray-400 cursor-help"
+                              title="Adjuntar automáticamente el certificado del usuario al email"
+                            >
+                              ℹ️
+                            </span>
+                          </span>
+                        </label>
+                        
+                        {resendData.include_certificate && (
+                          <label className="flex items-center ml-6 group">
+                            <input
+                              type="checkbox"
+                              name="force_regenerate_certificate"
+                              checked={resendData.force_regenerate_certificate}
+                              onChange={handleResendTicketCheckboxChange}
+                              className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                            />
+                            <span className="flex items-center">
+                              🔄 Regenerar Certificado
+                              <span 
+                                className="ml-2 text-gray-400 cursor-help"
+                                title="Generar nuevo PDF del certificado en lugar de usar el existente"
+                              >
+                                ℹ️
+                              </span>
+                            </span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -286,6 +343,8 @@ export default function BroadcastDetailModal({
                       setResendData({
                         include_ticket: false,
                         force_regenerate_ticket: false,
+                        include_certificate: false,
+                        force_regenerate_certificate: false,
                       });
                       onResend();
                     }}
