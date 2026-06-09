@@ -1,28 +1,12 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faEdit,
-  faFileDownload,
-  faMailBulk,
-  faTimes,
-  faTrash,
-  faSearch,
-  faCheck,
-  faExclamationCircle,
-  faPlus,
-} from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
-import validator from 'validator';
-import InputText from '@/components/form/InputText';
 import {
   deleteTickets,
   downloadTicket,
   getTicketsApproved,
   resendEmailTicket,
-  updateTickets,
   adminSaveTickets,
   adminEditTicket,
 } from '@/services/tickets';
@@ -32,386 +16,345 @@ import {
   FilterGetTicketsInput,
   AdminCreateTicketInput,
   AdminEditTicketInput,
+  Ticket,
 } from '@/types/tickets';
 import TicketModal from './Modals/CreateTicket';
 import EditTicketModal from './Modals/EditTicket';
-import { Ticket } from '@/types/tickets';
+
+/* ── helpers ── */
+const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
+  diamond:    { bg: 'rgba(4,238,98,.12)',   color: '#04EE62' },
+  vip:        { bg: 'rgba(168,85,247,.15)', color: '#c084fc' },
+  general:    { bg: 'rgba(59,130,246,.15)', color: '#60a5fa' },
+  streaming:  { bg: 'rgba(6,182,212,.15)',  color: '#22d3ee' },
+  allied:     { bg: 'rgba(251,146,60,.15)', color: '#fb923c' },
+  staff:      { bg: 'rgba(148,163,184,.12)',color: '#94a3b8' },
+  journalist: { bg: 'rgba(250,204,21,.12)', color: '#fbbf24' },
+};
+const TYPE_ICONS: Record<string, string> = {
+  diamond: '💎', vip: '🟣', general: '🔵',
+  streaming: '🌐', allied: '🤝', staff: '👥', journalist: '🎤',
+};
+
+function TypeBadge({ type }: { type: string }) {
+  const c = TYPE_COLORS[type] ?? { bg: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.6)' };
+  return (
+    <span style={{
+      background: c.bg, color: c.color,
+      border: `1px solid ${c.color}33`,
+      borderRadius: 100, padding: '3px 10px',
+      fontSize: 11, fontFamily: 'Oxanium, sans-serif',
+      fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
+      whiteSpace: 'nowrap',
+    }}>
+      {TYPE_ICONS[type] ?? '🎫'} {type}
+    </span>
+  );
+}
+
+function IconBtn({ title, onClick, danger = false, children }: {
+  title: string; onClick: () => void; danger?: boolean; children: React.ReactNode;
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        background: 'none', border: '1px solid rgba(255,255,255,.08)',
+        borderRadius: 7, padding: '5px 8px', cursor: 'pointer',
+        color: danger ? 'rgba(255,80,80,.7)' : 'rgba(255,255,255,.45)',
+        transition: 'all .15s',
+        display: 'inline-flex', alignItems: 'center',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLButtonElement).style.color = danger ? '#ff6b6b' : '#04EE62';
+        (e.currentTarget as HTMLButtonElement).style.borderColor = danger ? 'rgba(255,80,80,.4)' : 'rgba(4,238,98,.3)';
+        (e.currentTarget as HTMLButtonElement).style.background = danger ? 'rgba(255,80,80,.08)' : 'rgba(4,238,98,.07)';
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLButtonElement).style.color = danger ? 'rgba(255,80,80,.7)' : 'rgba(255,255,255,.45)';
+        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,.08)';
+        (e.currentTarget as HTMLButtonElement).style.background = 'none';
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+const s16 = { width: 14, height: 14 };
+
+/* ══════════════════════════════════════════════════ */
 
 const TicketsTable = () => {
-  const router = useRouter();
-
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [data, setData] = React.useState<Ticket[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
-  const [name, setName] = React.useState('');
-  const [lastname, setLastname] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [documentUser, setDocumentUser] = React.useState('');
-
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
 
-  const [filters, setFilters] = React.useState<FilterGetTicketsInput>({
+  const [filters] = React.useState<FilterGetTicketsInput>({
     status: [TicketStatus.PAID, TicketStatus.RESERVED],
   });
 
-  React.useEffect(() => {
-    getTickets();
-  }, []);
+  React.useEffect(() => { getTickets(); }, []);
 
   const getTickets = async () => {
     setIsLoading(true);
     try {
-      const tickets = await getTicketsApproved(filters);
-      setData(tickets);
-    } catch (error) {
-      console.error('Error obteniendo tickets:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al cargar tickets',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      setData(await getTicketsApproved(filters));
+    } catch {
+      toast('error', 'Error al cargar tickets');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredData = data.filter((item: Ticket) => {
-    if (!searchTerm || searchTerm === '') return true;
-    return (
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const toast = (icon: 'success' | 'error', title: string) =>
+    Swal.fire({ position: 'top-end', icon, title, showConfirmButton: false, timer: 1500 });
 
-  // Paginación
-  const itemsPerPage = 10; // Número de elementos por página
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const filteredData = data.filter(t =>
+    !searchTerm ||
+    t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.phone?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
-  const handleChangePage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
+  const ITEMS = 15;
+  const totalPages = Math.ceil(filteredData.length / ITEMS);
+  const currentItems = filteredData.slice((currentPage - 1) * ITEMS, currentPage * ITEMS);
 
   const resendEmail = async (uuid: string) => {
-    try {
-      const response = await resendEmailTicket(uuid);
-
-      if (response.status === 'ok') {
-        Swal.fire({
-          position: 'top-end',
-          icon: 'success',
-          title: 'Correo enviado',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      } else {
-        Swal.fire({
-          position: 'top-end',
-          icon: 'error',
-          title: 'Correo no enviado',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      }
-    } catch (error) {
-      console.error('Error enviando email:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al enviar correo',
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
+    const r = await resendEmailTicket(uuid);
+    toast(r.status === 'ok' ? 'success' : 'error', r.status === 'ok' ? 'Correo enviado' : 'Error al enviar correo');
   };
 
   const downloadPDF = async (ticket: Ticket) => {
     try {
-      const response = await downloadTicket(ticket.uuid);
-
-      if (response) {
-        const url = window.URL.createObjectURL(response);
-        const link = document.createElement('a');
-        link.href = url;
-        const ticketName = ticket.name
-          ? `${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}`
-          : ticket.uuid;
-        link.setAttribute(
-          'download',
-          `CNMP_COLOMBIA_BOLETO(${ticketName}).pdf`,
-        );
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      } else {
-        console.error('Error downloading PDF');
-        Swal.fire({
-          position: 'top-end',
-          icon: 'error',
-          title: 'Error al descargar PDF',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      }
-    } catch (error) {
-      console.error('Error descargando PDF:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al descargar PDF',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      const blob = await downloadTicket(ticket.uuid);
+      if (!blob) { toast('error', 'Error al descargar PDF'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CNMP_COLOMBIA_BOLETO(${ticket.name ? `${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}` : ticket.uuid}).pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast('error', 'Error al descargar PDF');
     }
   };
 
   const deleteTicket = async (uuid: string) => {
-    // Confirmar antes de eliminar
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción no se puede revertir',
+    const confirmed = await Swal.fire({
+      title: '¿Eliminar ticket?',
+      text: 'Esta acción no se puede revertir.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
+      confirmButtonColor: '#04EE62',
+      cancelButtonColor: '#333',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
+      background: '#2A2228',
+      color: '#fff',
     });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await deleteTickets(uuid);
-
-        if (response.status === 'ok') {
-          Swal.fire({
-            position: 'top-end',
-            icon: 'success',
-            title: 'Ticket Eliminado',
-            showConfirmButton: false,
-            timer: 1500,
-          });
-          getTickets();
-        } else {
-          Swal.fire({
-            position: 'top-end',
-            icon: 'error',
-            title: 'Ticket no eliminado',
-            showConfirmButton: false,
-            timer: 1500,
-          });
-        }
-      } catch (error) {
-        console.error('Error eliminando ticket:', error);
-        Swal.fire({
-          position: 'top-end',
-          icon: 'error',
-          title: 'Error al eliminar ticket',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      }
-    }
-  };
-
-  const editTicket = (ticket: Ticket) => {
-    setIsOpenEdit(true);
-    setTicketEdit(ticket);
+    if (!confirmed.isConfirmed) return;
+    const r = await deleteTickets(uuid);
+    toast(r.status === 'ok' ? 'success' : 'error', r.status === 'ok' ? 'Ticket eliminado' : 'Error al eliminar');
+    if (r.status === 'ok') getTickets();
   };
 
   const handleReserveTickets = async (ticket: AdminCreateTicketInput) => {
     setIsLoading(true);
     try {
-      const response = await adminSaveTickets(ticket);
-
-      if (response.status === 'ok') {
-        Swal.fire({
-          position: 'top-end',
-          icon: 'success',
-          title: 'Tickets Reservados',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-        setIsOpen(false);
-        getTickets();
-      } else {
-        throw new Error('Error al reservar tickets');
-      }
-    } catch (error) {
-      console.error('Error al reservar tickets:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudieron reservar los tickets',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      const r = await adminSaveTickets(ticket);
+      if (r.status !== 'ok') throw new Error();
+      toast('success', 'Ticket creado');
+      setIsOpen(false);
+      getTickets();
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo crear el ticket', background: '#2A2228', color: '#fff' });
+    } finally { setIsLoading(false); }
   };
 
   const handleEditTicket = async (ticket: AdminEditTicketInput) => {
     setIsLoading(true);
     try {
-      const response = await adminEditTicket(ticket);
+      const r = await adminEditTicket(ticket);
+      if (r.status !== 'ok') throw new Error();
+      toast('success', 'Ticket actualizado');
+      setIsOpenEdit(false);
+      getTickets();
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo editar el ticket', background: '#2A2228', color: '#fff' });
+    } finally { setIsLoading(false); }
+  };
 
-      if (response.status === 'ok') {
-        Swal.fire({
-          position: 'top-end',
-          icon: 'success',
-          title: 'Tickets Reservados',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-        setIsOpenEdit(false);
-        getTickets();
-      } else {
-        throw new Error('Error al reservar tickets');
-      }
-    } catch (error) {
-      console.error('Error al reservar tickets:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudieron reservar los tickets',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  /* ── page range ── */
+  const pageNums = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (currentPage <= 4) return [1, 2, 3, 4, 5, '…', totalPages];
+    if (currentPage >= totalPages - 3) return [1, '…', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '…', currentPage - 1, currentPage, currentPage + 1, '…', totalPages];
+  };
+
+  /* ── shared input style for search ── */
+  const searchStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,.05)',
+    border: '1px solid rgba(255,255,255,.1)',
+    borderRadius: 10,
+    padding: '9px 14px 9px 38px',
+    color: '#fff',
+    fontFamily: 'Space Grotesk, sans-serif',
+    fontSize: 14,
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      {/* Cabecera con búsqueda */}
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Lista de Tickets
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative flex-grow">
-              <FontAwesomeIcon
-                icon={faSearch}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Buscar ticket..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
-              />
-            </div>
-            <button
-              onClick={() => setIsOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
-            >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              <span>Nuevo Ticket</span>
-            </button>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+      {/* ── Header ── */}
+      <div style={{
+        background: 'var(--panel)', border: '1px solid var(--line)',
+        borderRadius: '16px 16px 0 0', padding: '18px 20px',
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+      }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ width: 15, height: 15, position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,.3)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, documento, email…"
+            value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            style={searchStyle}
+          />
         </div>
+
+        {/* Count */}
+        <span style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, color: 'var(--mute-2)', whiteSpace: 'nowrap' }}>
+          {filteredData.length} ticket{filteredData.length !== 1 ? 's' : ''}
+        </span>
+
+        {/* Refresh */}
+        <button className="adm-btn" onClick={getTickets} disabled={isLoading} style={{ whiteSpace: 'nowrap' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ ...s16, ...(isLoading ? { animation: 'spin 1s linear infinite' } : {}) }}>
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          Actualizar
+        </button>
+
+        {/* New ticket */}
+        <button className="adm-btn neon" onClick={() => setIsOpen(true)} style={{ whiteSpace: 'nowrap' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={s16}>
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Nuevo ticket
+        </button>
       </div>
 
-      {/* Tabla de tickets - Versión escritorio */}
-      <div className="hidden md:block overflow-x-auto">
+      {/* ── Table ── */}
+      <div style={{
+        background: 'var(--panel)', border: '1px solid var(--line)', borderTop: 'none',
+        borderRadius: totalPages > 1 ? '0' : '0 0 16px 16px',
+        overflowX: 'auto',
+      }}>
         {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div style={{ padding: 60, textAlign: 'center' }}>
+            <div style={{ width: 36, height: 36, border: '2px solid rgba(4,238,98,.2)', borderTopColor: '#04EE62', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+            <p style={{ color: 'var(--mute-2)', fontSize: 13 }}>Cargando tickets…</p>
           </div>
-        ) : data.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <FontAwesomeIcon
-              icon={faExclamationCircle}
-              className="text-gray-400 text-4xl mb-2"
-            />
-            <p>No hay tickets disponibles</p>
+        ) : filteredData.length === 0 ? (
+          <div style={{ padding: 60, textAlign: 'center', color: 'var(--mute-2)', fontSize: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🎫</div>
+            No se encontraron tickets
           </div>
         ) : (
-          <table className="min-w-full bg-white">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm leading-normal">
-                <th className="py-3 px-6 text-center">Documento</th>
-                <th className="py-3 px-6 text-center">Nombre</th>
-                <th className="py-3 px-6 text-center">Email</th>
-                <th className="py-3 px-6 text-center">Teléfono</th>
-                <th className="py-3 px-6 text-center">Localidad</th>
-                <th className="py-3 px-6 text-center">Acciones</th>
+              <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                {['Documento', 'Asistente', 'Contacto', 'Localidad', 'Acciones'].map(h => (
+                  <th key={h} style={{
+                    padding: '11px 16px', textAlign: h === 'Acciones' ? 'center' : 'left',
+                    fontFamily: 'Oxanium, sans-serif', fontSize: 11,
+                    fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                    color: 'var(--mute-2)',
+                  }}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="text-gray-600 text-sm">
-              {currentItems.map((item: Ticket) => (
-                <tr
-                  key={item.uuid}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+            <tbody>
+              {currentItems.map((item, idx) => (
+                <tr key={item.uuid} style={{
+                  borderBottom: idx < currentItems.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none',
+                  transition: 'background .15s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <td className="py-3 px-6 text-left whitespace-nowrap font-medium">
-                    {item.document}
+                  {/* Documento */}
+                  <td style={{ padding: '12px 16px', color: 'var(--mute)', fontFamily: 'Space Grotesk, monospace', fontSize: 12 }}>
+                    {item.document || '—'}
                   </td>
-                  <td className="py-3 px-6 text-left">
-                    <div className="font-medium">
-                      {!item.name
-                        ? 'Reservada'
-                        : item.lastname?.toUpperCase() + ', ' + item.name}
+
+                  {/* Asistente */}
+                  <td style={{ padding: '12px 16px' }}>
+                    <div style={{ fontWeight: 600, color: '#fff', fontSize: 13 }}>
+                      {!item.name ? <span style={{ color: 'var(--mute-2)', fontStyle: 'italic' }}>Reservada</span>
+                        : `${item.lastname?.toUpperCase()}, ${item.name}`}
                     </div>
+                    {item.email && (
+                      <div style={{ color: 'var(--mute)', fontSize: 11, marginTop: 2 }}>{item.email}</div>
+                    )}
                   </td>
-                  <td className="py-3 px-6 text-left text-gray-500">
-                    {item.email}
+
+                  {/* Contacto */}
+                  <td style={{ padding: '12px 16px', color: 'var(--mute)', fontSize: 12 }}>
+                    {item.phone || <span style={{ color: 'var(--mute-2)' }}>—</span>}
                   </td>
-                  <td className="py-3 px-6 text-left text-gray-500">
-                    {item.phone || 'No registrado'}
+
+                  {/* Localidad */}
+                  <td style={{ padding: '12px 16px' }}>
+                    <TypeBadge type={item.type} />
                   </td>
-                  <td className="py-3 px-6 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs text-center ${
-                        item.type === TicketType.VIP
-                          ? 'bg-purple-100 text-purple-800'
-                          : item.type === TicketType.GENERAL
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {item.type.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex item-center justify-center space-x-4">
-                      <button
-                        onClick={() => resendEmail(item.uuid)}
-                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                        title="Reenviar correo"
-                      >
-                        <FontAwesomeIcon icon={faMailBulk} />
-                      </button>
-                      <button
-                        onClick={() => downloadPDF(item)}
-                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                        title="Descargar PDF"
-                      >
-                        <FontAwesomeIcon icon={faFileDownload} />
-                      </button>
-                      <button
-                        onClick={() => editTicket(item)}
-                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                        title="Editar ticket"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
-                        onClick={() => deleteTicket(item.uuid)}
-                        className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
-                        title="Eliminar ticket"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
+
+                  {/* Acciones */}
+                  <td style={{ padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                      <IconBtn title="Reenviar correo" onClick={() => resendEmail(item.uuid)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                          <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                      </IconBtn>
+                      <IconBtn title="Descargar PDF" onClick={() => downloadPDF(item)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                      </IconBtn>
+                      <IconBtn title="Editar ticket" onClick={() => { setTicketEdit(item); setIsOpenEdit(true); }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </IconBtn>
+                      <IconBtn title="Eliminar ticket" onClick={() => deleteTicket(item.uuid)} danger>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                        </svg>
+                      </IconBtn>
                     </div>
                   </td>
                 </tr>
@@ -421,160 +364,48 @@ const TicketsTable = () => {
         )}
       </div>
 
-      {/* Vista móvil de tickets - Tarjetas */}
-      <div className="md:hidden">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : data.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <FontAwesomeIcon
-              icon={faExclamationCircle}
-              className="text-gray-400 text-4xl mb-2"
-            />
-            <p>No hay tickets disponibles</p>
-          </div>
-        ) : (
-          <div className="space-y-4 p-4">
-            {currentItems.map((item: Ticket) => (
-              <div
-                key={item.uuid}
-                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {!item.name
-                        ? 'Reservada'
-                        : item.lastname?.toUpperCase() + ', ' + item.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">{item.email}</p>
-                    <p className="text-sm text-gray-500">{item.phone || 'No registrado'}</p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs ${
-                      item.type === TicketType.VIP
-                        ? 'bg-purple-100 text-purple-800'
-                        : item.type === TicketType.GENERAL
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                    }`}
-                  >
-                    {item.type}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <span className="text-gray-500">Doc:</span>
-                    <span className="font-medium ml-1">{item.document}</span>
-                  </div>
-
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={() => resendEmail(item.uuid)}
-                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                      aria-label="Reenviar correo"
-                    >
-                      <FontAwesomeIcon icon={faMailBulk} />
-                    </button>
-                    <button
-                      onClick={() => downloadPDF(item)}
-                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                      aria-label="Descargar PDF"
-                    >
-                      <FontAwesomeIcon icon={faFileDownload} />
-                    </button>
-                    <button
-                      onClick={() => editTicket(item)}
-                      className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                      aria-label="Editar ticket"
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button
-                      onClick={() => deleteTicket(item.uuid)}
-                      className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
-                      aria-label="Eliminar ticket"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Paginación */}
-      {!isLoading && data.length > 0 && (
-        <div className="p-4 flex items-center justify-center sm:justify-end">
-          <div className="flex flex-wrap justify-center gap-1">
-            {totalPages > 5 && currentPage > 3 && (
-              <button
-                onClick={() => handleChangePage(1)}
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                1
-              </button>
-            )}
-
-            {totalPages > 5 && currentPage > 3 && (
-              <span className="px-2 py-1 text-gray-500">...</span>
-            )}
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((page) => {
-                if (totalPages <= 5) return true;
-                return page >= currentPage - 1 && page <= currentPage + 1;
-              })
-              .map((page) => (
+      {/* ── Pagination ── */}
+      {!isLoading && totalPages > 1 && (
+        <div style={{
+          background: 'var(--panel)', border: '1px solid var(--line)', borderTop: 'none',
+          borderRadius: '0 0 16px 16px', padding: '14px 20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 12, color: 'var(--mute-2)', fontFamily: 'Oxanium, sans-serif' }}>
+            Página {currentPage} de {totalPages} · {filteredData.length} resultados
+          </span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {pageNums().map((p, i) =>
+              p === '…' ? (
+                <span key={`e${i}`} style={{ padding: '5px 8px', color: 'var(--mute-2)', fontSize: 13 }}>…</span>
+              ) : (
                 <button
-                  key={page}
-                  onClick={() => handleChangePage(page)}
-                  className={`px-3 py-1 rounded-md ${
-                    currentPage === page
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } transition-colors`}
-                  aria-current={currentPage === page ? 'page' : undefined}
+                  key={p}
+                  onClick={() => setCurrentPage(Number(p))}
+                  style={{
+                    padding: '5px 10px', borderRadius: 7, fontSize: 13, cursor: 'pointer',
+                    fontFamily: 'Oxanium, sans-serif', fontWeight: 600,
+                    border: currentPage === p ? '1px solid var(--neon)' : '1px solid var(--line)',
+                    background: currentPage === p ? 'var(--neon)' : 'transparent',
+                    color: currentPage === p ? '#1A1418' : 'var(--mute)',
+                    transition: 'all .15s',
+                  }}
                 >
-                  {page}
+                  {p}
                 </button>
-              ))}
-
-            {totalPages > 5 && currentPage < totalPages - 2 && (
-              <span className="px-2 py-1 text-gray-500">...</span>
-            )}
-
-            {totalPages > 5 && currentPage < totalPages - 2 && (
-              <button
-                onClick={() => handleChangePage(totalPages)}
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                {totalPages}
-              </button>
+              )
             )}
           </div>
         </div>
       )}
 
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
       {isOpen && (
-        <TicketModal
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          onSave={handleReserveTickets}
-        />
+        <TicketModal isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={handleReserveTickets} />
       )}
       {isOpenEdit && ticketEdit && (
-        <EditTicketModal
-          isOpen={isOpenEdit}
-          onClose={() => setIsOpenEdit(false)}
-          onSave={handleEditTicket}
-          ticket={ticketEdit}
-        />
+        <EditTicketModal isOpen={isOpenEdit} onClose={() => setIsOpenEdit(false)} onSave={handleEditTicket} ticket={ticketEdit} />
       )}
     </div>
   );

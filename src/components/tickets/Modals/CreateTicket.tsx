@@ -2,362 +2,114 @@
 
 import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faTimes,
-  faMemory,
-  faToggleOn,
-  faToggleOff,
-  faExclamationCircle,
-} from '@fortawesome/free-solid-svg-icons';
-import { AdminCreateTicketInput, Ticket, TicketType } from '@/types/tickets';
+import { AdminCreateTicketInput, TicketType } from '@/types/tickets';
 import { localidadesData } from '@/data/ticketsData';
 import { generateReference } from '@/utils/utils';
+import { DarkModal, DarkField, DarkInput, DarkSelect, MemoriesToggle } from './ModalParts';
 
-interface TicketModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (ticket: AdminCreateTicketInput) => void;
 }
 
-const TicketModal: React.FC<TicketModalProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-}) => {
-  // Configuración de React Hook Form
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm<AdminCreateTicketInput>({
-    defaultValues: {
-      reference: '',
-      name: '',
-      lastname: '',
-      email: '',
-      document: '',
-      phone: '',
-      type: 'General' as TicketType,
-      withMemories: false,
-    },
+const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
+  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<AdminCreateTicketInput>({
+    defaultValues: { reference: '', name: '', lastname: '', email: '', document: '', phone: '', type: 'General' as TicketType, withMemories: false },
     mode: 'onChange',
   });
 
-  // Observar el tipo de ticket seleccionado
-  const selectedTicketType = watch('type');
+  const selectedType = watch('type');
 
-  // Generar referencia única
-  useEffect(() => {
-    const reference = generateReference();
-    setValue('reference', reference);
-  }, []);
+  useEffect(() => { setValue('reference', generateReference()); }, []);
 
-  // Actualizar withMemories cuando cambia el tipo de ticket
   useEffect(() => {
-    if (selectedTicketType && localidadesData[selectedTicketType]) {
-      setValue(
-        'withMemories',
-        localidadesData[selectedTicketType].withMemories || false,
-      );
+    if (selectedType && localidadesData[selectedType]) {
+      setValue('withMemories', localidadesData[selectedType].withMemories || false);
     }
-  }, [selectedTicketType, setValue]);
+  }, [selectedType, setValue]);
 
-  // Función para manejar la presentación del formulario
-  const onSubmit = (data: AdminCreateTicketInput) => {
-    onSave(data);
-  };
-
-  // Toggle para memorias
   const toggleMemories = () => {
-    // No permitir memorias en tickets gratuitos (allied, journalist)
-    const currentType = watch('type');
-    if (currentType && localidadesData[currentType] && localidadesData[currentType].price === 0) {
-      return; // No hacer nada si es un ticket gratuito
-    }
+    const t = watch('type');
+    if (t && localidadesData[t]?.price === 0) return;
     setValue('withMemories', !watch('withMemories'), { shouldValidate: true });
   };
 
-  // Si el modal no está abierto, no renderizamos nada
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">
-            {'Agregar Ticket'}
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Cerrar"
-          >
-            <FontAwesomeIcon icon={faTimes} size="lg" />
+    <DarkModal title="Nuevo ticket" onClose={onClose}>
+      <form onSubmit={handleSubmit(onSave)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        <DarkField label="Nombres *" error={errors.name?.message}>
+          <Controller name="name" control={control}
+            rules={{ required: 'Requerido', minLength: { value: 2, message: 'Mínimo 2 caracteres' } }}
+            render={({ field }) => <DarkInput {...field} placeholder="Nombres" hasError={!!errors.name} />}
+          />
+        </DarkField>
+
+        <DarkField label="Apellidos *" error={errors.lastname?.message}>
+          <Controller name="lastname" control={control}
+            rules={{ required: 'Requerido', minLength: { value: 2, message: 'Mínimo 2 caracteres' } }}
+            render={({ field }) => <DarkInput {...field} placeholder="Apellidos" hasError={!!errors.lastname} />}
+          />
+        </DarkField>
+
+        <DarkField label="Correo electrónico *" error={errors.email?.message}>
+          <Controller name="email" control={control}
+            rules={{ required: 'Requerido', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Formato inválido' } }}
+            render={({ field }) => <DarkInput {...field} type="email" placeholder="ejemplo@correo.com" hasError={!!errors.email} />}
+          />
+        </DarkField>
+
+        <DarkField label="Documento *" error={errors.document?.message}>
+          <Controller name="document" control={control}
+            rules={{ required: 'Requerido' }}
+            render={({ field }) => <DarkInput {...field} placeholder="Número de documento" hasError={!!errors.document} />}
+          />
+        </DarkField>
+
+        <DarkField label="Teléfono" error={errors.phone?.message}>
+          <Controller name="phone" control={control}
+            rules={{ pattern: { value: /^\+?[1-9]\d{1,14}$/, message: 'Formato inválido (+57123456789)' } }}
+            render={({ field }) => <DarkInput {...field} type="tel" placeholder="+57123456789" hasError={!!errors.phone} />}
+          />
+        </DarkField>
+
+        <DarkField label="Tipo de localidad">
+          <Controller name="type" control={control}
+            render={({ field }) => (
+              <DarkSelect {...field}>
+                {Object.values(TicketType).map(t => (
+                  <option key={t} value={t}>
+                    {localidadesData[t]?.name || t} — ${(localidadesData[t]?.price || 0).toLocaleString('es-CO')}
+                  </option>
+                ))}
+              </DarkSelect>
+            )}
+          />
+        </DarkField>
+
+        <Controller name="withMemories" control={control}
+          render={({ field: { value } }) => {
+            const t = watch('type');
+            const disabled = !!(t && localidadesData[t]?.price === 0);
+            return <MemoriesToggle checked={value} disabled={disabled} onToggle={toggleMemories} />;
+          }}
+        />
+
+        <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+          <button type="button" onClick={onClose}
+            style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+            Cancelar
+          </button>
+          <button type="submit"
+            style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: '#04EE62', color: '#1A1418', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, letterSpacing: '.04em' }}>
+            Agregar ticket
           </button>
         </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombres*
-            </label>
-            <Controller
-              name="name"
-              control={control}
-              rules={{
-                required: 'El nombre es requerido',
-                minLength: {
-                  value: 2,
-                  message: 'El nombre debe tener al menos 2 caracteres',
-                },
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="text"
-                  className={`w-full border ${errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Ingrese los nombres"
-                  aria-invalid={errors.name ? 'true' : 'false'}
-                />
-              )}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
-                {errors.name.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Apellidos*
-            </label>
-            <Controller
-              name="lastname"
-              control={control}
-              rules={{
-                required: 'El apellido es requerido',
-                minLength: {
-                  value: 2,
-                  message: 'El apellido debe tener al menos 2 caracteres',
-                },
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="text"
-                  className={`w-full border ${errors.lastname ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Ingrese los apellidos"
-                  aria-invalid={errors.lastname ? 'true' : 'false'}
-                />
-              )}
-            />
-            {errors.lastname && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
-                {errors.lastname.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Correo Electrónico*
-            </label>
-            <Controller
-              name="email"
-              control={control}
-              rules={{
-                required: 'El correo electrónico es requerido',
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: 'El formato de correo electrónico no es válido',
-                },
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="email"
-                  className={`w-full border ${errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="ejemplo@correo.com"
-                  aria-invalid={errors.email ? 'true' : 'false'}
-                />
-              )}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Documento*
-            </label>
-            <Controller
-              name="document"
-              control={control}
-              rules={{
-                required: 'El documento es requerido',
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="text"
-                  className={`w-full border ${errors.document ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Número de documento"
-                  aria-invalid={errors.document ? 'true' : 'false'}
-                />
-              )}
-            />
-            {errors.document && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
-                {errors.document.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Teléfono
-            </label>
-            <Controller
-              name="phone"
-              control={control}
-              rules={{
-                pattern: {
-                  value: /^\+?[1-9]\d{1,14}$/,
-                  message: 'El formato de teléfono no es válido (ej: +57123456789)',
-                },
-              }}
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="tel"
-                  className={`w-full border ${errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="+57123456789"
-                  aria-invalid={errors.phone ? 'true' : 'false'}
-                />
-              )}
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
-                {errors.phone.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de Ticket*
-            </label>
-            <Controller
-              name="type"
-              control={control}
-              render={({ field }) => (
-                <select
-                  {...field}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.values(TicketType).map(
-                    (type: TicketType, index: number) => (
-                      <option key={index} value={type}>
-                        {localidadesData[type]?.name || type} - $
-                        {localidadesData[type]?.price || '0'}
-                      </option>
-                    ),
-                  )}
-                </select>
-              )}
-            />
-          </div>
-
-          {/* Toggle de "Agregar Memorias" */}
-          <Controller
-            name="withMemories"
-            control={control}
-            render={({ field: { value } }) => {
-              const currentType = watch('type');
-              const isDisabled = currentType && localidadesData[currentType] && localidadesData[currentType].price === 0;
-              
-              return (
-                <div
-                  className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                    isDisabled
-                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
-                      : value
-                      ? 'border-blue-300 bg-blue-50 cursor-pointer'
-                      : 'border-gray-200 hover:bg-gray-50 cursor-pointer'
-                  }`}
-                  onClick={!isDisabled ? toggleMemories : undefined}
-                  role="checkbox"
-                  aria-checked={value}
-                  aria-disabled={isDisabled}
-                  tabIndex={isDisabled ? -1 : 0}
-                  onKeyPress={(e) => {
-                    if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
-                      toggleMemories();
-                    }
-                  }}
-                >
-                  <div className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={faMemory}
-                      className={`mr-2 ${
-                        isDisabled ? 'text-gray-300' : value ? 'text-blue-500' : 'text-gray-400'
-                      }`}
-                    />
-                    <span
-                      className={`font-medium ${
-                        isDisabled ? 'text-gray-400' : value ? 'text-blue-700' : 'text-gray-700'
-                      }`}
-                    >
-                      Agregar Memorias
-                      {isDisabled && <span className="text-xs text-gray-400 ml-2">(No disponible para tickets gratuitos)</span>}
-                    </span>
-                  </div>
-                  <FontAwesomeIcon
-                    icon={value ? faToggleOn : faToggleOff}
-                    className={`text-xl ${
-                      isDisabled ? 'text-gray-300' : value ? 'text-blue-500' : 'text-gray-400'
-                    }`}
-                  />
-                </div>
-              );
-            }}
-          />
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex-grow"
-            >
-              {'Agregar Ticket'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </DarkModal>
   );
 };
 
