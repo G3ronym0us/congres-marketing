@@ -1,29 +1,10 @@
 'use client';
 
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faEdit,
-  faFileDownload,
-  faMailBulk,
-  faTimes,
-  faTrash,
-  faSearch,
-  faCheck,
-  faExclamationCircle,
-  faPlus,
-  faEye,
-  faEyeSlash,
-  faImage,
-  faGlobe,
-  faFlag,
-} from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
 import CreateLecturerModal from './Modals/CreateLecturer';
 import EditLecturerModal from './Modals/EditLecturer';
 import {
-  CreateAcademicFormation,
-  CreatePublication,
   CreateLecturerData,
   Lecturer,
   UpdateLecturerData,
@@ -37,214 +18,138 @@ import {
   uploadImage,
 } from '@/services/user';
 
+/* ── design tokens ── */
+const INK    = '#1A1418';
+const PANEL  = '#2A2228';
+const PANEL2 = '#332A30';
+const NEON   = '#04EE62';
+const LINE   = 'rgba(255,255,255,.08)';
+const LINE2  = 'rgba(255,255,255,.14)';
+const MUTE   = 'rgba(255,255,255,.45)';
+const MUTE2  = 'rgba(255,255,255,.28)';
+
+const inputStyle: React.CSSProperties = {
+  background: INK,
+  color: '#fff',
+  border: `1px solid ${LINE2}`,
+  borderRadius: 10,
+  padding: '9px 14px',
+  fontFamily: 'Space Grotesk, sans-serif',
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
 const LecturersTable = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [data, setData] = React.useState<Lecturer[]>([]);
+  const [filteredData, setFilteredData] = React.useState<Lecturer[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [lecturerEdit, setLecturerEdit] = React.useState<Lecturer | null>(null);
-  const [typeFilter, setTypeFilter] = React.useState<
-    'all' | 'INTERNATIONAL' | 'NATIONAL'
-  >('all');
-  const [showFilter, setShowFilter] = React.useState<
-    'all' | 'visible' | 'hidden'
-  >('all');
+  const [typeFilter, setTypeFilter] = React.useState<'all' | 'INTERNATIONAL' | 'NATIONAL'>('all');
+  const [showFilter, setShowFilter] = React.useState<'all' | 'visible' | 'hidden'>('all');
+
+  const itemsPerPage = 10;
+
+  React.useEffect(() => { getLecturers(); }, []);
 
   React.useEffect(() => {
-    getLecturers();
-  }, []);
+    let filtered = data;
+    if (typeFilter !== 'all') filtered = filtered.filter(l => l.type === typeFilter);
+    if (showFilter === 'visible') filtered = filtered.filter(l => l.show);
+    if (showFilter === 'hidden')  filtered = filtered.filter(l => !l.show);
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      filtered = filtered.filter(l =>
+        l.firstName?.toLowerCase().includes(q) ||
+        l.lastName?.toLowerCase().includes(q)  ||
+        l.country?.toLowerCase().includes(q)   ||
+        l.position?.toLowerCase().includes(q)  ||
+        l.alt?.toLowerCase().includes(q),
+      );
+    }
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [data, searchTerm, typeFilter, showFilter]);
 
   const getLecturers = async () => {
     setIsLoading(true);
     try {
-      const lecturers = await getAll();
-      setData(lecturers);
-    } catch (error) {
-      console.error('Error obteniendo conferencistas:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al cargar conferencistas',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      setData(await getAll());
+    } catch {
+      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al cargar conferencistas', showConfirmButton: false, timer: 1500 });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredData = data.filter((item: Lecturer) => {
-    // Filtro de búsqueda
-    const matchesSearch =
-      !searchTerm ||
-      item.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.alt?.toLowerCase().includes(searchTerm.toLowerCase());
-    // Filtro de tipo
-    const matchesType = typeFilter === 'all' || item.type === typeFilter;
-    console.log(`matchesType`, matchesType, typeFilter, item.type);
-    // Filtro de visibilidad
-    const matchesShow =
-      showFilter === 'all' ||
-      (showFilter === 'visible' && item.show) ||
-      (showFilter === 'hidden' && !item.show);
-    return matchesSearch && matchesType && matchesShow;
-  });
+  const totalPages    = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems  = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // Paginación
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  const handleChangePage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-  };
-
-  const toggleVisibility = async (lecturer: Lecturer) => {
+  const handleToggleVisibility = async (lecturer: Lecturer) => {
     try {
       await toggleShow(lecturer.id);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: `Conferencista ${lecturer.show ? 'ocultado' : 'mostrado'}`,
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      getLecturers();
-    } catch (error) {
-      console.error('Error cambiando visibilidad:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al cambiar visibilidad',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      setData(prev => prev.map(l => l.id === lecturer.id ? { ...l, show: !l.show } : l));
+    } catch {
+      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al cambiar visibilidad', showConfirmButton: false, timer: 1500 });
     }
   };
 
-  const deleteLecturer = async (id: number, name: string) => {
-    const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: `Se eliminará permanentemente a ${name}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+  const handleDelete = async (id: number, name: string) => {
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Estás seguro?', text: `Se eliminará permanentemente a ${name}`,
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
     });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteLecturerService(id);
-        Swal.fire({
-          position: 'top-end',
-          icon: 'success',
-          title: 'Conferencista eliminado',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-        getLecturers();
-      } catch (error) {
-        console.error('Error eliminando conferencista:', error);
-        Swal.fire({
-          position: 'top-end',
-          icon: 'error',
-          title: 'Error al eliminar conferencista',
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      }
+    if (!isConfirmed) return;
+    try {
+      await deleteLecturerService(id);
+      setData(prev => prev.filter(l => l.id !== id));
+    } catch {
+      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al eliminar', showConfirmButton: false, timer: 1500 });
     }
   };
 
-  const editLecturer = (lecturer: Lecturer) => {
-    setIsOpenEdit(true);
-    setLecturerEdit(lecturer);
-  };
-
-  const handleCreateLecturer = async (
-    lecturer: CreateLecturerData,
-  ): Promise<{ success: boolean; message: string }> => {
+  const handleCreate = async (lecturer: CreateLecturerData): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true);
     try {
       const response = await create(lecturer);
       if (response instanceof Error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: response.message,
-        });
+        Swal.fire({ icon: 'error', title: 'Error', text: response.message });
         return { success: false, message: response.message };
       }
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Conferencista creado',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      Swal.fire({ position: 'top-end', icon: 'success', title: 'Conferencista creado', showConfirmButton: false, timer: 1500 });
       setIsOpen(false);
       getLecturers();
       return { success: true, message: 'Conferencista creado' };
-    } catch (error) {
-      console.error('Error al crear conferencista:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo crear el conferencista',
-      });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo crear el conferencista' });
       return { success: false, message: 'No se pudo crear el conferencista' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEditLecturer = async (lecturer: UpdateLecturerData) => {
+  const handleEdit = async (lecturer: UpdateLecturerData) => {
     if (!lecturerEdit) return;
-
     setIsLoading(true);
     try {
-      const cleanData: UpdateLecturerData = {
+      await update(lecturerEdit.id, {
         ...lecturer,
-        academicFormations: lecturer.academicFormations?.map((formation) => ({
-          title: formation.title,
-          institution: formation.institution,
-          year: formation.year,
-          place: formation.place,
-        })),
-        publications: lecturer.publications?.map((publication) => ({
-          title: publication.title,
-          editorial: publication.editorial,
-          year: publication.year,
-          role: publication.role,
-          description: publication.description,
-        })),
-      };
-      await update(lecturerEdit.id, cleanData);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Conferencista actualizado',
-        showConfirmButton: false,
-        timer: 1500,
+        academicFormations: lecturer.academicFormations?.map(f => ({ title: f.title, institution: f.institution, year: f.year, place: f.place })),
+        publications: lecturer.publications?.map(p => ({ title: p.title, editorial: p.editorial, year: p.year, role: p.role, description: p.description })),
       });
+      Swal.fire({ position: 'top-end', icon: 'success', title: 'Conferencista actualizado', showConfirmButton: false, timer: 1500 });
       setIsOpenEdit(false);
+      setLecturerEdit(null);
       getLecturers();
-    } catch (error) {
-      console.error('Error al actualizar conferencista:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo actualizar el conferencista',
-      });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el conferencista' });
     } finally {
       setIsLoading(false);
     }
@@ -253,431 +158,204 @@ const LecturersTable = () => {
   const handleImageUpload = async (lecturer: Lecturer, file: File) => {
     try {
       await uploadImage(lecturer.id, file);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Imagen actualizada',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      Swal.fire({ position: 'top-end', icon: 'success', title: 'Imagen actualizada', showConfirmButton: false, timer: 1500 });
       getLecturers();
-    } catch (error) {
-      console.error('Error subiendo imagen:', error);
-      Swal.fire({
-        position: 'top-end',
-        icon: 'error',
-        title: 'Error al subir imagen',
-        showConfirmButton: false,
-        timer: 1500,
-      });
+    } catch {
+      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al subir imagen', showConfirmButton: false, timer: 1500 });
     }
   };
 
+  const intl = data.filter(l => l.type === 'INTERNATIONAL').length;
+  const natl = data.filter(l => l.type === 'NATIONAL').length;
+  const vis  = data.filter(l => l.show).length;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      {/* Cabecera con búsqueda y filtros */}
-      <div className="p-4 sm:p-6 border-b border-gray-200">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Lista de Conferencistas
-            </h2>
-            <button
-              onClick={() => setIsOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
-            >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              <span>Nuevo Conferencista</span>
-            </button>
-          </div>
-
-          {/* Filtros y búsqueda */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <FontAwesomeIcon
-                icon={faSearch}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Buscar conferencista..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
-              />
-            </div>
-
-            <select
-              value={typeFilter}
-              onChange={(e) =>
-                setTypeFilter(
-                  e.target.value as 'all' | 'INTERNATIONAL' | 'NATIONAL',
-                )
-              }
-              className="py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Todos los tipos</option>
-              <option value="INTERNATIONAL">Internacionales</option>
-              <option value="NATIONAL">Nacionales</option>
-            </select>
-
-            <select
-              value={showFilter}
-              onChange={(e) =>
-                setShowFilter(e.target.value as 'all' | 'visible' | 'hidden')
-              }
-              className="py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Todos</option>
-              <option value="visible">Visibles</option>
-              <option value="hidden">Ocultos</option>
-            </select>
-          </div>
+    <div>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+            Conferencistas
+          </h2>
+          <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
+            {intl} internacionales · {natl} nacionales · {vis} visibles
+          </p>
         </div>
+        <button onClick={() => setIsOpen(true)} className="adm-btn neon">
+          + Nuevo conferencista
+        </button>
       </div>
 
-      {/* Tabla de conferencistas - Versión escritorio */}
-      <div className="hidden md:block overflow-x-auto">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : data.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <FontAwesomeIcon
-              icon={faExclamationCircle}
-              className="text-gray-400 text-4xl mb-2"
-            />
-            <p>No hay conferencistas disponibles</p>
-          </div>
-        ) : (
-          <table className="min-w-full bg-white">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm leading-normal">
-                <th className="py-3 px-6 text-left">Imagen</th>
-                <th className="py-3 px-6 text-left">Nombre</th>
-                <th className="py-3 px-6 text-center">Tipo</th>
-                <th className="py-3 px-6 text-center">País</th>
-                <th className="py-3 px-6 text-center">Estado</th>
-                <th className="py-3 px-6 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-600 text-sm">
-              {currentItems.map((item: Lecturer) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-3 px-6">
-                    <div className="relative w-12 h-12">
-                      <img
-                        src={item.image}
-                        alt={`${item.firstName} ${item.lastName}`}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    </div>
-                  </td>
-                  <td className="py-3 px-6 text-left">
-                    <div>
-                      <div className="font-medium">
-                        {item.firstName} {item.lastName}
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        {item.position}
-                      </div>
-                      {item.title && (
-                        <div className="text-blue-600 text-xs italic">
-                          "{item.title}"
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
-                        item.type === 'INTERNATIONAL'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      <FontAwesomeIcon
-                        icon={item.type === 'INTERNATIONAL' ? faGlobe : faFlag}
-                        className="mr-1"
-                      />
-                      {item.type === 'INTERNATIONAL'
-                        ? 'Internacional'
-                        : 'Nacional'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-center text-gray-500">
-                    {item.country}
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
-                        item.show
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      <FontAwesomeIcon
-                        icon={item.show ? faEye : faEyeSlash}
-                        className="mr-1"
-                      />
-                      {item.show ? 'Visible' : 'Oculto'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex item-center justify-center space-x-4">
-                      <button
-                        onClick={() => toggleVisibility(item)}
-                        className={`transform hover:scale-110 transition-all ${
-                          item.show
-                            ? 'hover:text-red-500'
-                            : 'hover:text-green-500'
-                        } text-gray-500`}
-                        title={item.show ? 'Ocultar' : 'Mostrar'}
-                      >
-                        <FontAwesomeIcon
-                          icon={item.show ? faEyeSlash : faEye}
-                        />
-                      </button>
-                      <label
-                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500 cursor-pointer"
-                        title="Cambiar imagen"
-                      >
-                        <FontAwesomeIcon icon={faImage} />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageUpload(item, file);
-                          }}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        onClick={() => editLecturer(item)}
-                        className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                        title="Editar conferencista"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
-                        onClick={() =>
-                          deleteLecturer(
-                            item.id,
-                            `${item.firstName} ${item.lastName}`,
-                          )
-                        }
-                        className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
-                        title="Eliminar conferencista"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      {/* ── Filtros ── */}
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: '14px 18px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Búsqueda */}
+        <div style={{ position: 'relative', flex: '1 1 200px' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: MUTE, pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar conferencista..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ ...inputStyle, paddingLeft: 34 }}
+          />
+        </div>
+
+        {/* Tipo */}
+        <select
+          value={typeFilter}
+          onChange={e => setTypeFilter(e.target.value as typeof typeFilter)}
+          style={{ ...inputStyle, width: 'auto', flex: '0 1 160px', cursor: 'pointer' }}
+        >
+          <option value="all">Todos los tipos</option>
+          <option value="INTERNATIONAL">Internacionales</option>
+          <option value="NATIONAL">Nacionales</option>
+        </select>
+
+        {/* Visibilidad */}
+        <select
+          value={showFilter}
+          onChange={e => setShowFilter(e.target.value as typeof showFilter)}
+          style={{ ...inputStyle, width: 'auto', flex: '0 1 140px', cursor: 'pointer' }}
+        >
+          <option value="all">Todos</option>
+          <option value="visible">Visibles</option>
+          <option value="hidden">Ocultos</option>
+        </select>
       </div>
 
-      {/* Vista móvil de conferencistas - Tarjetas */}
-      <div className="md:hidden">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : data.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <FontAwesomeIcon
-              icon={faExclamationCircle}
-              className="text-gray-400 text-4xl mb-2"
-            />
-            <p>No hay conferencistas disponibles</p>
-          </div>
-        ) : (
-          <div className="space-y-4 p-4">
-            {currentItems.map((item: Lecturer) => (
-              <div
-                key={item.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-              >
-                <div className="flex items-start space-x-3 mb-3">
-                  <img
-                    src={item.image}
-                    alt={`${item.firstName} ${item.lastName}`}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800">
-                      {item.firstName} {item.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-500">{item.position}</p>
-                    <p className="text-xs text-gray-400">{item.country}</p>
-                    {item.title && (
-                      <p className="text-xs text-blue-600 italic mt-1">
-                        "{item.title}"
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs text-center ${
-                        item.type === 'INTERNATIONAL'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {item.type === 'INTERNATIONAL' ? 'INT' : 'NAC'}
+      {/* ── Lista ── */}
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ width: 32, height: 32, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : currentItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          No se encontraron conferencistas
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {currentItems.map(item => (
+            <div key={item.id} style={{
+              background: PANEL,
+              border: `1px solid ${item.show ? LINE2 : LINE}`,
+              borderRadius: 14,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              opacity: item.show ? 1 : .55,
+              transition: 'opacity .2s',
+            }}>
+              {/* Imagen */}
+              <img
+                src={item.image}
+                alt={`${item.firstName} ${item.lastName}`}
+                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0, border: `2px solid ${LINE2}` }}
+              />
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                  <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                    {item.firstName} {item.lastName}
+                  </span>
+                  {/* Tipo */}
+                  <span style={{
+                    fontFamily: 'Space Grotesk, sans-serif', fontSize: 11,
+                    color: item.type === 'INTERNATIONAL' ? '#60a5fa' : NEON,
+                    background: item.type === 'INTERNATIONAL' ? 'rgba(96,165,250,.1)' : 'rgba(4,238,98,.1)',
+                    borderRadius: 6, padding: '2px 8px',
+                  }}>
+                    {item.type === 'INTERNATIONAL' ? '🌎 Internacional' : '🇨🇴 Nacional'}
+                  </span>
+                  {/* Visibilidad */}
+                  {!item.show && (
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b', background: 'rgba(255,80,80,.1)', borderRadius: 6, padding: '2px 8px' }}>
+                      Oculto
                     </span>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs text-center ${
-                        item.show
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      <FontAwesomeIcon icon={item.show ? faEye : faEyeSlash} />
-                    </span>
-                  </div>
+                  )}
                 </div>
-
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={() => toggleVisibility(item)}
-                    className={`transform hover:scale-110 transition-all ${
-                      item.show ? 'hover:text-red-500' : 'hover:text-green-500'
-                    } text-gray-500`}
-                    aria-label={item.show ? 'Ocultar' : 'Mostrar'}
-                  >
-                    <FontAwesomeIcon icon={item.show ? faEyeSlash : faEye} />
-                  </button>
-                  <label
-                    className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500 cursor-pointer"
-                    aria-label="Cambiar imagen"
-                  >
-                    <FontAwesomeIcon icon={faImage} />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(item, file);
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                  <button
-                    onClick={() => editLecturer(item)}
-                    className="transform hover:scale-110 hover:text-blue-500 transition-all text-gray-500"
-                    aria-label="Editar conferencista"
-                  >
-                    <FontAwesomeIcon icon={faEdit} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      deleteLecturer(
-                        item.id,
-                        `${item.firstName} ${item.lastName}`,
-                      )
-                    }
-                    className="transform hover:scale-110 hover:text-red-500 transition-all text-gray-500"
-                    aria-label="Eliminar conferencista"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {[item.position, item.country].filter(Boolean).join(' · ')}
+                  {item.title && <span style={{ color: MUTE2 }}> · "{item.title}"</span>}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Paginación */}
-      {!isLoading && data.length > 0 && (
-        <div className="p-4 flex items-center justify-center sm:justify-end">
-          <div className="flex flex-wrap justify-center gap-1">
-            {totalPages > 5 && currentPage > 3 && (
-              <button
-                onClick={() => handleChangePage(1)}
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                1
-              </button>
-            )}
-
-            {totalPages > 5 && currentPage > 3 && (
-              <span className="px-2 py-1 text-gray-500">...</span>
-            )}
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((page) => {
-                if (totalPages <= 5) return true;
-                return page >= currentPage - 1 && page <= currentPage + 1;
-              })
-              .map((page) => (
+              {/* Acciones */}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <button
-                  key={page}
-                  onClick={() => handleChangePage(page)}
-                  className={`px-3 py-1 rounded-md ${
-                    currentPage === page
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } transition-colors`}
-                  aria-current={currentPage === page ? 'page' : undefined}
+                  onClick={() => handleToggleVisibility(item)}
+                  className="adm-btn"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                  title={item.show ? 'Ocultar' : 'Mostrar'}
                 >
-                  {page}
+                  {item.show ? 'Ocultar' : 'Mostrar'}
                 </button>
-              ))}
 
-            {totalPages > 5 && currentPage < totalPages - 2 && (
-              <span className="px-2 py-1 text-gray-500">...</span>
-            )}
+                <label className="adm-btn" style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }} title="Cambiar imagen">
+                  Imagen
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(item, f); }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
 
-            {totalPages > 5 && currentPage < totalPages - 2 && (
-              <button
-                onClick={() => handleChangePage(totalPages)}
-                className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                {totalPages}
-              </button>
-            )}
-          </div>
+                <button
+                  onClick={() => { setLecturerEdit(item); setIsOpenEdit(true); }}
+                  className="adm-btn"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  Editar
+                </button>
+
+                <button
+                  onClick={() => handleDelete(item.id, `${item.firstName} ${item.lastName}`)}
+                  className="adm-btn danger"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Estadísticas */}
-      <div className="p-4 bg-gray-50 border-t">
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-          <span>Total: {data.length}</span>
-          <span>Visibles: {data.filter((l) => l.show).length}</span>
-          <span>
-            Internacionales:{' '}
-            {data.filter((l) => l.type === 'INTERNATIONAL').length}
-          </span>
-          <span>
-            Nacionales: {data.filter((l) => l.type === 'NATIONAL').length}
-          </span>
+      {/* ── Paginación ── */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className="adm-btn"
+              style={{
+                padding: '6px 12px', fontSize: 12,
+                ...(currentPage === page ? { background: NEON, color: INK, borderColor: NEON, fontWeight: 700 } : {}),
+              }}
+            >
+              {page}
+            </button>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Modales */}
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── Modales ── */}
       {isOpen && (
-        <CreateLecturerModal
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          onSave={handleCreateLecturer}
-        />
+        <CreateLecturerModal isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={handleCreate} />
       )}
       {isOpenEdit && lecturerEdit && (
         <EditLecturerModal
           isOpen={isOpenEdit}
-          onClose={() => setIsOpenEdit(false)}
-          onSave={handleEditLecturer}
+          onClose={() => { setIsOpenEdit(false); setLecturerEdit(null); }}
+          onSave={handleEdit}
           lecturer={lecturerEdit}
         />
       )}

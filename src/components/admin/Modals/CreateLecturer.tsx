@@ -1,13 +1,50 @@
 'use client';
 
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import {
   CreateLecturerData,
   CreateAcademicFormation,
   CreatePublication,
 } from '@/types/lecturer';
+
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+const MUTE2 = 'rgba(255,255,255,.28)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const SectionTitle = ({ title, onAdd }: { title: string; onAdd?: () => void }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+    <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE2 }}>
+      {title}
+    </span>
+    {onAdd && (
+      <button type="button" onClick={onAdd} className="adm-btn" style={{ fontSize: 11, padding: '4px 10px' }}>
+        + Agregar
+      </button>
+    )}
+  </div>
+);
 
 interface CreateLecturerModalProps {
   isOpen: boolean;
@@ -15,780 +52,253 @@ interface CreateLecturerModalProps {
   onSave: (lecturer: CreateLecturerData) => Promise<{ success: boolean; message: string }>;
 }
 
-const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-}) => {
-  // Estados básicos
-  const [firstName, setFirstName] = React.useState('');
-  const [lastName, setLastName] = React.useState('');
-  const [alt, setAlt] = React.useState('');
-  const [title, setTitle] = React.useState('');
-  const [country, setCountry] = React.useState('');
-  const [type, setType] = React.useState<'INTERNATIONAL' | 'NATIONAL'>(
-    'INTERNATIONAL',
-  );
-  const [position, setPosition] = React.useState('');
-  const [nickname, setNickname] = React.useState('');
-  const [biography, setBiography] = React.useState('');
-  const [image, setImage] = React.useState('');
-  const [show, setShow] = React.useState(true);
+const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClose, onSave }) => {
+  const [firstName, setFirstName]   = React.useState('');
+  const [lastName, setLastName]     = React.useState('');
+  const [alt, setAlt]               = React.useState('');
+  const [title, setTitle]           = React.useState('');
+  const [country, setCountry]       = React.useState('');
+  const [type, setType]             = React.useState<'INTERNATIONAL' | 'NATIONAL'>('INTERNATIONAL');
+  const [position, setPosition]     = React.useState('');
+  const [nickname, setNickname]     = React.useState('');
+  const [biography, setBiography]   = React.useState('');
+  const [image, setImage]           = React.useState('');
+  const [show, setShow]             = React.useState(true);
+  const [instagram, setInstagram]   = React.useState('');
+  const [facebook, setFacebook]     = React.useState('');
+  const [x, setX]                   = React.useState('');
+  const [youtube, setYoutube]       = React.useState('');
+  const [experienceAreas, setExperienceAreas]           = React.useState<string[]>(['']);
+  const [awards, setAwards]                             = React.useState<string[]>(['']);
+  const [createdMethodologies, setCreatedMethodologies] = React.useState<string[]>(['']);
+  const [academicFormations, setAcademicFormations]     = React.useState<CreateAcademicFormation[]>([{ title: '', institution: '', year: undefined, place: '' }]);
+  const [publications, setPublications]                 = React.useState<CreatePublication[]>([{ title: '', editorial: '', year: undefined, role: '', description: '' }]);
+  const [isLoading, setIsLoading]   = React.useState(false);
 
-  // Estados para redes sociales
-  const [instagram, setInstagram] = React.useState('');
-  const [facebook, setFacebook] = React.useState('');
-  const [x, setX] = React.useState('');
-  const [youtube, setYoutube] = React.useState('');
-
-  // Estados para arrays
-  const [experienceAreas, setExperienceAreas] = React.useState<string[]>(['']);
-  const [awards, setAwards] = React.useState<string[]>(['']);
-  const [createdMethodologies, setCreatedMethodologies] = React.useState<
-    string[]
-  >(['']);
-
-  // Estados para formación académica
-  const [academicFormations, setAcademicFormations] = React.useState<
-    CreateAcademicFormation[]
-  >([{ title: '', institution: '', year: undefined, place: '' }]);
-
-  // Estados para publicaciones
-  const [publications, setPublications] = React.useState<CreatePublication[]>([
-    { title: '', editorial: '', year: undefined, role: '', description: '' },
-  ]);
-
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  // Generar alt automáticamente
   React.useEffect(() => {
     if (firstName && lastName) {
-      const generatedAlt =
-        `${firstName.toLowerCase()}-${lastName.toLowerCase()}`
-          .replace(/[^a-z0-9-]/g, '')
-          .replace(/--+/g, '-');
-      setAlt(generatedAlt);
+      setAlt(`${firstName}-${lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/--+/g, '-'));
     } else if (firstName) {
-      const generatedAlt = firstName
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/--+/g, '-');
-      setAlt(generatedAlt);
+      setAlt(firstName.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/--+/g, '-'));
     }
   }, [firstName, lastName]);
 
   const resetForm = () => {
-    setFirstName('');
-    setLastName('');
-    setAlt('');
-    setTitle('');
-    setCountry('');
-    setType('INTERNATIONAL');
-    setPosition('');
-    setNickname('');
-    setBiography('');
-    setImage('');
-    setShow(true);
-    setInstagram('');
-    setFacebook('');
-    setX('');
-    setYoutube('');
-    setExperienceAreas(['']);
-    setAwards(['']);
-    setCreatedMethodologies(['']);
-    setAcademicFormations([
-      { title: '', institution: '', year: undefined, place: '' },
-    ]);
-    setPublications([
-      { title: '', editorial: '', year: undefined, role: '', description: '' },
-    ]);
+    setFirstName(''); setLastName(''); setAlt(''); setTitle(''); setCountry('');
+    setType('INTERNATIONAL'); setPosition(''); setNickname(''); setBiography('');
+    setImage(''); setShow(true); setInstagram(''); setFacebook(''); setX(''); setYoutube('');
+    setExperienceAreas(['']); setAwards(['']); setCreatedMethodologies(['']);
+    setAcademicFormations([{ title: '', institution: '', year: undefined, place: '' }]);
+    setPublications([{ title: '', editorial: '', year: undefined, role: '', description: '' }]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const lecturerData: CreateLecturerData = {
-        firstName,
-        lastName: lastName || undefined,
-        alt,
-        title: title || undefined,
-        country,
-        type,
-        position: position || undefined,
-        nickname: nickname || undefined,
-        biography: biography || undefined,
-        image,
-        show,
+      const response = await onSave({
+        firstName, lastName: lastName || undefined, alt,
+        title: title || undefined, country, type,
+        position: position || undefined, nickname: nickname || undefined,
+        biography: biography || undefined, image, show,
         socialMedia: {
-          instagram: instagram || undefined,
-          facebook: facebook || undefined,
-          x: x || undefined,
-          youtube: youtube || undefined,
+          instagram: instagram || undefined, facebook: facebook || undefined,
+          x: x || undefined, youtube: youtube || undefined,
         },
-        experienceAreas: experienceAreas.filter((area) => area.trim() !== ''),
-        awards: awards.filter((award) => award.trim() !== ''),
-        createdMethodologies: createdMethodologies.filter(
-          (method) => method.trim() !== '',
-        ),
-        academicFormations: academicFormations.filter(
-          (formation) => formation.title.trim() !== '',
-        ),
-        publications: publications.filter((pub) => pub.title.trim() !== ''),
-      };
-
-      const response = await onSave(lecturerData);
-      if (response.success) {
-        resetForm();
-      }
-    } catch (error) {
-      console.error('Error creating lecturer:', error);
+        experienceAreas: experienceAreas.filter(a => a.trim()),
+        awards: awards.filter(a => a.trim()),
+        createdMethodologies: createdMethodologies.filter(m => m.trim()),
+        academicFormations: academicFormations.filter(f => f.title.trim()),
+        publications: publications.filter(p => p.title.trim()),
+      });
+      if (response.success) resetForm();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
+  const handleClose = () => { resetForm(); onClose(); };
 
-  // Funciones para manejar arrays dinámicos
-  const addExperienceArea = () => setExperienceAreas([...experienceAreas, '']);
-  const removeExperienceArea = (index: number) => {
-    if (experienceAreas.length > 1) {
-      setExperienceAreas(experienceAreas.filter((_, i) => i !== index));
-    }
+  /* ── array helpers ── */
+  const updateStr = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, i: number, v: string) => {
+    const next = [...arr]; next[i] = v; setArr(next);
   };
-  const updateExperienceArea = (index: number, value: string) => {
-    const updated = [...experienceAreas];
-    updated[index] = value;
-    setExperienceAreas(updated);
-  };
-
-  const addAward = () => setAwards([...awards, '']);
-  const removeAward = (index: number) => {
-    if (awards.length > 1) {
-      setAwards(awards.filter((_, i) => i !== index));
-    }
-  };
-  const updateAward = (index: number, value: string) => {
-    const updated = [...awards];
-    updated[index] = value;
-    setAwards(updated);
-  };
-
-  const addMethodology = () =>
-    setCreatedMethodologies([...createdMethodologies, '']);
-  const removeMethodology = (index: number) => {
-    if (createdMethodologies.length > 1) {
-      setCreatedMethodologies(
-        createdMethodologies.filter((_, i) => i !== index),
-      );
-    }
-  };
-  const updateMethodology = (index: number, value: string) => {
-    const updated = [...createdMethodologies];
-    updated[index] = value;
-    setCreatedMethodologies(updated);
-  };
-
-  const addAcademicFormation = () => {
-    setAcademicFormations([
-      ...academicFormations,
-      { title: '', institution: '', year: undefined, place: '' },
-    ]);
-  };
-  const removeAcademicFormation = (index: number) => {
-    if (academicFormations.length > 1) {
-      setAcademicFormations(academicFormations.filter((_, i) => i !== index));
-    }
-  };
-  const updateAcademicFormation = (
-    index: number,
-    field: keyof CreateAcademicFormation,
-    value: string | number,
-  ) => {
-    const updated = [...academicFormations];
-    updated[index] = { ...updated[index], [field]: value };
-    setAcademicFormations(updated);
-  };
-
-  const addPublication = () => {
-    setPublications([
-      ...publications,
-      { title: '', editorial: '', year: undefined, role: '', description: '' },
-    ]);
-  };
-  const removePublication = (index: number) => {
-    if (publications.length > 1) {
-      setPublications(publications.filter((_, i) => i !== index));
-    }
-  };
-  const updatePublication = (
-    index: number,
-    field: keyof CreatePublication,
-    value: string | number,
-  ) => {
-    const updated = [...publications];
-    updated[index] = { ...updated[index], [field]: value };
-    setPublications(updated);
+  const removeStr = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, i: number) => {
+    if (arr.length > 1) setArr(arr.filter((_, j) => j !== i));
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Crear Nuevo Conferencista
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={handleClose} />
+
+      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 720, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+          <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+            Nuevo conferencista
           </h3>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FontAwesomeIcon icon={faTimes} />
-          </button>
+          <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Información básica */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apellido
-              </label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Slug (Alt) *
-              </label>
-              <input
-                type="text"
-                value={alt}
-                onChange={(e) => setAlt(e.target.value)}
-                required
-                placeholder="se-genera-automaticamente"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                País *
-              </label>
-              <input
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo *
-              </label>
-              <select
-                value={type}
-                onChange={(e) =>
-                  setType(e.target.value as 'INTERNATIONAL' | 'NATIONAL')
-                }
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+          {/* ── Información básica ── */}
+          <SectionTitle title="Información básica" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Nombre *">
+              <input style={iS} required value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Nombre" />
+            </Field>
+            <Field label="Apellido">
+              <input style={iS} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Apellido" />
+            </Field>
+            <Field label="Slug (alt) *">
+              <input style={iS} required value={alt} onChange={e => setAlt(e.target.value)} placeholder="se-genera-automaticamente" />
+            </Field>
+            <Field label="País *">
+              <input style={iS} required value={country} onChange={e => setCountry(e.target.value)} placeholder="Colombia" />
+            </Field>
+            <Field label="Tipo *">
+              <select style={{ ...iS, cursor: 'pointer' }} value={type} onChange={e => setType(e.target.value as typeof type)}>
                 <option value="INTERNATIONAL">Internacional</option>
                 <option value="NATIONAL">Nacional</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL de Imagen *
-              </label>
-              <input
-                type="url"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                required
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            </Field>
+            <Field label="URL de imagen *">
+              <input style={iS} type="url" required value={image} onChange={e => setImage(e.target.value)} placeholder="https://…" />
+            </Field>
           </div>
 
-          {/* Información adicional */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Título de Conferencia
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cargo/Posición
-              </label>
-              <input
-                type="text"
-                value={position}
-                onChange={(e) => setPosition(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apodo
-              </label>
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={show}
-                  onChange={(e) => setShow(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Mostrar en público
-                </span>
+          {/* ── Info adicional ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Título de conferencia">
+              <input style={iS} value={title} onChange={e => setTitle(e.target.value)} placeholder="Tema de su charla" />
+            </Field>
+            <Field label="Cargo / Posición">
+              <input style={iS} value={position} onChange={e => setPosition(e.target.value)} placeholder="Director de Marketing" />
+            </Field>
+            <Field label="Apodo">
+              <input style={iS} value={nickname} onChange={e => setNickname(e.target.value)} />
+            </Field>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff' }}>
+                <input type="checkbox" checked={show} onChange={e => setShow(e.target.checked)} style={{ accentColor: NEON, width: 16, height: 16 }} />
+                Mostrar en público
               </label>
             </div>
           </div>
 
-          {/* Biografía */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Biografía
-            </label>
-            <textarea
-              value={biography}
-              onChange={(e) => setBiography(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* ── Biografía ── */}
+          <Field label="Biografía">
+            <textarea style={{ ...iS, minHeight: 90, resize: 'vertical' } as React.CSSProperties} value={biography} onChange={e => setBiography(e.target.value)} placeholder="Reseña biográfica del conferencista…" />
+          </Field>
+
+          {/* ── Redes sociales ── */}
+          <SectionTitle title="Redes sociales" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Instagram"><input style={iS} type="url" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="https://instagram.com/…" /></Field>
+            <Field label="Facebook"><input style={iS} type="url" value={facebook} onChange={e => setFacebook(e.target.value)} placeholder="https://facebook.com/…" /></Field>
+            <Field label="X (Twitter)"><input style={iS} type="url" value={x} onChange={e => setX(e.target.value)} placeholder="https://x.com/…" /></Field>
+            <Field label="YouTube"><input style={iS} type="url" value={youtube} onChange={e => setYoutube(e.target.value)} placeholder="https://youtube.com/…" /></Field>
           </div>
 
-          {/* Redes Sociales */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-3">
-              Redes Sociales
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Instagram
-                </label>
-                <input
-                  type="url"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                  placeholder="https://instagram.com/usuario"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+          {/* ── Áreas de experiencia ── */}
+          <SectionTitle title="Áreas de experiencia" onAdd={() => setExperienceAreas([...experienceAreas, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {experienceAreas.map((area, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <input style={{ ...iS, flex: 1 }} value={area} onChange={e => updateStr(experienceAreas, setExperienceAreas, i, e.target.value)} placeholder="Área de experiencia" />
+                {experienceAreas.length > 1 && (
+                  <button type="button" onClick={() => removeStr(experienceAreas, setExperienceAreas, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
+                )}
               </div>
+            ))}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Facebook
-                </label>
-                <input
-                  type="url"
-                  value={facebook}
-                  onChange={(e) => setFacebook(e.target.value)}
-                  placeholder="https://facebook.com/usuario"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+          {/* ── Premios ── */}
+          <SectionTitle title="Premios y reconocimientos" onAdd={() => setAwards([...awards, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {awards.map((award, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <input style={{ ...iS, flex: 1 }} value={award} onChange={e => updateStr(awards, setAwards, i, e.target.value)} placeholder="Premio o reconocimiento" />
+                {awards.length > 1 && (
+                  <button type="button" onClick={() => removeStr(awards, setAwards, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
+                )}
               </div>
+            ))}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  X (Twitter)
-                </label>
-                <input
-                  type="url"
-                  value={x}
-                  onChange={(e) => setX(e.target.value)}
-                  placeholder="https://x.com/usuario"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+          {/* ── Metodologías ── */}
+          <SectionTitle title="Metodologías creadas" onAdd={() => setCreatedMethodologies([...createdMethodologies, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {createdMethodologies.map((m, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <input style={{ ...iS, flex: 1 }} value={m} onChange={e => updateStr(createdMethodologies, setCreatedMethodologies, i, e.target.value)} placeholder="Metodología creada" />
+                {createdMethodologies.length > 1 && (
+                  <button type="button" onClick={() => removeStr(createdMethodologies, setCreatedMethodologies, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  YouTube
-                </label>
-                <input
-                  type="url"
-                  value={youtube}
-                  onChange={(e) => setYoutube(e.target.value)}
-                  placeholder="https://youtube.com/usuario"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Áreas de Experiencia */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Áreas de Experiencia
-              </h4>
-              <button
-                type="button"
-                onClick={addExperienceArea}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {experienceAreas.map((area, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={area}
-                    onChange={(e) =>
-                      updateExperienceArea(index, e.target.value)
-                    }
-                    placeholder="Área de experiencia"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {experienceAreas.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeExperienceArea(index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Premios */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Premios y Reconocimientos
-              </h4>
-              <button
-                type="button"
-                onClick={addAward}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {awards.map((award, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={award}
-                    onChange={(e) => updateAward(index, e.target.value)}
-                    placeholder="Premio o reconocimiento"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {awards.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeAward(index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Metodologías Creadas */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Metodologías Creadas
-              </h4>
-              <button
-                type="button"
-                onClick={addMethodology}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {createdMethodologies.map((methodology, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={methodology}
-                    onChange={(e) => updateMethodology(index, e.target.value)}
-                    placeholder="Metodología creada"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {createdMethodologies.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeMethodology(index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Formación Académica */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Formación Académica
-              </h4>
-              <button
-                type="button"
-                onClick={addAcademicFormation}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-4">
-              {academicFormations.map((formation, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="md:col-span-2">
-                      <input
-                        type="text"
-                        value={formation.title}
-                        onChange={(e) =>
-                          updateAcademicFormation(
-                            index,
-                            'title',
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Título académico"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={formation.institution || ''}
-                      onChange={(e) =>
-                        updateAcademicFormation(
-                          index,
-                          'institution',
-                          e.target.value,
-                        )
-                      }
-                      placeholder="Institución"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      value={formation.year || ''}
-                      onChange={(e) =>
-                        updateAcademicFormation(
-                          index,
-                          'year',
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                      placeholder="Año"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="md:col-span-2">
-                      <input
-                        type="text"
-                        value={formation.place || ''}
-                        onChange={(e) =>
-                          updateAcademicFormation(
-                            index,
-                            'place',
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Lugar"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+          {/* ── Formación académica ── */}
+          <SectionTitle title="Formación académica" onAdd={() => setAcademicFormations([...academicFormations, { title: '', institution: '', year: undefined, place: '' }])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {academicFormations.map((f, i) => (
+              <div key={i} style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <input style={iS} value={f.title} onChange={e => { const n=[...academicFormations]; n[i]={...n[i],title:e.target.value}; setAcademicFormations(n); }} placeholder="Título académico" />
                   </div>
-                  {academicFormations.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeAcademicFormation(index)}
-                      className="mt-2 text-red-600 hover:text-red-700"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                      Eliminar formación
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Publicaciones */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Publicaciones
-              </h4>
-              <button
-                type="button"
-                onClick={addPublication}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-4">
-              {publications.map((publication, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="md:col-span-2">
-                      <input
-                        type="text"
-                        value={publication.title}
-                        onChange={(e) =>
-                          updatePublication(index, 'title', e.target.value)
-                        }
-                        placeholder="Título de la publicación"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={publication.editorial || ''}
-                      onChange={(e) =>
-                        updatePublication(index, 'editorial', e.target.value)
-                      }
-                      placeholder="Editorial"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      value={publication.year || ''}
-                      onChange={(e) =>
-                        updatePublication(
-                          index,
-                          'year',
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                      placeholder="Año"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={publication.role || ''}
-                      onChange={(e) =>
-                        updatePublication(index, 'role', e.target.value)
-                      }
-                      placeholder="Rol (Autor, Co-autor, etc.)"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="md:col-span-2">
-                      <textarea
-                        value={publication.description || ''}
-                        onChange={(e) =>
-                          updatePublication(
-                            index,
-                            'description',
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Descripción"
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                  <input style={iS} value={f.institution||''} onChange={e => { const n=[...academicFormations]; n[i]={...n[i],institution:e.target.value}; setAcademicFormations(n); }} placeholder="Institución" />
+                  <input style={iS} type="number" value={f.year||''} onChange={e => { const n=[...academicFormations]; n[i]={...n[i],year:parseInt(e.target.value)||undefined}; setAcademicFormations(n); }} placeholder="Año" />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <input style={iS} value={f.place||''} onChange={e => { const n=[...academicFormations]; n[i]={...n[i],place:e.target.value}; setAcademicFormations(n); }} placeholder="Lugar" />
                   </div>
-                  {publications.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePublication(index)}
-                      className="mt-2 text-red-600 hover:text-red-700"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                      Eliminar publicación
-                    </button>
-                  )}
                 </div>
-              ))}
-            </div>
+                {academicFormations.length > 1 && (
+                  <button type="button" onClick={() => setAcademicFormations(academicFormations.filter((_,j)=>j!==i))} className="adm-btn danger" style={{ fontSize: 11, padding: '5px 10px', alignSelf: 'flex-start' }}>
+                    Eliminar formación
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Botones */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
+          {/* ── Publicaciones ── */}
+          <SectionTitle title="Publicaciones" onAdd={() => setPublications([...publications, { title: '', editorial: '', year: undefined, role: '', description: '' }])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {publications.map((p, i) => (
+              <div key={i} style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <input style={iS} value={p.title} onChange={e => { const n=[...publications]; n[i]={...n[i],title:e.target.value}; setPublications(n); }} placeholder="Título de la publicación" />
+                  </div>
+                  <input style={iS} value={p.editorial||''} onChange={e => { const n=[...publications]; n[i]={...n[i],editorial:e.target.value}; setPublications(n); }} placeholder="Editorial" />
+                  <input style={iS} type="number" value={p.year||''} onChange={e => { const n=[...publications]; n[i]={...n[i],year:parseInt(e.target.value)||undefined}; setPublications(n); }} placeholder="Año" />
+                  <input style={iS} value={p.role||''} onChange={e => { const n=[...publications]; n[i]={...n[i],role:e.target.value}; setPublications(n); }} placeholder="Rol (Autor, Co-autor…)" />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <textarea style={{ ...iS, minHeight: 60, resize: 'vertical' } as React.CSSProperties} value={p.description||''} onChange={e => { const n=[...publications]; n[i]={...n[i],description:e.target.value}; setPublications(n); }} placeholder="Descripción" />
+                  </div>
+                </div>
+                {publications.length > 1 && (
+                  <button type="button" onClick={() => setPublications(publications.filter((_,j)=>j!==i))} className="adm-btn danger" style={{ fontSize: 11, padding: '5px 10px', alignSelf: 'flex-start' }}>
+                    Eliminar publicación
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ display: 'flex', gap: 10, paddingTop: 8, borderTop: `1px solid ${LINE}`, marginTop: 4 }}>
+            <button type="button" onClick={handleClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isLoading || !firstName || !country || !image}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? 'Creando...' : 'Crear Conferencista'}
+            <button type="submit" disabled={isLoading || !firstName || !country || !image} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isLoading || !firstName || !country || !image ? .5 : 1 }}>
+              {isLoading ? 'Creando…' : 'Crear conferencista'}
             </button>
           </div>
         </form>

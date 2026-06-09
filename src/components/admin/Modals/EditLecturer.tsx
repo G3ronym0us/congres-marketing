@@ -2,14 +2,47 @@
 
 import React from 'react';
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
-import {
-  UpdateLecturerData,
-  CreatePublication,
-  CreateAcademicFormation,
-  CreateSocialMedia,
-} from '@/types/lecturer';
+import { UpdateLecturerData } from '@/types/lecturer';
+
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+const MUTE2 = 'rgba(255,255,255,.28)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const Field = ({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+      {label}
+    </label>
+    {children}
+    {error && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b' }}>{error}</span>}
+  </div>
+);
+
+const SectionTitle = ({ title, onAdd }: { title: string; onAdd?: () => void }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${LINE}` }}>
+    <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE2 }}>
+      {title}
+    </span>
+    {onAdd && (
+      <button type="button" onClick={onAdd} className="adm-btn" style={{ fontSize: 11, padding: '4px 10px' }}>
+        + Agregar
+      </button>
+    )}
+  </div>
+);
 
 interface EditLecturerModalProps {
   isOpen: boolean;
@@ -18,16 +51,10 @@ interface EditLecturerModalProps {
   lecturer: UpdateLecturerData;
 }
 
-const EditLecturerModal: React.FC<EditLecturerModalProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-  lecturer,
-}) => {
+const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, onSave, lecturer }) => {
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Configurar valores por defecto
-  const getDefaultValues = (): UpdateLecturerData => ({
+  const getDefaults = (): UpdateLecturerData => ({
     firstName: lecturer.firstName || '',
     lastName: lecturer.lastName || '',
     alt: lecturer.alt || '',
@@ -45,675 +72,269 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({
       x: lecturer.socialMedia?.x || undefined,
       youtube: lecturer.socialMedia?.youtube || undefined,
     },
-    experienceAreas: lecturer.experienceAreas?.length
-      ? lecturer.experienceAreas
-      : [],
-    awards: lecturer.awards?.length ? lecturer.awards : [],
-    createdMethodologies: lecturer.createdMethodologies?.length
-      ? lecturer.createdMethodologies
-      : [],
-    academicFormations: lecturer.academicFormations?.length
-      ? lecturer.academicFormations
-      : [],
-    publications: lecturer.publications?.length
-      ? lecturer.publications
-      : [],
+    experienceAreas: lecturer.experienceAreas?.length ? lecturer.experienceAreas : [''],
+    awards: lecturer.awards?.length ? lecturer.awards : [''],
+    createdMethodologies: lecturer.createdMethodologies?.length ? lecturer.createdMethodologies : [''],
+    academicFormations: lecturer.academicFormations?.length ? lecturer.academicFormations : [],
+    publications: lecturer.publications?.length ? lecturer.publications : [],
   });
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    reset,
-    setValue,
-    formState: { errors, isValid },
-  } = useForm<UpdateLecturerData>({
-    defaultValues: getDefaultValues(),
+  const { control, handleSubmit, watch, reset, setValue, formState: { errors, isValid } } = useForm<UpdateLecturerData>({
+    defaultValues: getDefaults(),
     mode: 'onChange',
   });
 
-  const experienceAreas = useWatch({ control, name: 'experienceAreas' }) || [
-    '',
-  ];
-  const awards = useWatch({ control, name: 'awards' }) || [''];
-  const methodologies = useWatch({ control, name: 'createdMethodologies' }) || [
-    '',
-  ];
+  const experienceAreas  = useWatch({ control, name: 'experienceAreas' })  || [''];
+  const awards           = useWatch({ control, name: 'awards' })           || [''];
+  const methodologies    = useWatch({ control, name: 'createdMethodologies' }) || [''];
 
-  // Funciones helper
-  const updateStringArray = (
-    fieldName: keyof UpdateLecturerData,
-    newArray: string[],
-  ) => {
-    setValue(fieldName, newArray, { shouldDirty: true, shouldValidate: true });
+  const { fields: academicFields,     append: appendAcademic,     remove: removeAcademic }     = useFieldArray({ control, name: 'academicFormations' });
+  const { fields: publicationFields,  append: appendPublication,  remove: removePublication }   = useFieldArray({ control, name: 'publications' });
+
+  const updateStringArray = (field: keyof UpdateLecturerData, arr: string[], i: number, v: string) => {
+    const next = [...arr]; next[i] = v;
+    setValue(field, next, { shouldDirty: true });
+  };
+  const removeFromStringArray = (field: keyof UpdateLecturerData, arr: string[], i: number) => {
+    if (arr.length > 1) setValue(field, arr.filter((_, j) => j !== i), { shouldDirty: true });
   };
 
-  const addToStringArray = (
-    fieldName: keyof UpdateLecturerData,
-    currentArray: string[],
-  ) => {
-    updateStringArray(fieldName, [...currentArray, '']);
-  };
-
-  const removeFromStringArray = (
-    fieldName: keyof UpdateLecturerData,
-    currentArray: string[],
-    index: number,
-  ) => {
-    if (currentArray.length > 1) {
-      updateStringArray(
-        fieldName,
-        currentArray.filter((_, i) => i !== index),
-      );
-    }
-  };
-
-  const {
-    fields: academicFields,
-    append: appendAcademic,
-    remove: removeAcademic,
-  } = useFieldArray({
-    control,
-    name: 'academicFormations',
-  });
-
-  const {
-    fields: publicationFields,
-    append: appendPublication,
-    remove: removePublication,
-  } = useFieldArray({
-    control,
-    name: 'publications',
-  });
-
-  // Resetear form cuando cambie el lecturer
   React.useEffect(() => {
-    if (lecturer && isOpen) {
-      reset(getDefaultValues());
-    }
-  }, [lecturer, isOpen, reset]);
+    if (lecturer && isOpen) reset(getDefaults());
+  }, [lecturer, isOpen]);
 
   const onSubmit = async (data: UpdateLecturerData) => {
     setIsLoading(true);
-    try {
-      console.log('Datos limpios a enviar:', data);
-      await onSave(data);
-    } catch (error) {
-      console.error('Error updating lecturer:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    try { await onSave(data); } finally { setIsLoading(false); }
   };
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
+  const handleClose = () => { reset(); onClose(); };
 
-  // Observar imagen para preview
-  const watchedImage = watch('image');
+  const watchedImage     = watch('image');
   const watchedFirstName = watch('firstName');
-  const watchedLastName = watch('lastName');
+  const watchedLastName  = watch('lastName');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Editar Conferencista: {lecturer.firstName} {lecturer.lastName}
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={handleClose} />
+
+      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 720, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+            Editar conferencista
           </h3>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FontAwesomeIcon icon={faTimes} />
-          </button>
+          <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Vista previa de imagen actual */}
-          <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-            <img
-              src={watchedImage || '/placeholder-avatar.png'}
-              alt={`${watchedFirstName} ${watchedLastName}`}
-              className="w-16 h-16 rounded-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder-avatar.png';
-              }}
-            />
-            <div>
-              <h4 className="font-medium">Vista previa de imagen</h4>
-              <p className="text-sm text-gray-600">
-                Se actualiza automáticamente al cambiar la URL
-              </p>
+        {/* Preview imagen */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24 }}>
+          <img
+            src={watchedImage || '/placeholder-avatar.png'}
+            alt={`${watchedFirstName} ${watchedLastName}`}
+            style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: `2px solid ${LINE2}` }}
+            onError={e => { (e.target as HTMLImageElement).src = '/placeholder-avatar.png'; }}
+          />
+          <div>
+            <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 14, color: '#fff' }}>
+              {watchedFirstName} {watchedLastName}
+            </div>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+              Vista previa · se actualiza al cambiar la URL
             </div>
           </div>
+        </div>
 
-          {/* Información básica */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre *
-              </label>
-              <Controller
-                name="firstName"
-                control={control}
-                rules={{ required: 'El nombre es requerido' }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.firstName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                )}
-              />
-              {errors.firstName && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.firstName.message}
-                </p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apellido
-              </label>
-              <Controller
-                name="lastName"
-                control={control}
+          {/* ── Información básica ── */}
+          <SectionTitle title="Información básica" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Nombre *" error={errors.firstName?.message}>
+              <Controller name="firstName" control={control} rules={{ required: 'Requerido' }}
+                render={({ field }) => <input {...field} style={{ ...iS, borderColor: errors.firstName ? '#ff6b6b' : LINE2 }} />} />
+            </Field>
+            <Field label="Apellido">
+              <Controller name="lastName" control={control} render={({ field }) => <input {...field} style={iS} />} />
+            </Field>
+            <Field label="Slug (alt) *" error={errors.alt?.message}>
+              <Controller name="alt" control={control} rules={{ required: 'Requerido' }}
+                render={({ field }) => <input {...field} style={{ ...iS, borderColor: errors.alt ? '#ff6b6b' : LINE2 }} />} />
+            </Field>
+            <Field label="País *" error={errors.country?.message}>
+              <Controller name="country" control={control} rules={{ required: 'Requerido' }}
+                render={({ field }) => <input {...field} style={{ ...iS, borderColor: errors.country ? '#ff6b6b' : LINE2 }} />} />
+            </Field>
+            <Field label="Tipo *">
+              <Controller name="type" control={control}
                 render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Slug (Alt) *
-              </label>
-              <Controller
-                name="alt"
-                control={control}
-                rules={{ required: 'El slug es requerido' }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.alt ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                )}
-              />
-              {errors.alt && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.alt.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                País *
-              </label>
-              <Controller
-                name="country"
-                control={control}
-                rules={{ required: 'El país es requerido' }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.country ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                )}
-              />
-              {errors.country && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.country.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo *
-              </label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
+                  <select {...field} style={{ ...iS, cursor: 'pointer' }}>
                     <option value="INTERNATIONAL">Internacional</option>
                     <option value="NATIONAL">Nacional</option>
                   </select>
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL de Imagen *
-              </label>
-              <Controller
-                name="image"
-                control={control}
-                rules={{
-                  required: 'La imagen es requerida',
-                  pattern: {
-                    value: /^https?:\/\/.+/,
-                    message: 'Debe ser una URL válida',
-                  },
-                }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="url"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.image ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                )}
-              />
-              {errors.image && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.image.message}
-                </p>
-              )}
-            </div>
+                )} />
+            </Field>
+            <Field label="URL de imagen *" error={errors.image?.message}>
+              <Controller name="image" control={control} rules={{ required: 'Requerido', pattern: { value: /^https?:\/\/.+/, message: 'URL inválida' } }}
+                render={({ field }) => <input {...field} type="url" style={{ ...iS, borderColor: errors.image ? '#ff6b6b' : LINE2 }} />} />
+            </Field>
           </div>
 
-          {/* Información adicional */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Título de Conferencia
-              </label>
-              <Controller
-                name="title"
-                control={control}
+          {/* ── Info adicional ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Título de conferencia">
+              <Controller name="title" control={control} render={({ field }) => <input {...field} style={iS} placeholder="Tema de su charla" />} />
+            </Field>
+            <Field label="Cargo / Posición">
+              <Controller name="position" control={control} render={({ field }) => <input {...field} style={iS} />} />
+            </Field>
+            <Field label="Apodo">
+              <Controller name="nickname" control={control} render={({ field }) => <input {...field} style={iS} />} />
+            </Field>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Controller name="show" control={control}
                 render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cargo/Posición
-              </label>
-              <Controller
-                name="position"
-                control={control}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apodo
-              </label>
-              <Controller
-                name="nickname"
-                control={control}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                )}
-              />
-            </div>
-
-            <div className="flex items-center">
-              <Controller
-                name="show"
-                control={control}
-                render={({ field }) => (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={field.value}
-                      onChange={field.onChange}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      Mostrar en público
-                    </span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff' }}>
+                    <input type="checkbox" checked={field.value} onChange={field.onChange} style={{ accentColor: NEON, width: 16, height: 16 }} />
+                    Mostrar en público
                   </label>
+                )} />
+            </div>
+          </div>
+
+          {/* ── Biografía ── */}
+          <Field label="Biografía">
+            <Controller name="biography" control={control}
+              render={({ field }) => <textarea {...field} style={{ ...iS, minHeight: 90, resize: 'vertical' } as React.CSSProperties} />} />
+          </Field>
+
+          {/* ── Redes sociales ── */}
+          <SectionTitle title="Redes sociales" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Instagram">
+              <Controller name="socialMedia.instagram" control={control} render={({ field }) => <input {...field} type="url" style={iS} placeholder="https://instagram.com/…" />} />
+            </Field>
+            <Field label="Facebook">
+              <Controller name="socialMedia.facebook" control={control} render={({ field }) => <input {...field} type="url" style={iS} placeholder="https://facebook.com/…" />} />
+            </Field>
+            <Field label="X (Twitter)">
+              <Controller name="socialMedia.x" control={control} render={({ field }) => <input {...field} type="url" style={iS} placeholder="https://x.com/…" />} />
+            </Field>
+            <Field label="YouTube">
+              <Controller name="socialMedia.youtube" control={control} render={({ field }) => <input {...field} type="url" style={iS} placeholder="https://youtube.com/…" />} />
+            </Field>
+          </div>
+
+          {/* ── Áreas de experiencia ── */}
+          <SectionTitle title="Áreas de experiencia" onAdd={() => setValue('experienceAreas', [...experienceAreas, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {experienceAreas.map((_, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <Controller name={`experienceAreas.${i}`} control={control}
+                  render={({ field }) => <input {...field} style={{ ...iS, flex: 1 }} placeholder="Área de experiencia" />} />
+                {experienceAreas.length > 1 && (
+                  <button type="button" onClick={() => removeFromStringArray('experienceAreas', experienceAreas, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
                 )}
-              />
-            </div>
-          </div>
-
-          {/* Biografía */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Biografía
-            </label>
-            <Controller
-              name="biography"
-              control={control}
-              render={({ field }) => (
-                <textarea
-                  {...field}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              )}
-            />
-          </div>
-
-          {/* Redes Sociales */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 mb-3">
-              Redes Sociales
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Instagram
-                </label>
-                <Controller
-                  name="socialMedia.instagram"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="url"
-                      placeholder="https://instagram.com/usuario"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  )}
-                />
               </div>
+            ))}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Facebook
-                </label>
-                <Controller
-                  name="socialMedia.facebook"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="url"
-                      placeholder="https://facebook.com/usuario"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  )}
-                />
+          {/* ── Premios ── */}
+          <SectionTitle title="Premios y reconocimientos" onAdd={() => setValue('awards', [...awards, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {awards.map((_, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <Controller name={`awards.${i}`} control={control}
+                  render={({ field }) => <input {...field} style={{ ...iS, flex: 1 }} placeholder="Premio o reconocimiento" />} />
+                {awards.length > 1 && (
+                  <button type="button" onClick={() => removeFromStringArray('awards', awards, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
+                )}
               </div>
+            ))}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  X (Twitter)
-                </label>
-                <Controller
-                  name="socialMedia.x"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="url"
-                      placeholder="https://x.com/usuario"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  )}
-                />
+          {/* ── Metodologías ── */}
+          <SectionTitle title="Metodologías creadas" onAdd={() => setValue('createdMethodologies', [...methodologies, ''])} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {methodologies.map((_, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <Controller name={`createdMethodologies.${i}`} control={control}
+                  render={({ field }) => <input {...field} style={{ ...iS, flex: 1 }} placeholder="Metodología creada" />} />
+                {methodologies.length > 1 && (
+                  <button type="button" onClick={() => removeFromStringArray('createdMethodologies', methodologies, i)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 10px', flexShrink: 0 }}>✕</button>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  YouTube
-                </label>
-                <Controller
-                  name="socialMedia.youtube"
-                  control={control}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="url"
-                      placeholder="https://youtube.com/usuario"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  )}
-                />
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Áreas de Experiencia */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Áreas de Experiencia
-              </h4>
-              <button
-                type="button"
-                onClick={() => addToStringArray('experienceAreas', experienceAreas)}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {experienceAreas.map((field, index) => (
-                <div key={index} className="flex gap-2">
-                  <Controller
-                    name={`experienceAreas.${index}`}
-                    control={control}
-                    render={({ field: inputField }) => (
-                      <input
-                        {...inputField}
-                        type="text"
-                        placeholder="Área de experiencia"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    )}
-                  />
-                  {experienceAreas.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeFromStringArray('experienceAreas', experienceAreas, index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Premios */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Premios y Reconocimientos
-              </h4>
-              <button
-                type="button"
-                onClick={() => addToStringArray('awards', awards)}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {awards.map((field, index) => (
-                <div key={index} className="flex gap-2">
-                  <Controller
-                    name={`awards.${index}`}
-                    control={control}
-                    render={({ field: inputField }) => (
-                      <input
-                        {...inputField}
-                        type="text"
-                        placeholder="Premio o reconocimiento"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    )}
-                  />
-                  {awards.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeFromStringArray('awards', awards, index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Metodologías Creadas */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Metodologías Creadas
-              </h4>
-              <button
-                type="button"
-                onClick={() => addToStringArray('createdMethodologies', methodologies)}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-2">
-              {methodologies.map((field, index) => (
-                <div key={index} className="flex gap-2">
-                  <Controller
-                    name={`createdMethodologies.${index}`}
-                    control={control}
-                    render={({ field: inputField }) => (
-                      <input
-                        {...inputField}
-                        type="text"
-                        placeholder="Metodología creada"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    )}
-                  />
-                  {methodologies.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeFromStringArray('createdMethodologies', methodologies, index)}
-                      className="text-red-600 hover:text-red-700 px-3"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Formación Académica */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-medium text-gray-900">
-                Formación Académica
-              </h4>
-              <button
-                type="button"
-                onClick={() =>
-                  appendAcademic({
-                    title: '',
-                    institution: '',
-                    year: undefined,
-                    place: '',
-                  })
-                }
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                Agregar
-              </button>
-            </div>
-            <div className="space-y-4">
-              {academicFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="md:col-span-2">
-                      <Controller
-                        name={`academicFormations.${index}.title`}
-                        control={control}
-                        render={({ field: inputField }) => (
-                          <input
-                            {...inputField}
-                            type="text"
-                            placeholder="Título académico"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        )}
-                      />
-                    </div>
+          {/* ── Formación académica ── */}
+          <SectionTitle title="Formación académica" onAdd={() => appendAcademic({ title: '', institution: '', year: undefined, place: '' })} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {academicFields.map((f, i) => (
+              <div key={f.id} style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Controller name={`academicFormations.${i}.title`} control={control}
+                      render={({ field }) => <input {...field} style={iS} placeholder="Título académico" />} />
                   </div>
-                  {publicationFields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePublication(index)}
-                      className="mt-2 text-red-600 hover:text-red-700"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                      Eliminar publicación
-                    </button>
-                  )}
+                  <Controller name={`academicFormations.${i}.institution`} control={control}
+                    render={({ field }) => <input {...field} style={iS} placeholder="Institución" />} />
+                  <Controller name={`academicFormations.${i}.year`} control={control}
+                    render={({ field }) => <input {...field} type="number" style={iS} placeholder="Año" onChange={e => field.onChange(parseInt(e.target.value) || undefined)} />} />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Controller name={`academicFormations.${i}.place`} control={control}
+                      render={({ field }) => <input {...field} style={iS} placeholder="Lugar" />} />
+                  </div>
                 </div>
-              ))}
-            </div>
+                {academicFields.length > 1 && (
+                  <button type="button" onClick={() => removeAcademic(i)} className="adm-btn danger" style={{ fontSize: 11, padding: '5px 10px', alignSelf: 'flex-start' }}>
+                    Eliminar formación
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Botones */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
+          {/* ── Publicaciones ── */}
+          <SectionTitle title="Publicaciones" onAdd={() => appendPublication({ title: '', editorial: '', year: undefined, role: '', description: '' })} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {publicationFields.map((f, i) => (
+              <div key={f.id} style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Controller name={`publications.${i}.title`} control={control}
+                      render={({ field }) => <input {...field} style={iS} placeholder="Título de la publicación" />} />
+                  </div>
+                  <Controller name={`publications.${i}.editorial`} control={control}
+                    render={({ field }) => <input {...field} style={iS} placeholder="Editorial" />} />
+                  <Controller name={`publications.${i}.year`} control={control}
+                    render={({ field }) => <input {...field} type="number" style={iS} placeholder="Año" onChange={e => field.onChange(parseInt(e.target.value) || undefined)} />} />
+                  <Controller name={`publications.${i}.role`} control={control}
+                    render={({ field }) => <input {...field} style={iS} placeholder="Rol (Autor, Co-autor…)" />} />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Controller name={`publications.${i}.description`} control={control}
+                      render={({ field }) => <textarea {...field} style={{ ...iS, minHeight: 60, resize: 'vertical' } as React.CSSProperties} placeholder="Descripción" />} />
+                  </div>
+                </div>
+                {publicationFields.length > 1 && (
+                  <button type="button" onClick={() => removePublication(i)} className="adm-btn danger" style={{ fontSize: 11, padding: '5px 10px', alignSelf: 'flex-start' }}>
+                    Eliminar publicación
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ display: 'flex', gap: 10, paddingTop: 8, borderTop: `1px solid ${LINE}`, marginTop: 4 }}>
+            <button type="button" onClick={handleClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isLoading || !isValid}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? 'Actualizando...' : 'Actualizar Conferencista'}
+            <button type="submit" disabled={isLoading || !isValid} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isLoading || !isValid ? .5 : 1 }}>
+              {isLoading ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>
         </form>
