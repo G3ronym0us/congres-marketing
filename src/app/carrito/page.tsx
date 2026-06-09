@@ -299,9 +299,9 @@ export default function Carrito() {
   const getLocalidadDetails = (localidad: string) => {
     return (
       localidades[localidad] || {
-        nombre: 'Entrada',
-        precio: 0,
-        icono: '🎫',
+        name: 'Entrada',
+        price: 0,
+        icon: '🎫',
         withMemories: false,
         noPermiteMemorias: false,
       }

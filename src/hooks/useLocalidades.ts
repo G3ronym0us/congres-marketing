@@ -5,19 +5,24 @@ import { getLocalidadTypes } from '@/services/localidadTypes';
 
 /**
  * Carga las localidades (nombre, precio, features) desde el backend.
- * Mientras carga —o si la API falla— usa localidadesData estático como fallback.
+ * Arranca vacío con `loading: true` para que las páginas muestren un
+ * skeleton (sin flash de datos estáticos viejos); solo si la API falla
+ * o no devuelve nada se usa localidadesData estático como fallback.
  * Los estilos visuales (color/border) no existen en la API, así que se
  * heredan del registro estático con el mismo slug.
  */
 export const useLocalidades = () => {
   const [localidades, setLocalidades] =
-    useState<Record<string, LocalidadDetalle>>(localidadesData);
+    useState<Record<string, LocalidadDetalle>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getLocalidadTypes()
       .then(types => {
-        if (!Array.isArray(types) || types.length === 0) return;
+        if (!Array.isArray(types) || types.length === 0) {
+          setLocalidades(localidadesData);
+          return;
+        }
         const merged: Record<string, LocalidadDetalle> = {};
         [...types]
           .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -38,7 +43,10 @@ export const useLocalidades = () => {
           });
         setLocalidades(merged);
       })
-      .catch(err => console.error('Error cargando localidades:', err))
+      .catch(err => {
+        console.error('Error cargando localidades:', err);
+        setLocalidades(localidadesData);
+      })
       .finally(() => setLoading(false));
   }, []);
 

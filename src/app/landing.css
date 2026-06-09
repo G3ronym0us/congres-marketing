@@ -990,3 +990,149 @@ section { position: relative; }
   .bol-notes { padding: 22px; }
   .bol-addon { padding: 22px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   SKELETONS  (carga de localidades desde la API)
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes skShimmer { to { background-position: -200% 0; } }
+
+.sk-line {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.13) 50%, rgba(255,255,255,.05) 75%);
+  background-size: 200% 100%;
+  animation: skShimmer 1.4s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   QUANTITY SELECT PAGE  (/quantity-select)
+   ═══════════════════════════════════════════════════════ */
+
+.qs-grid {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) { .qs-grid { grid-template-columns: 1fr; } }
+
+.qs-panel {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  padding: 28px;
+}
+
+.qs-label {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mute-2);
+  display: block;
+  margin-bottom: 14px;
+}
+
+/* selector compacto de localidad */
+.qs-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.qs-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  text-align: left;
+  transition: border-color .25s, background .25s;
+}
+.qs-pill:hover { border-color: var(--neon-line); }
+.qs-pill.active { border-color: var(--neon); background: var(--neon-soft); }
+.qs-pill .nm { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--white); }
+.qs-pill .pr { font-family: var(--display); font-size: 13px; color: var(--mute); }
+.qs-pill.active .pr { color: var(--neon); }
+
+.qs-included {
+  font-size: 13px;
+  color: var(--neon);
+  margin-top: 14px;
+  font-family: var(--display);
+  letter-spacing: .04em;
+}
+
+/* stepper de cantidad */
+.qs-stepper { display: flex; align-items: center; gap: 0; }
+.qs-stepper button {
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 22px;
+  transition: border-color .25s, color .25s;
+}
+.qs-stepper button:first-child { border-radius: 12px 0 0 12px; }
+.qs-stepper button:last-child { border-radius: 0 12px 12px 0; }
+.qs-stepper button:hover:not(:disabled) { border-color: var(--neon-line); color: var(--neon); }
+.qs-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.qs-stepper .num {
+  width: 76px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--ink-deep);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 22px;
+}
+.qs-hint { font-size: 13px; color: var(--mute-2); margin-top: 10px; }
+
+/* toggle de memorias */
+.qs-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.qs-check .box {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  color: var(--ink-deep);
+  transition: background .2s, border-color .2s;
+}
+.qs-check.on .box { background: var(--neon); border-color: var(--neon); }
+.qs-check .tt { font-weight: 600; color: var(--white); font-size: 15px; }
+.qs-check .dd { font-size: 13px; color: var(--mute); margin-top: 2px; }
+.qs-check .pp { margin-left: auto; font-family: var(--display); font-weight: 700; white-space: nowrap; }
+
+/* resumen */
+.qs-summary .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--mute);
+  padding: 7px 0;
+}
+.qs-summary .row .v { color: var(--white); font-family: var(--display); }
+.qs-summary .total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 16px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 22px;
+}
+.qs-summary .total .v { color: var(--neon); }

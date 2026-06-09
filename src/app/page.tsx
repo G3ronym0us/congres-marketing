@@ -135,7 +135,7 @@ export default function LandingPage() {
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const { localidades } = useLocalidades();
+  const { localidades, loading: localidadesLoading } = useLocalidades();
 
   const cdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
@@ -551,7 +551,20 @@ export default function LandingPage() {
 
             {city.id === 'col' ? (
               <div className={`tk-grid ${sw}`}>
-                {Object.entries(localidades)
+                {localidadesLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <article key={i} className="tk" aria-hidden="true">
+                        <span className="sk-line" style={{ width: '50%', height: 16 }} />
+                        <span className="sk-line" style={{ width: '75%', height: 34, marginTop: 14 }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, margin: '20px 0 24px' }}>
+                          <span className="sk-line" style={{ width: '100%', height: 13 }} />
+                          <span className="sk-line" style={{ width: '90%', height: 13 }} />
+                          <span className="sk-line" style={{ width: '95%', height: 13 }} />
+                        </div>
+                        <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 'auto' }} />
+                      </article>
+                    ))
+                  : Object.entries(localidades)
                   .filter(([, t]) => t.pushable)
                   .map(([type, t]) => {
                   const isFeat = type === TicketType.DIAMOND;

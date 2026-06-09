@@ -22,7 +22,7 @@ const NOTES = [
 export default function BoleteriaPage() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
-  const { localidades } = useLocalidades();
+  const { localidades, loading } = useLocalidades();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -73,7 +73,24 @@ export default function BoleteriaPage() {
           <div className="wrap">
 
             <div className="bol-grid">
-              {Object.entries(localidades)
+              {loading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <article key={i} className="bol-card" aria-hidden="true">
+                      <div className="bol-card-top">
+                        <span className="sk-line" style={{ width: 34, height: 34, borderRadius: 10 }} />
+                        <span className="sk-line" style={{ width: '60%', height: 20 }} />
+                      </div>
+                      <span className="sk-line" style={{ width: '70%', height: 34 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                        <span className="sk-line" style={{ width: '100%', height: 13 }} />
+                        <span className="sk-line" style={{ width: '90%', height: 13 }} />
+                        <span className="sk-line" style={{ width: '95%', height: 13 }} />
+                        <span className="sk-line" style={{ width: '70%', height: 13 }} />
+                      </div>
+                      <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 'auto' }} />
+                    </article>
+                  ))
+                : Object.entries(localidades)
                 .filter(([, t]) => t.pushable)
                 .map(([type, t]) => {
                 const isFeat = type === FEATURED;
@@ -132,7 +149,7 @@ export default function BoleteriaPage() {
                 <div className="bol-addon-price">
                   <span style={{ color: 'var(--mute)', fontSize: 14, fontFamily: 'var(--display)' }}>COP</span>
                   <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'clamp(30px,4vw,42px)' }}>
-                    {formatoPrecio(PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()}
+                    {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()}
                   </span>
                 </div>
                 <p style={{ color: 'var(--mute-2)', fontSize: 12, fontFamily: 'var(--display)', letterSpacing: '.1em', textTransform: 'uppercase', marginTop: 4 }}>
