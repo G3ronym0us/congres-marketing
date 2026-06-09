@@ -2,11 +2,10 @@
 
 import React, { useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import logo from '../../../../public/images/2025/logo.png';
 import { loginUser } from '@/services/user';
 import { LoginUserInput } from '@/types/user';
 import { AuthContext } from '@/context/AuthContext';
+import '../../landing.css';
 
 const Login = () => {
   const router = useRouter();
@@ -15,29 +14,24 @@ const Login = () => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false); 
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleLogin = async (e: any) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      const payload: LoginUserInput = {
-        username,
-        password,
-      };
+      const payload: LoginUserInput = { username, password };
       const response = await loginUser(payload);
 
       if (response.status === 'fail') {
         setError(response.error || 'Credenciales inválidas');
       } else if (response.status === 'ok') {
-        console.log('response', response);
         await auth?.login(response.token);
         router.push('/admin/dashboard');
       }
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch {
       setError('Error de conexión. Intente nuevamente.');
     } finally {
       setIsLoading(false);
@@ -45,67 +39,155 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="w-96 p-6 bg-white text-black rounded shadow">
-        <div className="flex justify-center mb-4">
-          <Image src={logo} className={`inline`} alt="" />
+    <div className="cnmp-root" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="bg-field" />
+
+      <div style={{
+        position: 'relative', zIndex: 10,
+        width: '100%', maxWidth: 420,
+        margin: '0 auto', padding: '0 20px',
+      }}>
+
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <img src="/logo-principal.png" alt="CNMP 2026" style={{ height: 56, display: 'inline-block' }} />
         </div>
-        <h2 className="text-2xl font-bold text-center mb-4">Iniciar sesión</h2>
-        <div className="text-sm text-red-500 mb-2">{error}</div>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4 text-black">
-            <label
-              htmlFor="username"
-              className="block mb-2 text-sm font-medium text-gray-700"
-            >
-              Usuario
-            </label>
-            <input
-              type="username"
-              id="username"
-              className="w-full px-3 py-2 border rounded"
-              placeholder="Ingrese su usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
+
+        {/* Card */}
+        <div style={{
+          border: '1px solid var(--line)',
+          borderRadius: 20,
+          background: 'var(--panel)',
+          padding: '40px 36px',
+          boxShadow: '0 24px 64px rgba(0,0,0,.5)',
+        }}>
+          <div style={{ marginBottom: 32 }}>
+            <span className="eyebrow" style={{ display: 'block', marginBottom: 10 }}>Panel de administración</span>
+            <h1 style={{
+              fontFamily: 'var(--display)', fontWeight: 800,
+              fontSize: 'clamp(22px,4vw,28px)', lineHeight: 1.2,
+              color: 'var(--white)',
+            }}>
+              Iniciar sesión
+            </h1>
           </div>
-          <div className="mb-6">
-            <label
-              htmlFor="password"
-              className="block mb-2 text-sm font-medium text-gray-700"
-            >
-              Contraseña
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="w-full px-3 py-2 border rounded"
-              placeholder="Ingrese su contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <div className="flex justify-center">
+
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{
+                fontFamily: 'var(--display)', fontSize: 12,
+                letterSpacing: '.1em', textTransform: 'uppercase',
+                color: 'var(--mute)',
+              }}>
+                Usuario
+              </label>
+              <input
+                type="text"
+                autoComplete="username"
+                placeholder="Ingrese su usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                style={{
+                  background: 'var(--ink-deep)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 10,
+                  padding: '12px 16px',
+                  color: 'var(--white)',
+                  fontFamily: 'var(--body)',
+                  fontSize: 15,
+                  outline: 'none',
+                  transition: 'border-color .2s',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => (e.target.style.borderColor = 'var(--neon-line)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--line)')}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{
+                fontFamily: 'var(--display)', fontSize: 12,
+                letterSpacing: '.1em', textTransform: 'uppercase',
+                color: 'var(--mute)',
+              }}>
+                Contraseña
+              </label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="Ingrese su contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{
+                  background: 'var(--ink-deep)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 10,
+                  padding: '12px 16px',
+                  color: 'var(--white)',
+                  fontFamily: 'var(--body)',
+                  fontSize: 15,
+                  outline: 'none',
+                  transition: 'border-color .2s',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => (e.target.style.borderColor = 'var(--neon-line)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--line)')}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                background: 'rgba(255,60,60,.08)',
+                border: '1px solid rgba(255,60,60,.25)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                color: '#ff6b6b',
+                fontFamily: 'var(--display)',
+                fontSize: 13,
+              }}>
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center"
+              className="btn btn-neon"
+              style={{
+                width: '100%', justifyContent: 'center',
+                marginTop: 4,
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+              }}
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg style={{ width: 18, height: 18, animation: 'spin 1s linear infinite', marginRight: 8 }}
+                    viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" />
                   </svg>
-                  Iniciando sesión...
+                  Verificando...
                 </>
               ) : (
-                'Iniciar sesión'
+                <>Ingresar <span className="arr">→</span></>
               )}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: 24, color: 'var(--mute-2)', fontSize: 12, fontFamily: 'var(--display)', letterSpacing: '.08em' }}>
+          CNMP 2026 · Solo acceso autorizado
+        </p>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

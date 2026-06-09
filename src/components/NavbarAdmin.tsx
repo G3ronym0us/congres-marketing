@@ -1,53 +1,50 @@
 'use client';
 
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faTachometerAlt,
-  faSignOutAlt,
-  faBars,
-  faTimes
-} from '@fortawesome/free-solid-svg-icons';
 
-// Componente principal de la Navbar
-const Navbar = ({ title, onLogout, onToggleSidebar, sidebarOpen }: { title: string, onLogout: () => void, onToggleSidebar: () => void, sidebarOpen: boolean }) => {
+const NavbarAdmin = ({
+  title,
+  onLogout,
+  onToggleSidebar,
+  sidebarOpen,
+}: {
+  title: string;
+  onLogout: () => void;
+  onToggleSidebar: () => void;
+  sidebarOpen: boolean;
+}) => {
   return (
-    <header className="bg-white shadow-sm z-10 border-b border-gray-200">
-      <div className="px-4 sm:px-6 py-3">
-        <div className="flex items-center justify-between">
-          {/* Sección izquierda: Título e ícono */}
-          <div className="flex items-center">
-            <FontAwesomeIcon icon={faTachometerAlt} className="mr-2 text-blue-600 hidden sm:block" />
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-800 truncate">
-              {title}
-            </h1>
-          </div>
-          
-          {/* Sección derecha: Botón de hamburguesa y cerrar sesión */}
-          <div className="flex items-center space-x-3">
-            {/* Botón de hamburguesa (siempre visible) */}
-            <button
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              onClick={onToggleSidebar}
-              aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
-            >
-              <FontAwesomeIcon icon={sidebarOpen ? faTimes : faBars} className="w-5 h-5" />
-            </button>
-            
-            {/* Botón de cerrar sesión */}
-            <button
-              onClick={onLogout}
-              className="hidden sm:flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-            >
-              <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-        </div>
+    <header className="adm-topbar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          className="adm-btn adm-burger"
+          onClick={onToggleSidebar}
+          aria-label={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+          style={{ padding: '6px 10px' }}
+        >
+          {sidebarOpen ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+              <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+          )}
+        </button>
+        <span className="adm-topbar-title">{title}</span>
+      </div>
+
+      <div className="adm-topbar-actions">
+        <button className="adm-btn danger" onClick={onLogout}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}>
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          Cerrar sesión
+        </button>
       </div>
     </header>
   );
 };
 
-export default Navbar;
-
+export default NavbarAdmin;
