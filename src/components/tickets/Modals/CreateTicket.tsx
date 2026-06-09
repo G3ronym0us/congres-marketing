@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { AdminCreateTicketInput, TicketType } from '@/types/tickets';
-import { localidadesData } from '@/data/ticketsData';
+import { useLocalidades } from '@/hooks/useLocalidades';
 import { generateReference } from '@/utils/utils';
 import { DarkModal, DarkField, DarkInput, DarkSelect, MemoriesToggle } from './ModalParts';
 
@@ -14,6 +14,7 @@ interface Props {
 }
 
 const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
+  const { localidades } = useLocalidades();
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<AdminCreateTicketInput>({
     defaultValues: { reference: '', name: '', lastname: '', email: '', document: '', phone: '', type: 'General' as TicketType, withMemories: false },
     mode: 'onChange',
@@ -24,14 +25,14 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   useEffect(() => { setValue('reference', generateReference()); }, []);
 
   useEffect(() => {
-    if (selectedType && localidadesData[selectedType]) {
-      setValue('withMemories', localidadesData[selectedType].withMemories || false);
+    if (selectedType && localidades[selectedType]) {
+      setValue('withMemories', localidades[selectedType].withMemories || false);
     }
   }, [selectedType, setValue]);
 
   const toggleMemories = () => {
     const t = watch('type');
-    if (t && localidadesData[t]?.price === 0) return;
+    if (t && localidades[t]?.price === 0) return;
     setValue('withMemories', !watch('withMemories'), { shouldValidate: true });
   };
 
@@ -82,7 +83,7 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               <DarkSelect {...field}>
                 {Object.values(TicketType).map(t => (
                   <option key={t} value={t}>
-                    {localidadesData[t]?.name || t} — ${(localidadesData[t]?.price || 0).toLocaleString('es-CO')}
+                    {localidades[t]?.name || t} — ${(localidades[t]?.price || 0).toLocaleString('es-CO')}
                   </option>
                 ))}
               </DarkSelect>
@@ -93,7 +94,7 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
         <Controller name="withMemories" control={control}
           render={({ field: { value } }) => {
             const t = watch('type');
-            const disabled = !!(t && localidadesData[t]?.price === 0);
+            const disabled = !!(t && localidades[t]?.price === 0);
             return <MemoriesToggle checked={value} disabled={disabled} onToggle={toggleMemories} />;
           }}
         />

@@ -16,11 +16,8 @@ import {
   faTags,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '@/context/CartContext';
-import {
-  formatoPrecio,
-  localidadesData,
-  PRECIO_MEMORIAS,
-} from '@/data/ticketsData';
+import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { useLocalidades } from '@/hooks/useLocalidades';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
 import { AttendeeData, TicketType } from '@/types/tickets';
 import { discountCodeService, discountUtils } from '@/services/discountCode';
@@ -85,6 +82,7 @@ export default function Carrito() {
     applyDiscount,
     removeDiscount,
   } = useCart();
+  const { localidades } = useLocalidades();
   const [total, setTotal] = useState(0);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -300,7 +298,7 @@ export default function Carrito() {
   // Obtener detalles de un tipo de localidad
   const getLocalidadDetails = (localidad: string) => {
     return (
-      localidadesData[localidad] || {
+      localidades[localidad] || {
         nombre: 'Entrada',
         precio: 0,
         icono: '🎫',

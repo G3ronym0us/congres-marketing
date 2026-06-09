@@ -1,7 +1,8 @@
 'use client';
 
 import { TicketType } from '@/types/tickets';
-import { localidadesData, formatoPrecio } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
+import { useLocalidades } from '@/hooks/useLocalidades';
 
 interface TicketSelectorProps {
   selectedTicket: TicketType;
@@ -9,9 +10,10 @@ interface TicketSelectorProps {
 }
 
 export default function TicketSelector({ selectedTicket, onTicketSelect }: TicketSelectorProps) {
+  const { localidades } = useLocalidades();
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-      {Object.entries(localidadesData).map(([key, datos]) => {
+      {Object.entries(localidades).map(([key, datos]) => {
         // Omitir la opción de "solo memorias" y tickets no públicos en el selector
         if (key === 'memorias' || !datos.pushable) return null;
         

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTicketAlt } from '@fortawesome/free-solid-svg-icons';
 import { TicketType } from '@/types/tickets';
-import { localidadesData, formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { useLocalidades } from '@/hooks/useLocalidades';
 import { useCart } from '@/context/CartContext';
 
 // Componentes
@@ -20,28 +21,30 @@ export default function SeleccionCantidad() {
   const searchParams = useSearchParams();
   const { addItem } = useCart();
   
+  const { localidades } = useLocalidades();
   const [localidad, setLocalidad] = useState<TicketType>(TicketType.DIAMOND);
   const [cantidad, setCantidad] = useState(1);
   const [incluirMemorias, setIncluirMemorias] = useState(false);
-  const [detallesEntrada, setDetallesEntrada] = useState(localidadesData[TicketType.DIAMOND]);
-  
+  const [detallesEntrada, setDetallesEntrada] = useState(localidades[TicketType.DIAMOND]);
+
   useEffect(() => {
-    // Obtener la localidad de la URL
+    // Obtener la localidad de la URL (cualquier slug válido de localidad)
     const localidadParam = searchParams ? searchParams.get('localidad') : null;
-    if (localidadParam && Object.values(TicketType).includes(localidadParam as TicketType)) {
+    if (localidadParam) {
       setLocalidad(localidadParam as TicketType);
     }
   }, [searchParams]);
 
-  // Actualizar detalles cuando cambia la localidad
+  // Actualizar detalles cuando cambia la localidad (o llegan los datos de la API)
   useEffect(() => {
-    setDetallesEntrada(localidadesData[localidad]);
-    
+    if (!localidades[localidad]) return;
+    setDetallesEntrada(localidades[localidad]);
+
     // Reset el checkbox de memorias si cambia la localidad a una que ya las incluye
-    if (localidadesData[localidad] && localidadesData[localidad].withMemories) {
+    if (localidades[localidad].withMemories) {
       setIncluirMemorias(true);
     }
-  }, [localidad]);
+  }, [localidad, localidades]);
 
   const handleLocalidadSelect = (tipo: TicketType) => {
     setLocalidad(tipo);
