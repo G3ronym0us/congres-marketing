@@ -93,6 +93,7 @@ export interface UpdateTicketInput {
 export interface FilterGetTicketsInput {
   status?: TicketStatus[];
   type?: TicketType[];
+  edition?: number;
 }
 
 export interface AdminCreateTicketInput {

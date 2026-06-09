@@ -157,7 +157,9 @@ const BroadcastsAdmin = () => {
                   <StatusBadge status={b.status} />
                 </div>
                 <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
-                  {b.type === 'ALL_USERS' ? '👥 Todos los usuarios' : `✉️ ${b.specific_email}`}
+                  {b.type === 'ALL_USERS'
+                    ? `👥 Todos los usuarios${b.target_edition ? ` · 🗓 Edición ${b.target_edition}` : ''}`
+                    : `✉️ ${b.specific_email}`}
                   {' · '}Por: {b.sender_name}
                   {' · '}{formatDate(b.createdAt)}
                 </div>

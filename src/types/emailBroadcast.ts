@@ -13,6 +13,7 @@ export interface EmailBroadcast {
   error_message?: string;
   include_certificate?: boolean;
   force_regenerate_certificate?: boolean;
+  target_edition?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +29,7 @@ export interface CreateEmailBroadcastRequest {
   force_regenerate_ticket?: boolean;
   include_certificate?: boolean;
   force_regenerate_certificate?: boolean;
+  target_edition?: number;
 }
 
 export interface ResendEmailBroadcastRequest {

@@ -8,6 +8,7 @@ import NavbarAdmin from '@/components/NavbarAdmin';
 import SidebarAdmin from '@/components/SIdebarAdmin';
 import { AuthContext } from '@/context/AuthContext';
 import { useMetrics } from '@/hooks/useMetrics';
+import { getCurrentEdition, setCurrentEdition } from '@/services/tickets';
 import apiClient from '@/utils/apiClient';
 import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
@@ -51,10 +52,13 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [activeEdition, setActiveEdition] = useState<number | null>(null);
+  const [viewEdition, setViewEdition] = useState<number | undefined>(undefined);
+  const [isSwitchingEdition, setIsSwitchingEdition] = useState(false);
 
   const auth = useContext(AuthContext);
   const router = useRouter();
-  const { metrics, loading: metricsLoading, refetch } = useMetrics();
+  const { metrics, loading: metricsLoading, refetch } = useMetrics(viewEdition);
 
   const daysLeft = Math.max(0, Math.ceil((EVENT_DATE.getTime() - Date.now()) / 86400000));
 
@@ -73,12 +77,42 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  useEffect(() => {
+    if (isAuthLoading || !auth?.user) return;
+    getCurrentEdition()
+      .then(({ currentEdition }) => {
+        setActiveEdition(currentEdition);
+        setViewEdition(currentEdition);
+      })
+      .catch(() => setActiveEdition(null));
+  }, [isAuthLoading, auth?.user]);
+
   const handleLogout = () => { auth?.logout(); router.push('/admin/auth'); };
+
+  const activateEdition = async () => {
+    if (!viewEdition || viewEdition === activeEdition) return;
+    const ok = window.confirm(
+      `¿Activar la edición ${viewEdition} del congreso? Los nuevos tickets, transacciones y conferencistas se crearán en esa edición.`,
+    );
+    if (!ok) return;
+    try {
+      setIsSwitchingEdition(true);
+      const res = await setCurrentEdition(viewEdition);
+      setActiveEdition(res.currentEdition);
+    } catch {
+      alert('Error al cambiar la edición activa.');
+    } finally {
+      setIsSwitchingEdition(false);
+    }
+  };
 
   const downloadPDF = async () => {
     try {
       setIsDownloadingPDF(true);
-      const res = await apiClient.get('/tickets/report/download', { responseType: 'blob' });
+      const res = await apiClient.get('/tickets/report/download', {
+        responseType: 'blob',
+        params: viewEdition ? { edition: viewEdition } : undefined,
+      });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
@@ -143,7 +177,32 @@ export default function Dashboard() {
           {activeTab === 'dashboard' && (
             <>
               {/* Actions */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
+                {activeEdition !== null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 'auto' }}>
+                    <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 13 }}>Edición:</span>
+                    <select
+                      className="adm-btn"
+                      value={viewEdition ?? activeEdition}
+                      onChange={e => setViewEdition(parseInt(e.target.value, 10))}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {Array.from(
+                        { length: Math.max(activeEdition, new Date().getFullYear()) - 2025 + 2 },
+                        (_, i) => 2025 + i,
+                      ).map(year => (
+                        <option key={year} value={year} style={{ color: '#000' }}>
+                          {year}{year === activeEdition ? ' (activa)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {viewEdition !== undefined && viewEdition !== activeEdition && (
+                      <button className="adm-btn neon" onClick={activateEdition} disabled={isSwitchingEdition}>
+                        {isSwitchingEdition ? 'Activando…' : `Activar edición ${viewEdition}`}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <button className="adm-btn" onClick={refetch} disabled={metricsLoading}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, ...(metricsLoading ? { animation: 'spin 1s linear infinite' } : {}) }}>
                     <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>

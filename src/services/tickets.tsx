@@ -148,9 +148,11 @@ export async function downloadCertificate(uuid: string): Promise<Blob> {
   }
 }
 
-export async function getTicketsMetrics() {
+export async function getTicketsMetrics(edition?: number) {
   try {
-    const response = await apiClient.get('/tickets/metrics');
+    const response = await apiClient.get('/tickets/metrics', {
+      params: edition ? { edition } : undefined,
+    });
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -169,6 +171,26 @@ export async function getCertificateStatus(): Promise<{ enabled: boolean }> {
 export async function toggleCertificates(enabled: boolean): Promise<{ enabled: boolean }> {
   try {
     const response = await apiClient.put('/admin/certificates/toggle', { enabled });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function getCurrentEdition(): Promise<{ currentEdition: number }> {
+  try {
+    const response = await apiClient.get('/admin/edition');
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function setCurrentEdition(
+  edition: number,
+): Promise<{ message: string; currentEdition: number }> {
+  try {
+    const response = await apiClient.put('/admin/edition', { edition });
     return response.data;
   } catch (error) {
     return handleError(error);

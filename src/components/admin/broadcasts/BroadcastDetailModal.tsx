@@ -221,22 +221,22 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Boletos</div>
                       <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario"
-                        checked={resendData.include_ticket} name="include_ticket" onChange={handleCheckbox} />
+                        checked={resendData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} />
                       {resendData.include_ticket && (
                         <div style={{ paddingLeft: 28 }}>
                           <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR"
-                            checked={resendData.force_regenerate_ticket} name="force_regenerate_ticket" onChange={handleCheckbox} />
+                            checked={resendData.force_regenerate_ticket ?? false} name="force_regenerate_ticket" onChange={handleCheckbox} />
                         </div>
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Certificados</div>
                       <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario"
-                        checked={resendData.include_certificate} name="include_certificate" onChange={handleCheckbox} />
+                        checked={resendData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} />
                       {resendData.include_certificate && (
                         <div style={{ paddingLeft: 28 }}>
                           <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF"
-                            checked={resendData.force_regenerate_certificate} name="force_regenerate_certificate" onChange={handleCheckbox} />
+                            checked={resendData.force_regenerate_certificate ?? false} name="force_regenerate_certificate" onChange={handleCheckbox} />
                         </div>
                       )}
                     </div>

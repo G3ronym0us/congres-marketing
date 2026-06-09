@@ -52,10 +52,12 @@ const LecturersTable = () => {
   const [lecturerEdit, setLecturerEdit] = React.useState<Lecturer | null>(null);
   const [typeFilter, setTypeFilter] = React.useState<'all' | 'INTERNATIONAL' | 'NATIONAL'>('all');
   const [showFilter, setShowFilter] = React.useState<'all' | 'visible' | 'hidden'>('all');
+  const [editionFilter, setEditionFilter] = React.useState<number | undefined>(undefined);
 
   const itemsPerPage = 10;
 
-  React.useEffect(() => { getLecturers(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { getLecturers(); }, [editionFilter]);
 
   React.useEffect(() => {
     let filtered = data;
@@ -79,7 +81,7 @@ const LecturersTable = () => {
   const getLecturers = async () => {
     setIsLoading(true);
     try {
-      setData(await getAll());
+      setData(await getAll(editionFilter));
     } catch {
       Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al cargar conferencistas', showConfirmButton: false, timer: 1500 });
     } finally {
@@ -223,6 +225,22 @@ const LecturersTable = () => {
           <option value="all">Todos</option>
           <option value="visible">Visibles</option>
           <option value="hidden">Ocultos</option>
+        </select>
+
+        {/* Edición */}
+        <select
+          value={editionFilter ?? ''}
+          onChange={e => setEditionFilter(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+          style={{ ...inputStyle, width: 'auto', flex: '0 1 150px', cursor: 'pointer' }}
+          title="Filtrar por edición"
+        >
+          <option value="">Edición actual</option>
+          {Array.from(
+            { length: new Date().getFullYear() - 2025 + 2 },
+            (_, i) => 2025 + i,
+          ).map(year => (
+            <option key={year} value={year}>{year}</option>
+          ))}
         </select>
       </div>
 

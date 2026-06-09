@@ -42,6 +42,7 @@ export interface Lecturer {
   publications?: Publication[];
   createdMethodologies?: string[];
   show: boolean;
+  edition?: number;
   createdAt: string;
   updatedAt: string;
 }

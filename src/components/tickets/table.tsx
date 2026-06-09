@@ -95,16 +95,19 @@ const TicketsTable = () => {
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
 
+  const [edition, setEdition] = React.useState<number | undefined>(undefined);
+
   const [filters] = React.useState<FilterGetTicketsInput>({
     status: [TicketStatus.PAID, TicketStatus.RESERVED],
   });
 
-  React.useEffect(() => { getTickets(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { getTickets(); }, [edition]);
 
   const getTickets = async () => {
     setIsLoading(true);
     try {
-      setData(await getTicketsApproved(filters));
+      setData(await getTicketsApproved({ ...filters, edition }));
     } catch {
       toast('error', 'Error al cargar tickets');
     } finally {
@@ -240,6 +243,26 @@ const TicketsTable = () => {
             style={searchStyle}
           />
         </div>
+
+        {/* Edition filter */}
+        <select
+          className="adm-btn"
+          value={edition ?? ''}
+          onChange={e => {
+            setEdition(e.target.value ? parseInt(e.target.value, 10) : undefined);
+            setCurrentPage(1);
+          }}
+          style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+          title="Filtrar por edición"
+        >
+          <option value="" style={{ color: '#000' }}>Edición actual</option>
+          {Array.from(
+            { length: new Date().getFullYear() - 2025 + 2 },
+            (_, i) => 2025 + i,
+          ).map(year => (
+            <option key={year} value={year} style={{ color: '#000' }}>{year}</option>
+          ))}
+        </select>
 
         {/* Count */}
         <span style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, color: 'var(--mute-2)', whiteSpace: 'nowrap' }}>

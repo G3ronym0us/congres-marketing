@@ -64,11 +64,14 @@ export async function getNationalWithTitle(): Promise<Lecturer[]> {
   }
 }
 
-export async function getAll(): Promise<Lecturer[]> {
-  const response = await apiClient.get('/lecturers').then((res) => res.data).catch((err) => {
-    console.error('Error fetching lecturers:', err);
-    return [];
-  });
+export async function getAll(edition?: number): Promise<Lecturer[]> {
+  const response = await apiClient
+    .get('/lecturers', { params: edition ? { edition } : undefined })
+    .then((res) => res.data)
+    .catch((err) => {
+      console.error('Error fetching lecturers:', err);
+      return [];
+    });
   return response;
 }
 

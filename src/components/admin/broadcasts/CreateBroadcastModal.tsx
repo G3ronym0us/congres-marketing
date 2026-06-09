@@ -69,6 +69,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
     force_regenerate_ticket: false,
     include_certificate: false,
     force_regenerate_certificate: false,
+    target_edition: undefined,
   });
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -105,6 +106,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
           type: formData.type, specific_email: formData.specific_email || undefined,
           include_ticket: formData.include_ticket, force_regenerate_ticket: formData.force_regenerate_ticket,
           include_certificate: formData.include_certificate, force_regenerate_certificate: formData.force_regenerate_certificate,
+          target_edition: formData.target_edition,
         }, selectedFiles);
       } else {
         await emailBroadcastService.createBroadcast(formData);
@@ -114,6 +116,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
         title: '', sender_name: 'Equipo Organizador CNMP 2025', content: '', type: 'ALL_USERS',
         specific_email: '', include_ticket: false, force_regenerate_ticket: false,
         include_certificate: false, force_regenerate_certificate: false,
+        target_edition: undefined,
       });
       setSelectedFiles([]);
       onSuccess();
@@ -177,6 +180,29 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                   <input type="email" name="specific_email" value={formData.specific_email} onChange={handleInput} required
                     style={{ ...iS, marginTop: 4 }} placeholder="usuario@example.com" />
                 )}
+                {formData.type === 'ALL_USERS' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: MUTE, whiteSpace: 'nowrap' }}>
+                      🗓 Edición:
+                    </span>
+                    <select
+                      value={formData.target_edition ?? ''}
+                      onChange={e => setFormData(prev => ({
+                        ...prev,
+                        target_edition: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                      }))}
+                      style={{ ...iS, width: 'auto', cursor: 'pointer' }}
+                    >
+                      <option value="">Todas las ediciones</option>
+                      {Array.from(
+                        { length: new Date().getFullYear() - 2025 + 2 },
+                        (_, i) => 2025 + i,
+                      ).map(year => (
+                        <option key={year} value={year}>Asistentes {year}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </Field>
 
@@ -202,22 +228,22 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Boletos</div>
                   <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario al email"
-                    checked={formData.include_ticket} name="include_ticket" onChange={handleCheckbox} />
+                    checked={formData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} />
                   {formData.include_ticket && (
                     <div style={{ paddingLeft: 28 }}>
                       <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR en lugar de usar los existentes"
-                        checked={formData.force_regenerate_ticket} name="force_regenerate_ticket" onChange={handleCheckbox} />
+                        checked={formData.force_regenerate_ticket ?? false} name="force_regenerate_ticket" onChange={handleCheckbox} />
                     </div>
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Certificados</div>
                   <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario al email"
-                    checked={formData.include_certificate} name="include_certificate" onChange={handleCheckbox} />
+                    checked={formData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} />
                   {formData.include_certificate && (
                     <div style={{ paddingLeft: 28 }}>
                       <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF del certificado"
-                        checked={formData.force_regenerate_certificate} name="force_regenerate_certificate" onChange={handleCheckbox} />
+                        checked={formData.force_regenerate_certificate ?? false} name="force_regenerate_certificate" onChange={handleCheckbox} />
                     </div>
                   )}
                 </div>
@@ -262,7 +288,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                 De: <span style={{ color: '#fff' }}>{formData.sender_name}</span>
               </div>
               <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? 'Todos los usuarios' : formData.specific_email}</span>
+                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (edición ${formData.target_edition})` : ' (todas las ediciones)'}` : formData.specific_email}</span>
               </div>
               <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
                 {formData.title}

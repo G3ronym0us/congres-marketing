@@ -24,7 +24,7 @@ export interface MetricsData {
   lastUpdated: string;
 }
 
-export const useMetrics = () => {
+export const useMetrics = (edition?: number) => {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +33,8 @@ export const useMetrics = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const data = await getTicketsMetrics();
+
+      const data = await getTicketsMetrics(edition);
       setMetrics(data);
     } catch (err) {
       console.error('Error fetching metrics:', err);
@@ -46,7 +46,8 @@ export const useMetrics = () => {
 
   useEffect(() => {
     fetchMetrics();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edition]);
 
   return {
     metrics,
