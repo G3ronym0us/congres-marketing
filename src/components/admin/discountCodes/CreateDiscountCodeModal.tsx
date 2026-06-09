@@ -1,185 +1,142 @@
 'use client';
 
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { adminDiscountCodeService } from '@/services/discountCode';
 import { CreateDiscountCodeInput } from '@/types/discountCode';
 
-interface CreateDiscountCodeModalProps {
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+      {label}
+    </label>
+    {children}
+    {hint && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)' }}>{hint}</span>}
+  </div>
+);
+
+interface Props {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function CreateDiscountCodeModal({ onClose, onSuccess }: CreateDiscountCodeModalProps) {
+export default function CreateDiscountCodeModal({ onClose, onSuccess }: Props) {
+  const today = new Date().toISOString().slice(0, 16);
+
   const [formData, setFormData] = useState<CreateDiscountCodeInput>({
-    code: '',
-    discountPercentage: 0,
-    maxUses: 1,
-    isActive: true,
-    expiresAt: '',
+    code: '', discountPercentage: 0, maxUses: 1, isActive: true, expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError]     = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox'
+        ? (e.target as HTMLInputElement).checked
+        : type === 'number' ? parseFloat(value) || 0 : value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
+    setLoading(true); setError('');
     try {
       await adminDiscountCodeService.createCode(formData);
+      Swal.fire({ icon: 'success', title: 'Código creado', timer: 1500, showConfirmButton: false });
       onSuccess();
-    } catch (error: any) {
-      console.error('Error creating discount code:', error);
-      
-      if (error.response?.data?.message) {
-        if (Array.isArray(error.response.data.message)) {
-          setError(error.response.data.message.join(', '));
-        } else {
-          setError(error.response.data.message);
-        }
-      } else {
-        setError('Error al crear el código de descuento');
-      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || 'Error al crear el código de descuento'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' 
-        ? (e.target as HTMLInputElement).checked
-        : type === 'number' 
-          ? parseFloat(value) || 0
-          : value
-    }));
-  };
-
-  // Generar fecha mínima (hoy)
-  const today = new Date().toISOString().slice(0, 16);
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Crear Código de Descuento</h2>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+
+      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 460, boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+            Crear Código de Descuento
+          </h3>
+          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div style={{ background: 'rgba(255,80,80,.1)', border: '1px solid rgba(255,80,80,.25)', borderRadius: 8, padding: '10px 14px', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#ff9999', marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
 
-          <div>
-            <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
-              Código *
-            </label>
-            <input
-              type="text"
-              id="code"
-              name="code"
-              value={formData.code}
-              onChange={handleChange}
-              placeholder="ej: EARLY2025"
-              required
-              minLength={3}
-              maxLength={20}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 uppercase"
-              style={{ textTransform: 'uppercase' }}
-            />
-            <p className="text-xs text-gray-500 mt-1">3-20 caracteres, sin espacios</p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          <Field label="Código *" hint="3–20 caracteres, sin espacios">
+            <input type="text" name="code" value={formData.code} onChange={handleChange}
+              required minLength={3} maxLength={20} placeholder="ej: EARLY2025"
+              style={{ ...iS, textTransform: 'uppercase', letterSpacing: '.05em' }} />
+          </Field>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Descuento (%)*" hint="Entre 0.01 y 100">
+              <input type="number" name="discountPercentage" value={formData.discountPercentage}
+                onChange={handleChange} required min="0.01" max="100" step="0.01"
+                placeholder="15.50" style={iS} />
+            </Field>
+            <Field label="Usos máximos *">
+              <input type="number" name="maxUses" value={formData.maxUses}
+                onChange={handleChange} required min="1" style={iS} />
+            </Field>
           </div>
 
-          <div>
-            <label htmlFor="discountPercentage" className="block text-sm font-medium text-gray-700 mb-1">
-              Porcentaje de Descuento * (%)
-            </label>
-            <input
-              type="number"
-              id="discountPercentage"
-              name="discountPercentage"
-              value={formData.discountPercentage}
-              onChange={handleChange}
-              placeholder="15.50"
-              required
-              min="0.01"
-              max="100"
-              step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">Entre 0.01% y 100%</p>
+          <Field label="Fecha de expiración *">
+            <input type="datetime-local" name="expiresAt" value={formData.expiresAt}
+              onChange={handleChange} required min={today}
+              style={{ ...iS, colorScheme: 'dark' }} />
+          </Field>
+
+          {/* Toggle activo */}
+          <div
+            onClick={() => setFormData(p => ({ ...p, isActive: !p.isActive }))}
+            role="checkbox" aria-checked={formData.isActive} tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setFormData(p => ({ ...p, isActive: !p.isActive })); }}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 10, border: `1px solid ${formData.isActive ? 'rgba(4,238,98,.35)' : LINE2}`, background: formData.isActive ? 'rgba(4,238,98,.06)' : 'transparent', cursor: 'pointer', transition: 'all .15s' }}
+          >
+            <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: formData.isActive ? NEON : MUTE }}>
+              Estado: {formData.isActive ? 'Activo' : 'Inactivo'}
+            </span>
+            <span style={{ fontSize: 20, color: formData.isActive ? NEON : MUTE }}>
+              {formData.isActive ? '●' : '○'}
+            </span>
           </div>
 
-          <div>
-            <label htmlFor="maxUses" className="block text-sm font-medium text-gray-700 mb-1">
-              Usos Máximos *
-            </label>
-            <input
-              type="number"
-              id="maxUses"
-              name="maxUses"
-              value={formData.maxUses}
-              onChange={handleChange}
-              required
-              min="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha de Expiración *
-            </label>
-            <input
-              type="datetime-local"
-              id="expiresAt"
-              name="expiresAt"
-              value={formData.expiresAt}
-              onChange={handleChange}
-              required
-              min={today}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-              Código activo
-            </label>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors disabled:opacity-50"
-            >
+          {/* Footer */}
+          <div style={{ display: 'flex', gap: 10, paddingTop: 8, borderTop: `1px solid ${LINE}` }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 min-w-[80px] flex items-center justify-center"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                'Crear'
-              )}
+            <button type="submit" disabled={loading} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: loading ? .6 : 1 }}>
+              {loading ? 'Creando…' : 'Crear código'}
             </button>
           </div>
         </form>

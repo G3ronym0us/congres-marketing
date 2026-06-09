@@ -1,204 +1,186 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCertificate,
-  faToggleOn,
-  faToggleOff,
-  faSpinner,
-  faCheckCircle,
-  faExclamationTriangle,
-  faDownload,
-  faRefresh
-} from '@fortawesome/free-solid-svg-icons';
 import { getCertificateStatus, toggleCertificates } from '@/services/tickets';
 
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
 export default function CertificatesAdmin() {
-  const [certificatesEnabled, setCertificatesEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [enabled, setEnabled]     = useState(false);
+  const [loading, setLoading]     = useState(true);
+  const [toggling, setToggling]   = useState(false);
+  const [error, setError]         = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const loadCertificateStatus = async () => {
+  const load = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await getCertificateStatus();
-      setCertificatesEnabled(response.enabled);
+      setLoading(true); setError(null);
+      const res = await getCertificateStatus();
+      setEnabled(res.enabled);
       setLastUpdated(new Date());
-    } catch (err: any) {
-      console.error('Error loading certificate status:', err);
+    } catch {
       setError('Error al cargar el estado de los certificados');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggleCertificates = async () => {
+  const handleToggle = async () => {
     try {
-      setToggling(true);
-      setError(null);
-      const newStatus = !certificatesEnabled;
-      const response = await toggleCertificates(newStatus);
-      setCertificatesEnabled(response.enabled);
+      setToggling(true); setError(null);
+      const res = await toggleCertificates(!enabled);
+      setEnabled(res.enabled);
       setLastUpdated(new Date());
-    } catch (err: any) {
-      console.error('Error toggling certificates:', err);
+    } catch {
       setError('Error al cambiar el estado de los certificados');
     } finally {
       setToggling(false);
     }
   };
 
-  useEffect(() => {
-    loadCertificateStatus();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <FontAwesomeIcon icon={faCertificate} className="mr-3 text-blue-600" />
-            Gestión de Certificados
+          <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+            🏆 Gestión de Certificados
           </h2>
-          <p className="text-gray-600 mt-1">
-            Controla la disponibilidad de certificados de asistencia para los usuarios
+          <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
+            Controla la disponibilidad de certificados de asistencia
           </p>
         </div>
         <button
-          onClick={loadCertificateStatus}
-          disabled={loading || toggling}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          onClick={load} disabled={loading || toggling}
+          className="adm-btn"
+          style={{ fontSize: 12, opacity: (loading || toggling) ? .5 : 1, cursor: (loading || toggling) ? 'not-allowed' : 'pointer' }}
         >
-          <FontAwesomeIcon icon={faRefresh} className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
+          {loading ? '↻ Cargando…' : '↻ Actualizar'}
         </button>
       </div>
 
-      {/* Error Alert */}
+      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 mr-2" />
-            <span className="text-red-700">{error}</span>
-          </div>
+        <div style={{ background: 'rgba(255,80,80,.08)', border: '1px solid rgba(255,80,80,.2)', borderRadius: 10, padding: '12px 16px', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#ff9999', marginBottom: 16 }}>
+          ⚠️ {error}
         </div>
       )}
 
-      {/* Main Controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <FontAwesomeIcon icon={faSpinner} spin className="text-2xl text-blue-600 mr-3" />
-              <span className="text-gray-600">Cargando estado de certificados...</span>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Status Display */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    certificatesEnabled ? 'bg-green-100' : 'bg-gray-100'
-                  }`}>
-                    <FontAwesomeIcon 
-                      icon={certificatesEnabled ? faCheckCircle : faCertificate} 
-                      className={`text-xl ${certificatesEnabled ? 'text-green-600' : 'text-gray-400'}`}
-                    />
+      {/* Main panel */}
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+            <div style={{ width: 32, height: 32, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          </div>
+        ) : (
+          <>
+            {/* Estado + toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', background: PANEL2, border: `1px solid ${enabled ? 'rgba(4,238,98,.2)' : LINE}`, borderRadius: 12, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: enabled ? 'rgba(4,238,98,.12)' : 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+                  {enabled ? '✅' : '🏆'}
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', marginBottom: 2 }}>
+                    Estado de Certificados
                   </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      Estado de Certificados
-                    </h3>
-                    <p className={`text-sm ${certificatesEnabled ? 'text-green-600' : 'text-gray-500'}`}>
-                      {certificatesEnabled ? 'Habilitados' : 'Deshabilitados'}
-                    </p>
+                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: enabled ? NEON : MUTE }}>
+                    {enabled ? 'Habilitados' : 'Deshabilitados'}
                   </div>
                 </div>
-
-                {/* Toggle Button */}
-                <button
-                  onClick={handleToggleCertificates}
-                  disabled={toggling}
-                  className={`inline-flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
-                    certificatesEnabled
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  } ${toggling ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {toggling ? (
-                    <>
-                      <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-                      Cambiando...
-                    </>
-                  ) : (
-                    <>
-                      <FontAwesomeIcon 
-                        icon={certificatesEnabled ? faToggleOff : faToggleOn} 
-                        className="mr-2" 
-                      />
-                      {certificatesEnabled ? 'Deshabilitar' : 'Habilitar'}
-                    </>
-                  )}
-                </button>
               </div>
 
-              {/* Information Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
-                  <h4 className="font-semibold text-blue-800 mb-2">
-                    Cuando están habilitados:
-                  </h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Los usuarios pueden descargar sus certificados</li>
-                    <li>• Los certificados aparecen en la consulta de tickets</li>
-                    <li>• Se generan automáticamente para tickets pagados</li>
-                  </ul>
-                </div>
-
-                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  <h4 className="font-semibold text-gray-800 mb-2">
-                    Cuando están deshabilitados:
-                  </h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Los certificados no son visibles para usuarios</li>
-                    <li>• No se puede descargar certificados</li>
-                    <li>• Los certificados existentes se mantienen</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Additional Actions */}
-              <div className="border-t pt-6">
-                <h4 className="font-semibold text-gray-800 mb-4">Acciones Adicionales</h4>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    disabled={!certificatesEnabled}
-                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FontAwesomeIcon icon={faDownload} className="mr-2" />
-                    Generar Certificados Masivos
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Nota: Los certificados masivos solo están disponibles cuando los certificados están habilitados
-                </p>
-              </div>
-
-              {/* Last Updated */}
-              {lastUpdated && (
-                <div className="text-xs text-gray-500 text-center pt-4 border-t">
-                  Última actualización: {lastUpdated.toLocaleString('es-ES')}
-                </div>
-              )}
+              <button
+                onClick={handleToggle} disabled={toggling}
+                style={{
+                  padding: '11px 24px', borderRadius: 10, border: 'none', cursor: toggling ? 'not-allowed' : 'pointer',
+                  background: enabled ? 'rgba(255,80,80,.15)' : NEON,
+                  color: enabled ? '#ff6b6b' : INK,
+                  fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13,
+                  opacity: toggling ? .6 : 1,
+                  transition: 'all .2s',
+                  ...(enabled ? { border: '1px solid rgba(255,80,80,.3)' } : {}),
+                }}
+              >
+                {toggling ? 'Cambiando…' : enabled ? 'Deshabilitar' : 'Habilitar'}
+              </button>
             </div>
-          )}
-        </div>
+
+            {/* Info cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ background: PANEL2, border: `1px solid rgba(4,238,98,.15)`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 13, color: NEON, marginBottom: 10 }}>
+                  Cuando están habilitados
+                </div>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    'Los usuarios pueden descargar sus certificados',
+                    'Aparecen en la consulta de tickets',
+                    'Se generan para tickets pagados',
+                  ].map((t, i) => (
+                    <li key={i} style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: 'rgba(255,255,255,.7)', display: 'flex', gap: 8 }}>
+                      <span style={{ color: NEON, flexShrink: 0 }}>·</span>{t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div style={{ background: PANEL2, border: `1px solid ${LINE2}`, borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 13, color: MUTE, marginBottom: 10 }}>
+                  Cuando están deshabilitados
+                </div>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    'No son visibles para los usuarios',
+                    'No se pueden descargar certificados',
+                    'Los existentes se mantienen',
+                  ].map((t, i) => (
+                    <li key={i} style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: 'rgba(255,255,255,.4)', display: 'flex', gap: 8 }}>
+                      <span style={{ flexShrink: 0 }}>·</span>{t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Acciones adicionales */}
+            <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
+              <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 12 }}>
+                Acciones adicionales
+              </div>
+              <button
+                disabled={!enabled}
+                className="adm-btn"
+                style={{ fontSize: 12, opacity: enabled ? 1 : .4, cursor: enabled ? 'pointer' : 'not-allowed' }}
+              >
+                ⬇ Generar Certificados Masivos
+              </button>
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)', marginTop: 8 }}>
+                Solo disponible cuando los certificados están habilitados
+              </div>
+            </div>
+
+            {/* Última actualización */}
+            {lastUpdated && (
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)', textAlign: 'center', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
+                Última actualización: {lastUpdated.toLocaleString('es-ES')}
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }

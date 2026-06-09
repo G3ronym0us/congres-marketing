@@ -1,20 +1,34 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import logo from "../../../../public/images/2025/logo.png";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faEdit,
-  faFileDownload,
-  faMailBulk,
-  faTimes,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import Swal from "sweetalert2";
-import validator from "validator";
-import InputText from "@/components/form/InputText";
+import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import validator from 'validator';
+
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const Field = ({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+      {label}
+    </label>
+    {children}
+    {error && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b' }}>{error}</span>}
+  </div>
+);
 
 type Ticket = {
   id: number;
@@ -29,405 +43,289 @@ type Ticket = {
   row: string;
 };
 
-type TicketError = {
-  name?: string;
-  lastname?: string;
-  email?: string;
-  document?: string;
-};
+type TicketErrors = { name?: string; lastname?: string; email?: string; document?: string };
 
 const Tickets = () => {
-  const router = useRouter();
+  const [data, setData]               = useState<Ticket[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isOpen, setIsOpen]           = useState(false);
+  const [ticketEdit, setTicketEdit]   = useState<Ticket | null>(null);
+  const [saving, setSaving]           = useState(false);
 
-  const [token, setToken] = React.useState("");
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [data, setData] = React.useState([]);
-  const [isOpen, setIsOpen] = React.useState(false);
-  // Datos de ejemplo
+  const [name, setName]               = useState('');
+  const [lastname, setLastname]       = useState('');
+  const [email, setEmail]             = useState('');
+  const [documentUser, setDocumentUser] = useState('');
+  const [phone, setPhone]             = useState('');
+  const [errors, setErrors]           = useState<TicketErrors>({});
 
-  const [name, setName] = React.useState("");
-  const [lastname, setLastname] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [documentUser, setDocumentUser] = React.useState("");
-  const [phone, setPhone] = React.useState("");
+  const itemsPerPage = 10;
 
-  const [errors, setErrors]: any = React.useState({});
-  const [ticketEdit, setTicketEdit]: any = React.useState({});
+  useEffect(() => { load(); }, []);
 
-  React.useEffect(() => {
-    getTickets();
-  }, []);
-
-  const getTickets = async () => {
-    const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets";
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.status === 401) {
-      const responseData = await response.json();
-      //   router.push("/admin/auth");
-    } else if (response.status === 200) {
-      const responseData = await response.json();
-      setData(responseData);
+  const load = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(process.env.NEXT_PUBLIC_URL + 'api/admin/tickets');
+      if (res.ok) setData(await res.json());
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Filtrar datos según el término de búsqueda
-  const filteredData = data.filter((item: Ticket) => {
-    if (!searchTerm || searchTerm === "") return true;
+  const filtered = data.filter(t => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
     return (
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.document?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+      t.name?.toLowerCase().includes(q) ||
+      t.lastname?.toLowerCase().includes(q) ||
+      t.document?.toLowerCase().includes(q) ||
+      t.phone?.toLowerCase().includes(q) ||
+      t.email?.toLowerCase().includes(q)
     );
   });
 
-  // Paginación
-  const itemsPerPage = 10; // Número de elementos por página
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const pageItems  = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleChangePage = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+  const openEdit = (t: Ticket) => {
+    setTicketEdit(t);
+    setName(t.name || '');
+    setLastname(t.lastname || '');
+    setEmail(t.email || '');
+    setDocumentUser(t.document || '');
+    setPhone(t.phone || '');
+    setErrors({});
+    setIsOpen(true);
   };
 
-  const resendEmail = async (id: number) => {
-    const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets/resend/" + id;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.status === 200) {
-      Swal.fire({
-        position: "top-end",
-        icon: "success",
-        title: "Correo enviado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    } else {
-      Swal.fire({
-        position: "top-end",
-        icon: "error",
-        title: "Correo no enviado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-  };
-
-  const downloadPDF = async (ticket: Ticket) => {
-    const url =
-      process.env.NEXT_PUBLIC_URL + "api/admin/tickets/download/" + ticket.id;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `CNMP_COLOMBIA_BOLETO(${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}).pdf`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } else {
-      console.error("Error downloading PDF");
-    }
-  };
-
-  const deleteTicket = async (id: number) => {
-    const url = process.env.NEXT_PUBLIC_URL + "api/admin/tickets/delete/" + id;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.status === 200) {
-      Swal.fire({
-        position: "top-end",
-        icon: "success",
-        title: "Ticket Eliminado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      getTickets();
-    } else {
-      Swal.fire({
-        position: "top-end",
-        icon: "error",
-        title: "Ticket no eliminado",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-  };
-
-  const handleSubmit = async (e: any) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errs: TicketErrors = {};
+    if (!name.trim()) errs.name = 'Requerido';
+    if (!lastname.trim()) errs.lastname = 'Requerido';
+    if (!validator.isEmail(email)) errs.email = 'Email no válido';
+    if (!documentUser.trim()) errs.document = 'Requerido';
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
 
-    const newErrors: TicketError = {};
-
-    if (name.trim() === "") newErrors.name = "Los nombres son requeridos";
-    if (lastname.trim() === "")
-      newErrors.lastname = "Los apellidos son requeridos";
-    if (!validator.isEmail(email)) newErrors.email = "El email no es valido";
-    if (documentUser.trim() === "")
-      newErrors.document = "El documento no es valido";
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      const data: Ticket = {
-        ...ticketEdit,
-        name: name ?? ticketEdit.name,
-        lastname: lastname ?? ticketEdit.lastname,
-        email: email ?? ticketEdit.email,
-        document: documentUser ?? ticketEdit.document,
-        phone: phone ?? ticketEdit.phone,
-      };
-
-      const url =
-        process.env.NEXT_PUBLIC_URL + "api/admin/tickets/update/" + data.id;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+    setSaving(true);
+    try {
+      const updated = { ...ticketEdit, name, lastname, email, document: documentUser, phone };
+      const res = await fetch(process.env.NEXT_PUBLIC_URL + 'api/admin/tickets/update/' + ticketEdit!.id, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated),
       });
-
-      if (response.status === 200) {
-        Swal.fire({
-          position: "top-end",
-          icon: "success",
-          title: "Ticket editado",
-          showConfirmButton: false,
-          timer: 1500,
-        });
-        getTickets();
-        setIsOpen(!isOpen);
+      if (res.ok) {
+        Swal.fire({ icon: 'success', title: 'Ticket actualizado', timer: 1500, showConfirmButton: false });
+        setIsOpen(false);
+        load();
       } else {
-        Swal.fire({
-          position: "top-end",
-          icon: "error",
-          title: "Ticket no editado",
-          showConfirmButton: false,
-          timer: 1500,
-        });
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el ticket' });
       }
+    } finally {
+      setSaving(false);
     }
   };
 
-  const editTicket = (ticket: Ticket) => {
-    setIsOpen(!isOpen);
-    setTicketEdit(ticket);
-    setName(ticket.name);
-    setLastname(ticket.lastname);
-    setDocumentUser(ticket.document);
-    setEmail(ticket.email);
-    setPhone(ticket.phone || "");
+  const handleResend = async (id: number) => {
+    const res = await fetch(process.env.NEXT_PUBLIC_URL + 'api/admin/tickets/resend/' + id);
+    if (res.ok)
+      Swal.fire({ icon: 'success', title: 'Correo enviado', timer: 1500, showConfirmButton: false });
+    else
+      Swal.fire({ icon: 'error', title: 'Error al enviar', timer: 1500, showConfirmButton: false });
+  };
+
+  const handleDownload = async (t: Ticket) => {
+    const res = await fetch(process.env.NEXT_PUBLIC_URL + 'api/admin/tickets/download/' + t.id);
+    if (res.ok) {
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `CNMP_COLOMBIA_BOLETO(${t.name.toUpperCase()} ${t.lastname.toUpperCase()}).pdf`;
+      document.body.appendChild(link); link.click(); link.remove();
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Eliminar ticket?', text: 'Esta acción no se puede revertir',
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#d33', cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+    });
+    if (!isConfirmed) return;
+    const res = await fetch(process.env.NEXT_PUBLIC_URL + 'api/admin/tickets/delete/' + id);
+    if (res.ok) {
+      Swal.fire({ icon: 'success', title: 'Ticket eliminado', timer: 1500, showConfirmButton: false });
+      load();
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el ticket' });
+    }
   };
 
   return (
-    <>
-      <div className="bg-gray-100 w-full py-10 px-20 text-black">
-        <div className=" bg-white p-4 mt-10 rounded-lg">
-          <div className=" mt-4 w-full">
-            <input
-              type="text"
-              placeholder="Buscar"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <table className="min-w-full bg-white m-2 text-center">
-            <thead>
-              <tr>
-                <th className="py-2">Documento</th>
-                <th className="py-2">Nombre</th>
-                <th className="py-2">Teléfono</th>
-                <th className="py-2">Localidad</th>
-                <th className="py-2">Asiento</th>
-                <th className="py-2">Opciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((item: Ticket) => (
-                <tr key={item.id}>
-                  <td className="py-2">{item.document}</td>
-                  <td className="py-2">
-                    {!item.name
-                      ? "Reservada"
-                      : item.lastname?.toUpperCase() + ", " + item.name}
-                  </td>
-                  <td className="py-2">{item.phone || 'No registrado'}</td>
-                  <td className="py-2">{item.type}</td>
-                  <td className="py-2">{item.row + `-` + item.number}</td>
-                  <td className="py-2">
-                    <FontAwesomeIcon
-                      onClick={() => resendEmail(item.id)}
-                      icon={faMailBulk}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => downloadPDF(item)}
-                      icon={faFileDownload}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => editTicket(item)}
-                      icon={faEdit}
-                      className="text-blue-500 mr-2 cursor-pointer"
-                    />
-                    <FontAwesomeIcon
-                      onClick={() => deleteTicket(item.id)}
-                      icon={faTrash}
-                      className="text-red-500 cursor-pointer"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-6 text-right pr-6">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => handleChangePage(i + 1)}
-                className={`px-3 py-1 border ${
-                  currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-white"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+            Tickets
+          </h2>
+          <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
+            {data.length} en total
+          </p>
         </div>
       </div>
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-10 text-black">
-          <div
-            className="fixed inset-0 bg-gray-900 bg-opacity-50"
-            onClick={() => setIsOpen(!isOpen)}
-          ></div>
-          <div className="bg-white w:1/2 lg:w-1/4 p-4 rounded shadow-lg relative text-xs text-primary">
-            <div className="flex justify-end">
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <div className="uppercase mb-6 text-lg text-center text-blue-500">
-              Editar Ticket
-            </div>
-            <div className="grid grid-cols-1">
-              <form className="grid grid-cols-1" onSubmit={handleSubmit}>
-                <div className="px-2 mb-4 text-justify text-md">
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Nombres</label>
-                    <InputText
-                      value={name}
-                      error={errors.name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                    {errors.name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                    )}
-                  </div>
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Apellidos</label>
-                    <InputText
-                      value={lastname}
-                      error={errors.lastname}
-                      onChange={(e) => setLastname(e.target.value)}
-                    />
-                    {errors.lastname && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.lastname}
-                      </p>
-                    )}
-                  </div>
+      {/* Filtro */}
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: '14px 18px', marginBottom: 16 }}>
+        <div style={{ position: 'relative' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: MUTE, pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" placeholder="Buscar por nombre, documento, email…"
+            value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            style={{ ...iS, paddingLeft: 34 }} />
+        </div>
+      </div>
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Correo</label>
-                    <InputText
-                      value={email}
-                      error={errors.email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                    {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
+      {/* Lista */}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ width: 32, height: 32, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : pageItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          No se encontraron tickets
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {pageItems.map(t => (
+            <div key={t.id} style={{ background: PANEL, border: `1px solid ${LINE2}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
 
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Documento:</label>
-                    <InputText
-                      value={documentUser}
-                      error={errors.document}
-                      onChange={(e) => setDocumentUser(e.target.value)}
-                    />
-                    {errors.document && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.document}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 mb-4">
-                    <label className="text-black">Teléfono:</label>
-                    <InputText
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      error=""
-                    />
-                  </div>
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff', marginBottom: 3 }}>
+                  {!t.name ? 'Reservada' : `${t.lastname?.toUpperCase()}, ${t.name}`}
                 </div>
-                <div className="px-2">
-                  <button
-                    onClick={handleSubmit}
-                    className="bg-blue-500 rounded w-full text-white text-lg font-bold py-2 mt-4"
-                  >
-                    Confirmar
-                  </button>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+                  {t.document || '—'}
+                  {' · '}{t.phone || 'Sin teléfono'}
+                  {' · '}{t.email || '—'}
                 </div>
-              </form>
+              </div>
+
+              {/* Asiento */}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 14, color: NEON }}>
+                  {t.row}-{t.number}
+                </div>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
+                  {t.type}
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                <button onClick={() => handleResend(t.id)} className="adm-btn" style={{ fontSize: 11, padding: '6px 10px' }} title="Reenviar correo">
+                  ✉
+                </button>
+                <button onClick={() => handleDownload(t)} className="adm-btn" style={{ fontSize: 11, padding: '6px 10px' }} title="Descargar PDF">
+                  ⬇
+                </button>
+                <button onClick={() => openEdit(t)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(t.id)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 12px' }}>
+                  Eliminar
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button key={page} onClick={() => setCurrentPage(page)} className="adm-btn"
+              style={{ padding: '6px 12px', fontSize: 12, ...(currentPage === page ? { background: NEON, color: INK, borderColor: NEON, fontWeight: 700 } : {}) }}>
+              {page}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* Modal editar */}
+      {isOpen && ticketEdit && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={() => setIsOpen(false)} />
+
+          <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 480, boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+                Editar Ticket
+              </h3>
+              <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
+            </div>
+
+            {/* Info de solo lectura */}
+            <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+                Localidad: <span style={{ color: NEON, fontWeight: 600 }}>{ticketEdit.type}</span>
+                {' · '}Asiento: <span style={{ color: '#fff' }}>{ticketEdit.row}-{ticketEdit.number}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Nombres *" error={errors.name}>
+                  <input value={name} onChange={e => setName(e.target.value)}
+                    style={{ ...iS, borderColor: errors.name ? '#ff6b6b' : LINE2 }} />
+                </Field>
+                <Field label="Apellidos *" error={errors.lastname}>
+                  <input value={lastname} onChange={e => setLastname(e.target.value)}
+                    style={{ ...iS, borderColor: errors.lastname ? '#ff6b6b' : LINE2 }} />
+                </Field>
+              </div>
+
+              <Field label="Correo *" error={errors.email}>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  style={{ ...iS, borderColor: errors.email ? '#ff6b6b' : LINE2 }} />
+              </Field>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Documento *" error={errors.document}>
+                  <input value={documentUser} onChange={e => setDocumentUser(e.target.value)}
+                    style={{ ...iS, borderColor: errors.document ? '#ff6b6b' : LINE2 }} />
+                </Field>
+                <Field label="Teléfono">
+                  <input value={phone} onChange={e => setPhone(e.target.value)} style={iS} />
+                </Field>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, paddingTop: 8, borderTop: `1px solid ${LINE}` }}>
+                <button type="button" onClick={() => setIsOpen(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: saving ? .6 : 1 }}>
+                  {saving ? 'Guardando…' : 'Confirmar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -1,228 +1,175 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { adminDiscountCodeService, discountUtils } from '@/services/discountCode';
 import { DiscountCode } from '@/types/discountCode';
 import CreateDiscountCodeModal from './CreateDiscountCodeModal';
 import EditDiscountCodeModal from './EditDiscountCodeModal';
-import LoadingSpinner from '@/components/LoadingSpinner';
+
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+const StatusBadge = ({ code }: { code: DiscountCode }) => {
+  if (!code.isActive)
+    return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE, background: 'rgba(255,255,255,.08)', borderRadius: 6, padding: '3px 9px' }}>Inactivo</span>;
+  if (discountUtils.isCodeExpired(code.expiresAt))
+    return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b', background: 'rgba(255,80,80,.1)', borderRadius: 6, padding: '3px 9px' }}>Expirado</span>;
+  if (code.currentUses >= code.maxUses)
+    return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#f97316', background: 'rgba(249,115,22,.12)', borderRadius: 6, padding: '3px 9px' }}>Agotado</span>;
+  return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: NEON, background: 'rgba(4,238,98,.1)', borderRadius: 6, padding: '3px 9px' }}>Activo</span>;
+};
 
 export default function DiscountCodesAdmin() {
-  const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [codes, setCodes]             = useState<DiscountCode[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCode, setEditingCode] = useState<DiscountCode | null>(null);
 
-  const fetchDiscountCodes = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      const codes = await adminDiscountCodeService.getAllCodes();
-      setDiscountCodes(codes);
-      setError('');
-    } catch (error) {
-      console.error('Error fetching discount codes:', error);
-      setError('Error al cargar los códigos de descuento');
+      setCodes(await adminDiscountCodeService.getAllCodes());
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cargar los códigos de descuento' });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchDiscountCodes();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este código de descuento?')) {
-      return;
-    }
-
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Eliminar código?', text: 'Esta acción no se puede revertir',
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#d33', cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+    });
+    if (!isConfirmed) return;
     try {
       await adminDiscountCodeService.deleteCode(id);
-      await fetchDiscountCodes();
-    } catch (error) {
-      console.error('Error deleting discount code:', error);
-      setError('Error al eliminar el código de descuento');
+      load();
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el código' });
     }
   };
 
-  const handleToggleActive = async (code: DiscountCode) => {
+  const handleToggle = async (code: DiscountCode) => {
     try {
-      await adminDiscountCodeService.updateCode(code.id, {
-        isActive: !code.isActive,
-      });
-      await fetchDiscountCodes();
-    } catch (error) {
-      console.error('Error updating discount code:', error);
-      setError('Error al actualizar el código de descuento');
+      await adminDiscountCodeService.updateCode(code.id, { isActive: !code.isActive });
+      setCodes(prev => prev.map(c => c.id === code.id ? { ...c, isActive: !c.isActive } : c));
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el código' });
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getStatusBadge = (code: DiscountCode) => {
-    if (!code.isActive) {
-      return <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full">Inactivo</span>;
-    }
-    
-    if (discountUtils.isCodeExpired(code.expiresAt)) {
-      return <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">Expirado</span>;
-    }
-    
-    if (code.currentUses >= code.maxUses) {
-      return <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">Agotado</span>;
-    }
-    
-    return <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">Activo</span>;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-96">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const activeCount = codes.filter(c => c.isActive && !discountUtils.isCodeExpired(c.expiresAt) && c.currentUses < c.maxUses).length;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Códigos de Descuento</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          Crear Código
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+            Códigos de Descuento
+          </h2>
+          <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
+            {codes.length} en total · {activeCount} activos
+          </p>
+        </div>
+        <button onClick={() => setIsCreateOpen(true)} className="adm-btn neon">
+          + Crear código
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+      {/* Lista */}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ width: 32, height: 32, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : codes.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          No hay códigos de descuento · Crea el primero
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {codes.map(code => (
+            <div key={code.id} style={{ background: PANEL, border: `1px solid ${code.isActive ? LINE2 : LINE}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', opacity: code.isActive ? 1 : .6 }}>
+
+              {/* Código + badge */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                  <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 16, color: NEON, letterSpacing: '.05em' }}>
+                    {code.code}
+                  </span>
+                  <StatusBadge code={code} />
+                </div>
+                <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Expira: {formatDate(code.expiresAt)}
+                  {' · '}Creado: {formatDate(code.createdAt)}
+                </div>
+              </div>
+
+              {/* Métricas */}
+              <div style={{ display: 'flex', gap: 20, flexShrink: 0 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>
+                    {parseFloat(code.discountPercentage)}%
+                  </div>
+                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 10, color: MUTE, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    descuento
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>
+                    {code.currentUses}/{code.maxUses}
+                  </div>
+                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 10, color: MUTE, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    usos
+                  </div>
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button onClick={() => handleToggle(code)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
+                  {code.isActive ? 'Desactivar' : 'Activar'}
+                </button>
+                <button onClick={() => setEditingCode(code)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(code.id)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 12px' }}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Descuento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usos
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Expira
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Creado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {discountCodes.map((code) => (
-                <tr key={code.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{code.code}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-900">{discountUtils.formatPercentage(code.discountPercentage)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-900">
-                      {code.currentUses} / {code.maxUses}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {Math.max(0, code.maxUses - code.currentUses)} disponibles
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(code)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(code.expiresAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(code.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleToggleActive(code)}
-                        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                          code.isActive
-                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
-                        }`}
-                      >
-                        {code.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                      <button
-                        onClick={() => setEditingCode(code)}
-                        className="text-blue-600 hover:text-blue-900 px-3 py-1 rounded text-xs font-medium hover:bg-blue-50"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(code.id)}
-                        className="text-red-600 hover:text-red-900 px-3 py-1 rounded text-xs font-medium hover:bg-red-50"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {discountCodes.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-2">No hay códigos de descuento</div>
-            <div className="text-gray-400">Crea tu primer código de descuento</div>
-          </div>
-        )}
-      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Modales */}
-      {showCreateModal && (
+      {isCreateOpen && (
         <CreateDiscountCodeModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            setShowCreateModal(false);
-            fetchDiscountCodes();
-          }}
+          onClose={() => setIsCreateOpen(false)}
+          onSuccess={() => { setIsCreateOpen(false); load(); }}
         />
       )}
-
       {editingCode && (
         <EditDiscountCodeModal
           discountCode={editingCode}
           onClose={() => setEditingCode(null)}
-          onSuccess={() => {
-            setEditingCode(null);
-            fetchDiscountCodes();
-          }}
+          onSuccess={() => { setEditingCode(null); load(); }}
         />
       )}
     </div>
