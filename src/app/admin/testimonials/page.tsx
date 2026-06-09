@@ -1,486 +1,268 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faPlus,
-  faSearch,
-  faEdit,
-  faTrash,
-  faToggleOn,
-  faToggleOff,
-  faImage,
-  faEye,
-  faEyeSlash,
-  faExclamationCircle,
-} from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
-import { Testimonial, TestimonialFilters } from '@/types/testimonials';
-import {
-  getTestimonials,
-  deleteTestimonial,
-  toggleTestimonialActive,
-} from '@/services/testimonials';
+import { Testimonial } from '@/types/testimonials';
+import { getTestimonials, deleteTestimonial, toggleTestimonialActive } from '@/services/testimonials';
 import CreateTestimonialModal from '@/components/admin/testimonials/CreateTestimonialModal';
 import EditTestimonialModal from '@/components/admin/testimonials/EditTestimonialModal';
 import ImageUploadModal from '@/components/admin/testimonials/ImageUploadModal';
 
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '9px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 13,
+  outline: 'none', boxSizing: 'border-box',
+};
+
 const TestimonialsAdmin = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [filteredTestimonials, setFilteredTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
+  const [testimonials, setTestimonials]             = useState<Testimonial[]>([]);
+  const [filtered, setFiltered]                     = useState<Testimonial[]>([]);
+  const [loading, setLoading]                       = useState(true);
+  const [searchTerm, setSearchTerm]                 = useState('');
+  const [showActiveOnly, setShowActiveOnly]         = useState(false);
+  const [currentPage, setCurrentPage]               = useState(1);
+  const [isCreateOpen, setIsCreateOpen]             = useState(false);
+  const [isEditOpen, setIsEditOpen]                 = useState(false);
+  const [isImageOpen, setIsImageOpen]               = useState(false);
+  const [selected, setSelected]                     = useState<Testimonial | null>(null);
 
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    loadTestimonials();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
-    filterTestimonials();
+    let f = testimonials;
+    if (showActiveOnly) f = f.filter(t => t.active);
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      f = f.filter(t =>
+        t.firstName.toLowerCase().includes(q) ||
+        t.lastName.toLowerCase().includes(q)  ||
+        t.position.toLowerCase().includes(q)  ||
+        t.content.toLowerCase().includes(q),
+      );
+    }
+    setFiltered(f);
+    setCurrentPage(1);
   }, [testimonials, searchTerm, showActiveOnly]);
 
-  const loadTestimonials = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      const data = await getTestimonials();
-      setTestimonials(data);
-    } catch (error) {
-      console.error('Error loading testimonials:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudieron cargar los testimonios',
-      });
+      setTestimonials(await getTestimonials());
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar los testimonios' });
     } finally {
       setLoading(false);
     }
   };
 
-  const filterTestimonials = () => {
-    let filtered = testimonials;
-
-    if (showActiveOnly) {
-      filtered = filtered.filter((t) => t.active);
-    }
-
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.firstName.toLowerCase().includes(searchLower) ||
-          t.lastName.toLowerCase().includes(searchLower) ||
-          t.position.toLowerCase().includes(searchLower) ||
-          t.content.toLowerCase().includes(searchLower)
-      );
-    }
-
-    setFilteredTestimonials(filtered);
-    setCurrentPage(1);
-  };
-
-  const handleToggleActive = async (testimonial: Testimonial) => {
+  const handleToggle = async (t: Testimonial) => {
     try {
-      await toggleTestimonialActive(testimonial.id);
-      setTestimonials((prev) =>
-        prev.map((t) =>
-          t.id === testimonial.id ? { ...t, active: !t.active } : t
-        )
-      );
-      Swal.fire({
-        icon: 'success',
-        title: 'Estado actualizado',
-        text: `Testimonio ${testimonial.active ? 'desactivado' : 'activado'} correctamente`,
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    } catch (error) {
-      console.error('Error toggling testimonial:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo cambiar el estado del testimonio',
-      });
+      await toggleTestimonialActive(t.id);
+      setTestimonials(prev => prev.map(x => x.id === t.id ? { ...x, active: !x.active } : x));
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cambiar el estado' });
     }
   };
 
-  const handleDelete = async (testimonial: Testimonial) => {
-    const result = await Swal.fire({
+  const handleDelete = async (t: Testimonial) => {
+    const { isConfirmed } = await Swal.fire({
       title: '¿Estás seguro?',
-      text: `Se eliminará el testimonio de ${testimonial.firstName} ${testimonial.lastName}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      text: `Se eliminará el testimonio de ${t.firstName} ${t.lastName}`,
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
     });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteTestimonial(testimonial.id);
-        setTestimonials((prev) => prev.filter((t) => t.id !== testimonial.id));
-        Swal.fire({
-          icon: 'success',
-          title: 'Eliminado',
-          text: 'Testimonio eliminado correctamente',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } catch (error) {
-        console.error('Error deleting testimonial:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo eliminar el testimonio',
-        });
-      }
+    if (!isConfirmed) return;
+    try {
+      await deleteTestimonial(t.id);
+      setTestimonials(prev => prev.filter(x => x.id !== t.id));
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el testimonio' });
     }
   };
 
-  const handleEdit = (testimonial: Testimonial) => {
-    setSelectedTestimonial(testimonial);
-    setIsEditModalOpen(true);
-  };
-
-  const handleImageUpload = (testimonial: Testimonial) => {
-    setSelectedTestimonial(testimonial);
-    setIsImageModalOpen(true);
-  };
-
-  const handleTestimonialCreated = () => {
-    loadTestimonials();
-    setIsCreateModalOpen(false);
-  };
-
-  const handleTestimonialUpdated = () => {
-    loadTestimonials();
-    setIsEditModalOpen(false);
-    setSelectedTestimonial(null);
-  };
-
-  const handleImageUpdated = () => {
-    loadTestimonials();
-    setIsImageModalOpen(false);
-    setSelectedTestimonial(null);
-  };
-
-  // Paginación
-  const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredTestimonials.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages  = Math.ceil(filtered.length / itemsPerPage);
+  const pageItems   = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const activeCount = testimonials.filter(t => t.active).length;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Gestión de Testimonios
-            </h1>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <FontAwesomeIcon icon={faPlus} />
-              Nuevo Testimonio
-            </button>
-          </div>
+    <div>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+            Testimonios
+          </h2>
+          <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
+            {testimonials.length} en total · {activeCount} activos
+          </p>
         </div>
-
-        {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <FontAwesomeIcon
-                  icon={faSearch}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Buscar testimonios..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowActiveOnly(!showActiveOnly)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  showActiveOnly
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                <FontAwesomeIcon icon={showActiveOnly ? faEye : faEyeSlash} />
-                {showActiveOnly ? 'Solo activos' : 'Todos'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Lista de testimonios */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : currentItems.length === 0 ? (
-            <div className="text-center py-12">
-              <FontAwesomeIcon
-                icon={faExclamationCircle}
-                className="text-gray-400 text-4xl mb-4"
-              />
-              <p className="text-gray-500">No se encontraron testimonios</p>
-            </div>
-          ) : (
-            <>
-              {/* Vista desktop */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left p-4 font-medium text-gray-700">
-                        Persona
-                      </th>
-                      <th className="text-left p-4 font-medium text-gray-700">
-                        Cargo
-                      </th>
-                      <th className="text-left p-4 font-medium text-gray-700">
-                        Testimonio
-                      </th>
-                      <th className="text-center p-4 font-medium text-gray-700">
-                        Imagen
-                      </th>
-                      <th className="text-center p-4 font-medium text-gray-700">
-                        Estado
-                      </th>
-                      <th className="text-center p-4 font-medium text-gray-700">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentItems.map((testimonial) => (
-                      <tr key={testimonial.id} className="border-t hover:bg-gray-50">
-                        <td className="p-4">
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {testimonial.firstName} {testimonial.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {testimonial.id}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-gray-700">
-                          {testimonial.position}
-                        </td>
-                        <td className="p-4">
-                          <div className="max-w-xs truncate text-gray-700">
-                            {testimonial.content}
-                          </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          {testimonial.image ? (
-                            <img
-                              src={testimonial.image}
-                              alt={`${testimonial.firstName} ${testimonial.lastName}`}
-                              className="w-10 h-10 rounded-full object-cover mx-auto"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
-                              <FontAwesomeIcon icon={faImage} className="text-gray-400" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-4 text-center">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              testimonial.active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {testimonial.active ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => handleEdit(testimonial)}
-                              className="text-blue-600 hover:text-blue-800 p-1"
-                              title="Editar"
-                            >
-                              <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button
-                              onClick={() => handleImageUpload(testimonial)}
-                              className="text-purple-600 hover:text-purple-800 p-1"
-                              title="Subir imagen"
-                            >
-                              <FontAwesomeIcon icon={faImage} />
-                            </button>
-                            <button
-                              onClick={() => handleToggleActive(testimonial)}
-                              className={`p-1 ${
-                                testimonial.active
-                                  ? 'text-orange-600 hover:text-orange-800'
-                                  : 'text-green-600 hover:text-green-800'
-                              }`}
-                              title={testimonial.active ? 'Desactivar' : 'Activar'}
-                            >
-                              <FontAwesomeIcon
-                                icon={testimonial.active ? faToggleOff : faToggleOn}
-                              />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(testimonial)}
-                              className="text-red-600 hover:text-red-800 p-1"
-                              title="Eliminar"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Vista móvil */}
-              <div className="md:hidden">
-                {currentItems.map((testimonial) => (
-                  <div key={testimonial.id} className="p-4 border-b">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {testimonial.firstName} {testimonial.lastName}
-                        </h3>
-                        <p className="text-sm text-gray-600">{testimonial.position}</p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          testimonial.active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {testimonial.active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700 mb-3 line-clamp-2">
-                      {testimonial.content}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        {testimonial.image && (
-                          <img
-                            src={testimonial.image}
-                            alt={`${testimonial.firstName} ${testimonial.lastName}`}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(testimonial)}
-                          className="text-blue-600 p-1"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button
-                          onClick={() => handleImageUpload(testimonial)}
-                          className="text-purple-600 p-1"
-                        >
-                          <FontAwesomeIcon icon={faImage} />
-                        </button>
-                        <button
-                          onClick={() => handleToggleActive(testimonial)}
-                          className={
-                            testimonial.active ? 'text-orange-600' : 'text-green-600'
-                          }
-                        >
-                          <FontAwesomeIcon
-                            icon={testimonial.active ? faToggleOff : faToggleOn}
-                          />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(testimonial)}
-                          className="text-red-600 p-1"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="p-4 flex justify-center">
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <button onClick={() => setIsCreateOpen(true)} className="adm-btn neon">
+          + Nuevo testimonio
+        </button>
       </div>
 
-      {/* Modales */}
-      <CreateTestimonialModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleTestimonialCreated}
-      />
+      {/* ── Filtros ── */}
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: '14px 18px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: MUTE, pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar testimonios..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ ...iS, width: '100%', paddingLeft: 34 }}
+          />
+        </div>
+        <button
+          onClick={() => setShowActiveOnly(v => !v)}
+          className="adm-btn"
+          style={{ fontSize: 12, ...(showActiveOnly ? { borderColor: `rgba(4,238,98,.4)`, color: NEON } : {}) }}
+        >
+          {showActiveOnly ? 'Solo activos' : 'Todos'}
+        </button>
+      </div>
 
-      {selectedTestimonial && (
+      {/* ── Lista ── */}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ width: 32, height: 32, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : pageItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          No se encontraron testimonios
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {pageItems.map(t => (
+            <div key={t.id} style={{
+              background: PANEL,
+              border: `1px solid ${t.active ? LINE2 : LINE}`,
+              borderRadius: 14,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              opacity: t.active ? 1 : .55,
+              transition: 'opacity .2s',
+            }}>
+              {/* Avatar */}
+              {t.image ? (
+                <img src={t.image} alt={`${t.firstName} ${t.lastName}`}
+                  style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: `2px solid ${LINE2}` }} />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: LINE2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
+                  👤
+                </div>
+              )}
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                  <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                    {t.firstName} {t.lastName}
+                  </span>
+                  {!t.active && (
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b', background: 'rgba(255,80,80,.1)', borderRadius: 6, padding: '2px 8px' }}>
+                      Inactivo
+                    </span>
+                  )}
+                </div>
+                <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', marginBottom: 4 }}>
+                  {t.position}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,.35)', fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 480 }}>
+                  "{t.content}"
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => handleToggle(t)}
+                  className="adm-btn"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  {t.active ? 'Desactivar' : 'Activar'}
+                </button>
+                <button
+                  onClick={() => { setSelected(t); setIsImageOpen(true); }}
+                  className="adm-btn"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  Imagen
+                </button>
+                <button
+                  onClick={() => { setSelected(t); setIsEditOpen(true); }}
+                  className="adm-btn"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(t)}
+                  className="adm-btn danger"
+                  style={{ fontSize: 11, padding: '6px 12px' }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Paginación ── */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className="adm-btn"
+              style={{ padding: '6px 12px', fontSize: 12, ...(currentPage === page ? { background: NEON, color: INK, borderColor: NEON, fontWeight: 700 } : {}) }}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── Modales ── */}
+      <CreateTestimonialModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => { setIsCreateOpen(false); load(); }}
+      />
+      {selected && (
         <>
           <EditTestimonialModal
-            isOpen={isEditModalOpen}
-            onClose={() => {
-              setIsEditModalOpen(false);
-              setSelectedTestimonial(null);
-            }}
-            testimonial={selectedTestimonial}
-            onSuccess={handleTestimonialUpdated}
+            isOpen={isEditOpen}
+            onClose={() => { setIsEditOpen(false); setSelected(null); }}
+            testimonial={selected}
+            onSuccess={() => { setIsEditOpen(false); setSelected(null); load(); }}
           />
-
           <ImageUploadModal
-            isOpen={isImageModalOpen}
-            onClose={() => {
-              setIsImageModalOpen(false);
-              setSelectedTestimonial(null);
-            }}
-            testimonial={selectedTestimonial}
-            onSuccess={handleImageUpdated}
+            isOpen={isImageOpen}
+            onClose={() => { setIsImageOpen(false); setSelected(null); }}
+            testimonial={selected}
+            onSuccess={() => { setIsImageOpen(false); setSelected(null); load(); }}
           />
         </>
       )}

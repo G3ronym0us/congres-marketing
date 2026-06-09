@@ -1,299 +1,189 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faTimes,
-  faUpload,
-  faTrash,
-  faImage,
-  faExclamationCircle,
-} from '@fortawesome/free-solid-svg-icons';
 import Swal from 'sweetalert2';
 import { Testimonial } from '@/types/testimonials';
 import { uploadTestimonialImage, deleteTestimonialImage } from '@/services/testimonials';
 
-interface ImageUploadModalProps {
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+const MUTE2 = 'rgba(255,255,255,.28)';
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   testimonial: Testimonial;
   onSuccess: () => void;
 }
 
-const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
-  isOpen,
-  onClose,
-  testimonial,
-  onSuccess,
-}) => {
+const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);
+  const [uploading, setUploading]       = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+  const fileInputRef                    = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Formato no válido',
-        text: 'Solo se permiten archivos JPEG, JPG, PNG y WEBP',
-      });
+      Swal.fire({ icon: 'error', title: 'Formato no válido', text: 'Solo se permiten JPEG, JPG, PNG y WEBP' });
       return;
     }
-
-    // Validar tamaño (5MB máximo)
-    const maxSize = 5 * 1024 * 1024; // 5MB en bytes
-    if (file.size > maxSize) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Archivo muy grande',
-        text: 'El archivo no puede exceder 5MB',
-      });
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({ icon: 'error', title: 'Archivo muy grande', text: 'El archivo no puede exceder 5MB' });
       return;
     }
 
     setSelectedFile(file);
-
-    // Crear preview
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
+    reader.onload = ev => setPreviewUrl(ev.target?.result as string);
     reader.readAsDataURL(file);
   };
 
   const handleUpload = async () => {
     if (!selectedFile) return;
-
     try {
       setUploading(true);
       await uploadTestimonialImage(testimonial.id, selectedFile);
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Imagen subida',
-        text: 'La imagen se ha subido correctamente',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      
+      Swal.fire({ icon: 'success', title: 'Imagen subida', timer: 1500, showConfirmButton: false });
       setSelectedFile(null);
       setPreviewUrl(null);
       onSuccess();
     } catch (error: any) {
-      console.error('Error uploading image:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.response?.data?.message || 'No se pudo subir la imagen',
-      });
+      Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'No se pudo subir la imagen' });
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDeleteImage = async () => {
-    const result = await Swal.fire({
-      title: '¿Eliminar imagen?',
-      text: 'Esta acción no se puede revertir',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+  const handleDelete = async () => {
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Eliminar imagen?', text: 'Esta acción no se puede revertir',
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
     });
-
-    if (result.isConfirmed) {
-      try {
-        setDeleting(true);
-        await deleteTestimonialImage(testimonial.id);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Imagen eliminada',
-          text: 'La imagen se ha eliminado correctamente',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        
-        onSuccess();
-      } catch (error: any) {
-        console.error('Error deleting image:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'No se pudo eliminar la imagen',
-        });
-      } finally {
-        setDeleting(false);
-      }
+    if (!isConfirmed) return;
+    try {
+      setDeleting(true);
+      await deleteTestimonialImage(testimonial.id);
+      Swal.fire({ icon: 'success', title: 'Imagen eliminada', timer: 1500, showConfirmButton: false });
+      onSuccess();
+    } catch (error: any) {
+      Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'No se pudo eliminar la imagen' });
+    } finally {
+      setDeleting(false);
     }
   };
 
   const clearSelection = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">
-            Gestionar Imagen
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+
+      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 440, boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+            Gestionar imagen
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Cerrar"
-          >
-            <FontAwesomeIcon icon={faTimes} size="lg" />
-          </button>
+          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
           {/* Imagen actual */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2">Imagen actual</h4>
-            <div className="flex justify-center">
+            <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 12 }}>
+              Imagen actual
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
               {testimonial.image ? (
-                <div className="relative">
-                  <img
-                    src={testimonial.image}
-                    alt={`${testimonial.firstName} ${testimonial.lastName}`}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-                  />
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={testimonial.image} alt={`${testimonial.firstName} ${testimonial.lastName}`}
+                    style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${LINE2}` }} />
                   <button
-                    onClick={handleDeleteImage}
+                    onClick={handleDelete}
                     disabled={deleting}
-                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
                     title="Eliminar imagen"
+                    style={{ position: 'absolute', top: -6, right: -6, width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#ff4444', color: '#fff', cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, opacity: deleting ? .6 : 1 }}
                   >
-                    {deleting ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                    ) : (
-                      <FontAwesomeIcon icon={faTrash} size="sm" />
-                    )}
+                    {deleting ? '…' : '✕'}
                   </button>
                 </div>
               ) : (
-                <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center">
-                  <FontAwesomeIcon icon={faImage} className="text-gray-400 text-2xl" />
+                <div style={{ width: 100, height: 100, borderRadius: '50%', background: LINE2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+                  👤
                 </div>
               )}
             </div>
           </div>
 
-          {/* Subir nueva imagen */}
+          {/* Preview de nueva imagen */}
+          {previewUrl && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+                Vista previa
+              </div>
+              <img src={previewUrl} alt="Vista previa"
+                style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: `3px solid rgba(4,238,98,.4)` }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleUpload} disabled={uploading} className="adm-btn neon" style={{ fontSize: 12 }}>
+                  {uploading ? 'Subiendo…' : 'Confirmar'}
+                </button>
+                <button onClick={clearSelection} disabled={uploading} className="adm-btn" style={{ fontSize: 12 }}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Zona de carga */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2">
+            <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 10 }}>
               {testimonial.image ? 'Cambiar imagen' : 'Subir imagen'}
-            </h4>
-            
-            {/* Vista previa del archivo seleccionado */}
-            {previewUrl && (
-              <div className="mb-4">
-                <div className="flex justify-center mb-2">
-                  <img
-                    src={previewUrl}
-                    alt="Vista previa"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
-                  />
-                </div>
-                <div className="flex justify-center gap-2">
-                  <button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                        Subiendo...
-                      </>
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon={faUpload} />
-                        Confirmar
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={clearSelection}
-                    disabled={uploading}
-                    className="bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileSelect} style={{ display: 'none' }} id="img-upload-testimonial" />
+            <label htmlFor="img-upload-testimonial" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 16px', border: `2px dashed ${LINE2}`, borderRadius: 12, cursor: 'pointer', transition: 'border-color .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(4,238,98,.35)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = LINE2)}>
+              <span style={{ fontSize: 28 }}>📁</span>
+              <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff', fontWeight: 500 }}>
+                Haz clic para seleccionar
+              </span>
+              <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE2 }}>
+                JPEG, JPG, PNG, WEBP · máx. 5MB
+              </span>
+            </label>
+          </div>
 
-            {/* Selector de archivo */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                <FontAwesomeIcon icon={faUpload} className="text-gray-400 text-3xl mb-2" />
-                <span className="text-gray-600 font-medium">
-                  Haz clic para seleccionar
-                </span>
-                <span className="text-gray-500 text-sm mt-1">
-                  JPEG, JPG, PNG, WEBP (máx. 5MB)
-                </span>
-              </label>
+          {/* Info */}
+          <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 14 }}>ℹ️</span>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE, lineHeight: 1.6 }}>
+              Usa imágenes cuadradas · resolución mínima 300×300px · al subir una nueva imagen, la anterior se reemplaza automáticamente
             </div>
           </div>
 
-          {/* Información adicional */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-start">
-              <FontAwesomeIcon
-                icon={faExclamationCircle}
-                className="text-blue-500 mt-0.5 mr-2"
-              />
-              <div className="text-sm text-blue-700">
-                <p className="font-medium mb-1">Recomendaciones:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Usa imágenes cuadradas para mejor resultado</li>
-                  <li>Resolución mínima recomendada: 300x300px</li>
-                  <li>Al subir una nueva imagen, la anterior se eliminará automáticamente</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <button
-            onClick={onClose}
-            className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
-          >
+          {/* Footer */}
+          <button onClick={onClose} style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
             Cerrar
           </button>
         </div>
