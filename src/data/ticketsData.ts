@@ -54,7 +54,7 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     border: 'border-white/20',
     icon: '🌐',
     features: [
-      'Ingreso virtual a todas las jornadas del CNMP 2025',
+      'Ingreso virtual a todas las jornadas del evento',
       'Acceso por grupo cerrado de Facebook',
       'Certificación de participación digital'
     ],

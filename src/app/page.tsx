@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getInternationalWithTitle, getNationalWithTitle } from '@/services/user';
 import { getActiveTestimonials } from '@/services/testimonials';
 import { Lecturer } from '@/types/lecturer';
 import { Testimonial } from '@/types/testimonials';
-import { localidadesData, formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { WHATSAPP_URL } from '@/data/contactData';
+import { useLocalidades } from '@/hooks/useLocalidades';
 import { TicketType } from '@/types/tickets';
 import './landing.css';
 
@@ -23,17 +25,10 @@ interface CityData {
   speakers: Speaker[]; days: ScheduleDay[];
 }
 
-const COL_TICKETS: TicketType[] = [
-  TicketType.DIAMOND,
-  TicketType.VIP,
-  TicketType.GENERAL,
-  TicketType.STREAMING,
-];
-
 const CITIES: Record<CityId, CityData> = {
   col: {
     id: 'col', leg: 'Parada 01', city: 'Colombia', country: 'Colombia', flag: 'CO',
-    venue: 'Sede por confirmar', dateShort: '28 – 29 AGO', dateLong: '28 y 29 de Agosto, 2026',
+    venue: 'Sede por confirmar', dateShort: '28–29 Ago 2026', dateLong: '28 y 29 de Agosto, 2026',
     year: '2026', iso: '2026-08-28T09:00:00', status: 'Próxima parada', statusType: 'next',
     stat: { a: '500', b: '12', c: '2', d: '7' },
     speakers: [
@@ -73,7 +68,7 @@ const CITIES: Record<CityId, CityData> = {
 
   rd: {
     id: 'rd', leg: 'Parada 02', city: 'Santo Domingo', country: 'República Dominicana', flag: 'RD',
-    venue: 'Sede por confirmar', dateShort: 'NOV 2026', dateLong: 'Noviembre, 2026',
+    venue: 'Sede por confirmar', dateShort: 'Nov 2026', dateLong: 'Noviembre, 2026',
     year: '2026', iso: '2026-11-13T09:00:00', status: 'Próximamente', statusType: 'soon',
     stat: { a: '400', b: '10', c: '2', d: '6' },
     speakers: [
@@ -96,7 +91,7 @@ const CITIES: Record<CityId, CityData> = {
 
   mx: {
     id: 'mx', leg: 'Parada 03', city: 'Ciudad de México', country: 'México', flag: 'MX',
-    venue: 'Sede por confirmar', dateShort: 'FEB 2027', dateLong: 'Febrero, 2027',
+    venue: 'Sede por confirmar', dateShort: 'Feb 2027', dateLong: 'Febrero, 2027',
     year: '2027', iso: '2027-02-12T09:00:00', status: 'Próximamente', statusType: 'soon',
     stat: { a: '600', b: '14', c: '2', d: '8' },
     speakers: [
@@ -119,7 +114,6 @@ const CITIES: Record<CityId, CityData> = {
 };
 
 const ORDER: CityId[] = ['col', 'rd', 'mx'];
-const CITY_DATES: Record<CityId, string> = { col: '28–29 Ago 2026', rd: 'Nov 2026', mx: 'Feb 2027' };
 
 const AUDIENCE = [
   { ix: '01', text: 'Eres candidato a una elección y necesitas una narrativa ganadora.' },
@@ -141,6 +135,7 @@ export default function LandingPage() {
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const { localidades } = useLocalidades();
 
   const cdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
@@ -301,7 +296,7 @@ export default function LandingPage() {
                     <span className="ct-dot" />
                     <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {CITIES[id].flag}</div>
                     <div className="ct-name">{CITIES[id].city}</div>
-                    <div className="ct-date">{CITY_DATES[id]}</div>
+                    <div className="ct-date">{CITIES[id].dateShort}</div>
                   </button>
                 ))}
               </div>
@@ -353,14 +348,15 @@ export default function LandingPage() {
         {/* TICKER */}
         <div className="ticker" aria-hidden="true">
           <div className="ticker-track">
-            <span className="it"><span className="star">✦</span> Colombia · 28–29 Ago 2026</span>
-            <span className="it"><span className="star">✦</span> Santo Domingo · Nov 2026</span>
-            <span className="it"><span className="star">✦</span> Ciudad de México · Feb 2027</span>
-            <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
-            <span className="it"><span className="star">✦</span> Colombia · 28–29 Ago 2026</span>
-            <span className="it"><span className="star">✦</span> Santo Domingo · Nov 2026</span>
-            <span className="it"><span className="star">✦</span> Ciudad de México · Feb 2027</span>
-            <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
+            {/* lista duplicada: el loop infinito del CSS necesita dos copias */}
+            {[0, 1].map(copy => (
+              <Fragment key={copy}>
+                {ORDER.map(id => (
+                  <span key={id} className="it"><span className="star">✦</span> {CITIES[id].city} · {CITIES[id].dateShort}</span>
+                ))}
+                <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
+              </Fragment>
+            ))}
           </div>
         </div>
 
@@ -376,39 +372,22 @@ export default function LandingPage() {
             <div className="route">
               <div className="route-line"><div className="fill" id="route-fill" /></div>
               <div className="route-stops">
-                <div className="stop is-next reveal">
-                  <div className="node" />
-                  <div className="stop-card">
-                    <div className="leg">Parada 01</div>
-                    <div className="code">CO</div>
-                    <div className="city">Colombia</div>
-                    <div className="country">Colombia</div>
-                    <div className="when">28 – 29 Agosto 2026</div>
-                    <span className="badge next">Próxima parada</span>
-                  </div>
-                </div>
-                <div className="stop reveal d1">
-                  <div className="node" />
-                  <div className="stop-card">
-                    <div className="leg">Parada 02</div>
-                    <div className="code">RD</div>
-                    <div className="city">Santo Domingo</div>
-                    <div className="country">República Dominicana</div>
-                    <div className="when">Noviembre 2026</div>
-                    <span className="badge soon">Próximamente</span>
-                  </div>
-                </div>
-                <div className="stop reveal d2">
-                  <div className="node" />
-                  <div className="stop-card">
-                    <div className="leg">Parada 03</div>
-                    <div className="code">MX</div>
-                    <div className="city">Ciudad de México</div>
-                    <div className="country">México</div>
-                    <div className="when">Febrero 2027</div>
-                    <span className="badge soon">Próximamente</span>
-                  </div>
-                </div>
+                {ORDER.map((id, i) => {
+                  const c = CITIES[id];
+                  return (
+                    <div key={id} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
+                      <div className="node" />
+                      <div className="stop-card">
+                        <div className="leg">{c.leg}</div>
+                        <div className="code">{c.flag}</div>
+                        <div className="city">{c.city}</div>
+                        <div className="country">{c.country}</div>
+                        <div className="when">{c.dateLong}</div>
+                        <span className={`badge ${c.statusType}`}>{c.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -572,9 +551,10 @@ export default function LandingPage() {
 
             {city.id === 'col' ? (
               <div className={`tk-grid ${sw}`}>
-                {COL_TICKETS.map((type) => {
-                  const t = localidadesData[type];
-                  const isFeat = type === TicketType.VIP;
+                {Object.entries(localidades)
+                  .filter(([, t]) => t.pushable)
+                  .map(([type, t]) => {
+                  const isFeat = type === TicketType.DIAMOND;
                   return (
                     <article key={type} className={`tk${isFeat ? ' feat' : ''} reveal`}>
                       {isFeat && <span className="tk-feat-tag">Más vendido</span>}
@@ -609,7 +589,7 @@ export default function LandingPage() {
 
             {city.id === 'col' && (
               <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 16, textAlign: 'center' }}>
-                Add-on opcional: <strong style={{ color: '#fff' }}>Memorias del evento</strong> — COP {formatoPrecio(PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()} · disponible al momento de la compra.
+                Add-on opcional: <strong style={{ color: '#fff' }}>Memorias del evento</strong> — COP {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()} · disponible al momento de la compra.
               </p>
             )}
           </div>
@@ -707,7 +687,7 @@ export default function LandingPage() {
                 <h4>Contacto</h4>
                 <a href="mailto:cnmpcolombia@gmail.com">cnmpcolombia@gmail.com</a>
                 <a href="https://cnmpcolombia.com">cnmpcolombia.com</a>
-                <a href="#">WhatsApp</a>
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
               </div>
             </div>
             <div className="foot-bottom">
@@ -719,7 +699,7 @@ export default function LandingPage() {
       </main>
 
       {/* WhatsApp float */}
-      <a className="wa" href="#" aria-label="WhatsApp">
+      <a className="wa" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.738-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z" />
         </svg>
