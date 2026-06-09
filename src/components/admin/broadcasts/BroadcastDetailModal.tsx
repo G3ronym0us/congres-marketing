@@ -1,13 +1,60 @@
 'use client';
 
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faEnvelope, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { EmailBroadcast, ResendEmailBroadcastRequest } from '../../../types/emailBroadcast';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
 import Swal from 'sweetalert2';
 
-interface BroadcastDetailModalProps {
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const STATUS: Record<string, { color: string; bg: string; label: string }> = {
+  PENDING:   { color: '#f59e0b', bg: 'rgba(245,158,11,.12)',  label: 'Pendiente'  },
+  SENDING:   { color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'Enviando'   },
+  COMPLETED: { color: NEON,      bg: 'rgba(4,238,98,.1)',     label: 'Completado' },
+  FAILED:    { color: '#ff6b6b', bg: 'rgba(255,80,80,.1)',    label: 'Fallido'    },
+};
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 12 }}>
+    {children}
+  </div>
+);
+
+const CheckRow = ({
+  emoji, label, hint, checked, name, onChange
+}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+    <input type="checkbox" name={name} checked={checked} onChange={onChange} style={{ display: 'none' }} />
+    <span
+      style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${checked ? NEON : LINE2}`, background: checked ? 'rgba(4,238,98,.15)' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
+    >
+      {checked && <span style={{ color: NEON, fontSize: 11, lineHeight: 1 }}>✓</span>}
+    </span>
+    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: checked ? '#fff' : MUTE }}>
+      {emoji} {label}
+    </span>
+    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)', cursor: 'help' }} title={hint}>ℹ️</span>
+  </label>
+);
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   broadcast: EmailBroadcast;
@@ -15,98 +62,37 @@ interface BroadcastDetailModalProps {
   onUpdate: () => void;
 }
 
-export default function BroadcastDetailModal({
-  isOpen,
-  onClose,
-  broadcast,
-  onResend,
-  onUpdate
-}: BroadcastDetailModalProps) {
+export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onResend, onUpdate }: Props) {
   const [resendEmail, setResendEmail] = useState('');
-  const [resending, setResending] = useState(false);
-  const [resendData, setResendData] = useState<ResendEmailBroadcastRequest>({
-    include_ticket: false,
-    force_regenerate_ticket: false,
-    include_certificate: false,
-    force_regenerate_certificate: false,
+  const [resending, setResending]     = useState(false);
+  const [resendData, setResendData]   = useState<ResendEmailBroadcastRequest>({
+    include_ticket: false, force_regenerate_ticket: false,
+    include_certificate: false, force_regenerate_certificate: false,
   });
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      PENDING: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendiente' },
-      SENDING: { color: 'bg-blue-100 text-blue-800', text: 'Enviando' },
-      COMPLETED: { color: 'bg-green-100 text-green-800', text: 'Completado' },
-      FAILED: { color: 'bg-red-100 text-red-800', text: 'Fallido' },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
-    
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getProgressPercentage = () => {
-    if (broadcast.total_recipients === 0) return 0;
-    return Math.round((broadcast.sent_count / broadcast.total_recipients) * 100);
-  };
-
-  const handleResendTicketCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setResendData(prev => ({
       ...prev,
       [name]: checked,
-      // If unchecking include_ticket, also uncheck force_regenerate_ticket
       ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {}),
-      // If unchecking include_certificate, also uncheck force_regenerate_certificate
-      ...(name === 'include_certificate' && !checked ? { force_regenerate_certificate: false } : {})
+      ...(name === 'include_certificate' && !checked ? { force_regenerate_certificate: false } : {}),
     }));
   };
 
-  const handleCustomResend = async () => {
+  const handleResend = async () => {
     setResending(true);
     try {
-      const requestData: ResendEmailBroadcastRequest = {
+      await emailBroadcastService.resendBroadcast(broadcast.id, {
         ...resendData,
         specific_email: resendEmail || undefined,
-      };
-
-      await emailBroadcastService.resendBroadcast(broadcast.id, requestData);
+      });
       setResendEmail('');
-      setResendData({
-        include_ticket: false,
-        force_regenerate_ticket: false,
-        include_certificate: false,
-        force_regenerate_certificate: false,
-      });
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Reenviado',
-        text: 'El broadcast se ha reenviado correctamente',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      
+      setResendData({ include_ticket: false, force_regenerate_ticket: false, include_certificate: false, force_regenerate_certificate: false });
+      Swal.fire({ icon: 'success', title: 'Reenviado', timer: 1500, showConfirmButton: false });
       onUpdate();
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo reenviar el broadcast',
-      });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo reenviar el broadcast' });
     } finally {
       setResending(false);
     }
@@ -114,95 +100,98 @@ export default function BroadcastDetailModal({
 
   if (!isOpen) return null;
 
+  const s        = STATUS[broadcast.status] ?? STATUS.PENDING;
+  const pct      = broadcast.total_recipients > 0
+    ? Math.round((broadcast.sent_count / broadcast.total_recipients) * 100) : 0;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Detalle del Broadcast</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <FontAwesomeIcon icon={faTimes} className="h-6 w-6" />
-          </button>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+
+      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+            Detalle del Broadcast
+          </h3>
+          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        <div className="space-y-6">
-          {/* Información básica */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{broadcast.title}</h3>
-                <p className="text-gray-600">Por: {broadcast.sender_name}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Info básica */}
+          <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
+              <div>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff', marginBottom: 4 }}>
+                  {broadcast.title}
+                </div>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: MUTE }}>
+                  Por: {broadcast.sender_name}
+                </div>
               </div>
-              {getStatusBadge(broadcast.status)}
+              <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: s.color, background: s.bg, borderRadius: 6, padding: '3px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {s.label}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
-                <span className="text-sm font-medium text-gray-500">Tipo:</span>
-                <p className="text-gray-900">
-                  {broadcast.type === 'ALL_USERS' ? 'Todos los usuarios' : 'Email específico'}
-                  {broadcast.specific_email && (
-                    <span className="block text-sm text-gray-600">{broadcast.specific_email}</span>
-                  )}
-                </p>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>Tipo</div>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff' }}>
+                  {broadcast.type === 'ALL_USERS' ? '👥 Todos los usuarios' : `✉️ ${broadcast.specific_email}`}
+                </div>
               </div>
               <div>
-                <span className="text-sm font-medium text-gray-500">Fecha de creación:</span>
-                <p className="text-gray-900 flex items-center">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                  {formatDate(broadcast.createdAt)}
-                </p>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>Fecha</div>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff' }}>{formatDate(broadcast.createdAt)}</div>
               </div>
             </div>
 
             {/* Progress bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE, marginBottom: 6 }}>
                 <span>Progreso de envío</span>
-                <span>{broadcast.sent_count}/{broadcast.total_recipients} ({getProgressPercentage()}%)</span>
+                <span style={{ color: '#fff' }}>{broadcast.sent_count}/{broadcast.total_recipients} ({pct}%)</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                  style={{ width: `${getProgressPercentage()}%` }}
-                ></div>
+              <div style={{ width: '100%', height: 6, background: LINE2, borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: NEON, borderRadius: 99, transition: 'width .3s' }} />
               </div>
               {broadcast.failed_count > 0 && (
-                <p className="text-sm text-red-600 mt-1">
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#ff6b6b', marginTop: 6 }}>
                   {broadcast.failed_count} emails fallaron en el envío
-                </p>
+                </div>
               )}
             </div>
 
             {broadcast.error_message && (
-              <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
-                <span className="text-sm font-medium text-red-800">Error:</span>
-                <p className="text-sm text-red-700 mt-1">{broadcast.error_message}</p>
+              <div style={{ marginTop: 12, background: 'rgba(255,80,80,.08)', border: '1px solid rgba(255,80,80,.2)', borderRadius: 8, padding: '10px 14px' }}>
+                <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: '#ff6b6b', textTransform: 'uppercase', marginBottom: 4 }}>Error</div>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#ff9999' }}>{broadcast.error_message}</div>
               </div>
             )}
           </div>
 
-          {/* Contenido del email */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">Contenido del Email</h4>
-            <div className="bg-white p-4 rounded-lg border">
-              <div className="whitespace-pre-wrap text-gray-900">{broadcast.content}</div>
+          {/* Contenido */}
+          <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px' }}>
+            <SectionLabel>Contenido del email</SectionLabel>
+            <div style={{ background: INK, border: `1px solid ${LINE2}`, borderRadius: 8, padding: '14px 16px', fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: 'rgba(255,255,255,.85)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+              {broadcast.content}
             </div>
           </div>
 
-          {/* Archivos adjuntos */}
+          {/* Adjuntos */}
           {broadcast.attachments && broadcast.attachments.length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Archivos Adjuntos</h4>
-              <div className="space-y-2">
-                {broadcast.attachments.map((attachment, index) => (
-                  <div key={index} className="flex items-center text-sm text-gray-600 bg-white p-2 rounded border">
-                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                    {attachment.split('/').pop()}
+            <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px' }}>
+              <SectionLabel>Archivos adjuntos</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {broadcast.attachments.map((att, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: INK, border: `1px solid ${LINE2}`, borderRadius: 8, padding: '8px 12px' }}>
+                    <span style={{ fontSize: 14 }}>📎</span>
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>
+                      {att.split('/').pop()}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -211,158 +200,66 @@ export default function BroadcastDetailModal({
 
           {/* Reenvío */}
           {broadcast.status === 'COMPLETED' && (
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
-                Reenviar Broadcast
-              </h4>
-              <div className="space-y-4">
+            <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px' }}>
+              <SectionLabel>✉️ Reenviar broadcast</SectionLabel>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email específico (opcional)
-                  </label>
-                  <input
-                    type="email"
-                    value={resendEmail}
-                    onChange={(e) => setResendEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Dejar vacío para reenviar a todos los destinatarios originales"
-                  />
+                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE, marginBottom: 6 }}>
+                    Email específico (dejar vacío para reenviar a todos los destinatarios originales)
+                  </div>
+                  <input type="email" value={resendEmail} onChange={e => setResendEmail(e.target.value)}
+                    style={iS} placeholder="usuario@example.com" />
                 </div>
 
-                <div className="border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Opciones de Adjuntos Automáticos
-                  </label>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600 mb-3">Boletos</h4>
-                      <div className="space-y-3">
-                        <label className="flex items-center group">
-                          <input
-                            type="checkbox"
-                            name="include_ticket"
-                            checked={resendData.include_ticket}
-                            onChange={handleResendTicketCheckboxChange}
-                            className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="flex items-center">
-                            🎫 Incluir Boleto
-                            <span 
-                              className="ml-2 text-gray-400 cursor-help"
-                              title="Adjuntar automáticamente el boleto del usuario al email"
-                            >
-                              ℹ️
-                            </span>
-                          </span>
-                        </label>
-                        
-                        {resendData.include_ticket && (
-                          <label className="flex items-center ml-6 group">
-                            <input
-                              type="checkbox"
-                              name="force_regenerate_ticket"
-                              checked={resendData.force_regenerate_ticket}
-                              onChange={handleResendTicketCheckboxChange}
-                              className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                            />
-                            <span className="flex items-center">
-                              🔄 Regenerar Boleto
-                              <span 
-                                className="ml-2 text-gray-400 cursor-help"
-                                title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
-                              >
-                                ℹ️
-                              </span>
-                            </span>
-                          </label>
-                        )}
-                      </div>
+                {/* Adjuntos automáticos */}
+                <div style={{ background: INK, border: `1px solid ${LINE2}`, borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+                    Adjuntos automáticos
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Boletos</div>
+                      <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario"
+                        checked={resendData.include_ticket} name="include_ticket" onChange={handleCheckbox} />
+                      {resendData.include_ticket && (
+                        <div style={{ paddingLeft: 28 }}>
+                          <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR"
+                            checked={resendData.force_regenerate_ticket} name="force_regenerate_ticket" onChange={handleCheckbox} />
+                        </div>
+                      )}
                     </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600 mb-3">Certificados</h4>
-                      <div className="space-y-3">
-                        <label className="flex items-center group">
-                          <input
-                            type="checkbox"
-                            name="include_certificate"
-                            checked={resendData.include_certificate}
-                            onChange={handleResendTicketCheckboxChange}
-                            className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                          />
-                          <span className="flex items-center">
-                            🏆 Incluir Certificado
-                            <span 
-                              className="ml-2 text-gray-400 cursor-help"
-                              title="Adjuntar automáticamente el certificado del usuario al email"
-                            >
-                              ℹ️
-                            </span>
-                          </span>
-                        </label>
-                        
-                        {resendData.include_certificate && (
-                          <label className="flex items-center ml-6 group">
-                            <input
-                              type="checkbox"
-                              name="force_regenerate_certificate"
-                              checked={resendData.force_regenerate_certificate}
-                              onChange={handleResendTicketCheckboxChange}
-                              className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                            />
-                            <span className="flex items-center">
-                              🔄 Regenerar Certificado
-                              <span 
-                                className="ml-2 text-gray-400 cursor-help"
-                                title="Generar nuevo PDF del certificado en lugar de usar el existente"
-                              >
-                                ℹ️
-                              </span>
-                            </span>
-                          </label>
-                        )}
-                      </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Certificados</div>
+                      <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario"
+                        checked={resendData.include_certificate} name="include_certificate" onChange={handleCheckbox} />
+                      {resendData.include_certificate && (
+                        <div style={{ paddingLeft: 28 }}>
+                          <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF"
+                            checked={resendData.force_regenerate_certificate} name="force_regenerate_certificate" onChange={handleCheckbox} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCustomResend}
-                    disabled={resending}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <FontAwesomeIcon icon={faEnvelope} />
-                    {resending ? 'Reenviando...' : 'Reenviar Broadcast'}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={handleResend} disabled={resending}
+                    style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: resending ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: resending ? .6 : 1 }}>
+                    {resending ? 'Reenviando…' : '✉️ Reenviar broadcast'}
                   </button>
                   <button
-                    onClick={() => {
-                      // Reset ticket options before calling onResend
-                      setResendData({
-                        include_ticket: false,
-                        force_regenerate_ticket: false,
-                        include_certificate: false,
-                        force_regenerate_certificate: false,
-                      });
-                      onResend();
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-                  >
-                    Reenviar a Todos
+                    onClick={() => { setResendData({ include_ticket: false, force_regenerate_ticket: false, include_certificate: false, force_regenerate_certificate: false }); onResend(); }}
+                    style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: '#fff', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+                    👥 Reenviar a todos
                   </button>
                 </div>
               </div>
             </div>
           )}
-        </div>
 
-        <div className="flex justify-end pt-6 border-t">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
+          {/* Cerrar */}
+          <button onClick={onClose} style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
             Cerrar
           </button>
         </div>

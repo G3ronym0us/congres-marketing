@@ -1,24 +1,64 @@
 'use client';
 
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faEye } from '@fortawesome/free-solid-svg-icons';
 import { CreateEmailBroadcastRequest, EmailBroadcastType } from '../../../types/emailBroadcast';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
 import FileUploader from './FileUploader';
 import Swal from 'sweetalert2';
 
-interface CreateBroadcastModalProps {
+/* ── design tokens ── */
+const INK   = '#1A1418';
+const PANEL = '#2A2228';
+const PANEL2= '#332A30';
+const NEON  = '#04EE62';
+const LINE  = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE  = 'rgba(255,255,255,.45)';
+
+const iS: React.CSSProperties = {
+  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
+  borderRadius: 10, padding: '10px 14px',
+  fontFamily: 'Space Grotesk, sans-serif', fontSize: 14,
+  outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const CheckRow = ({
+  emoji, label, hint, checked, name, onChange
+}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+    <input type="checkbox" name={name} checked={checked} onChange={onChange} style={{ display: 'none' }} />
+    <span
+      style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${checked ? NEON : LINE2}`, background: checked ? 'rgba(4,238,98,.15)' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
+    >
+      {checked && <span style={{ color: NEON, fontSize: 11, lineHeight: 1 }}>✓</span>}
+    </span>
+    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: checked ? '#fff' : MUTE }}>
+      {emoji} {label}
+    </span>
+    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)', cursor: 'help' }} title={hint}>ℹ️</span>
+  </label>
+);
+
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: CreateBroadcastModalProps) {
-  const [loading, setLoading] = useState(false);
+export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Props) {
+  const [loading, setLoading]         = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
+
   const [formData, setFormData] = useState<CreateEmailBroadcastRequest>({
     title: '',
     sender_name: 'Equipo Organizador CNMP 2025',
@@ -31,403 +71,174 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
     force_regenerate_certificate: false,
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = 'checked' in e.target ? e.target.checked : false;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleTicketCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: checked,
-      // If unchecking include_ticket, also uncheck force_regenerate_ticket
       ...(name === 'include_ticket' && !checked ? { force_regenerate_ticket: false } : {}),
-      // If unchecking include_certificate, also uncheck force_regenerate_certificate
-      ...(name === 'include_certificate' && !checked ? { force_regenerate_certificate: false } : {})
+      ...(name === 'include_certificate' && !checked ? { force_regenerate_certificate: false } : {}),
     }));
   };
 
-  const handleTypeChange = (type: EmailBroadcastType) => {
-    setFormData(prev => ({
-      ...prev,
-      type,
-      specific_email: type === 'SPECIFIC_EMAIL' ? prev.specific_email : ''
-    }));
+  const handleType = (type: EmailBroadcastType) => {
+    setFormData(prev => ({ ...prev, type, specific_email: type === 'SPECIFIC_EMAIL' ? prev.specific_email : '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.type === 'SPECIFIC_EMAIL' && !formData.specific_email) {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'El email específico es requerido' });
+      return;
+    }
     setLoading(true);
-
     try {
-      if (formData.type === 'SPECIFIC_EMAIL' && !formData.specific_email) {
-        throw new Error('El email específico es requerido');
-      }
-
       if (selectedFiles.length > 0) {
-        const broadcastData = {
-          title: formData.title,
-          sender_name: formData.sender_name,
-          content: formData.content,
-          type: formData.type,
-          specific_email: formData.specific_email || undefined,
-          include_ticket: formData.include_ticket,
-          force_regenerate_ticket: formData.force_regenerate_ticket,
-          include_certificate: formData.include_certificate,
-          force_regenerate_certificate: formData.force_regenerate_certificate,
-        };
-        await emailBroadcastService.createBroadcastWithAttachments(broadcastData, selectedFiles);
+        await emailBroadcastService.createBroadcastWithAttachments({
+          title: formData.title, sender_name: formData.sender_name, content: formData.content,
+          type: formData.type, specific_email: formData.specific_email || undefined,
+          include_ticket: formData.include_ticket, force_regenerate_ticket: formData.force_regenerate_ticket,
+          include_certificate: formData.include_certificate, force_regenerate_certificate: formData.force_regenerate_certificate,
+        }, selectedFiles);
       } else {
         await emailBroadcastService.createBroadcast(formData);
       }
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Broadcast creado',
-        text: 'El broadcast ha sido creado correctamente',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-
-      // Reset form
+      Swal.fire({ icon: 'success', title: 'Broadcast creado', timer: 1500, showConfirmButton: false });
       setFormData({
-        title: '',
-        sender_name: 'Equipo Organizador CNMP 2025',
-        content: '',
-        type: 'ALL_USERS',
-        specific_email: '',
-        include_ticket: false,
-        force_regenerate_ticket: false,
-        include_certificate: false,
-        force_regenerate_certificate: false,
+        title: '', sender_name: 'Equipo Organizador CNMP 2025', content: '', type: 'ALL_USERS',
+        specific_email: '', include_ticket: false, force_regenerate_ticket: false,
+        include_certificate: false, force_regenerate_certificate: false,
       });
       setSelectedFiles([]);
-      
       onSuccess();
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error instanceof Error ? error.message : 'Error al crear el broadcast',
-      });
+      Swal.fire({ icon: 'error', title: 'Error', text: error instanceof Error ? error.message : 'Error al crear el broadcast' });
     } finally {
       setLoading(false);
     }
   };
 
-  const PreviewModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Vista Previa del Email</h3>
-          <button
-            onClick={() => setShowPreview(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <FontAwesomeIcon icon={faTimes} className="h-6 w-6" />
-          </button>
-        </div>
-        
-        <div className="border rounded-lg p-4 bg-gray-50">
-          <div className="mb-4">
-            <div className="text-sm text-gray-600">De: {formData.sender_name}</div>
-            <div className="text-sm text-gray-600">
-              Para: {formData.type === 'ALL_USERS' ? 'Todos los usuarios' : formData.specific_email}
-            </div>
-            <div className="text-lg font-semibold mt-2">{formData.title}</div>
-          </div>
-          
-          <div className="prose max-w-none">
-            <div className="whitespace-pre-wrap">{formData.content}</div>
-          </div>
-
-          {selectedFiles.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="text-sm font-medium text-gray-700 mb-2">Adjuntos:</div>
-              {selectedFiles.map((file, index) => (
-                <div key={index} className="text-sm text-gray-600">
-                  📎 {file.name}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {(formData.include_ticket || formData.force_regenerate_ticket || formData.include_certificate || formData.force_regenerate_certificate) && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="text-sm font-medium text-gray-700 mb-2">Opciones de Adjuntos:</div>
-              {formData.include_ticket && (
-                <div className="text-sm text-gray-600">
-                  🎫 Incluir boleto del usuario
-                </div>
-              )}
-              {formData.force_regenerate_ticket && (
-                <div className="text-sm text-gray-600">
-                  🔄 Regenerar PDF y QR codes de boletos
-                </div>
-              )}
-              {formData.include_certificate && (
-                <div className="text-sm text-gray-600">
-                  🏆 Incluir certificado del usuario
-                </div>
-              )}
-              {formData.force_regenerate_certificate && (
-                <div className="text-sm text-gray-600">
-                  🔄 Regenerar PDF del certificado
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   if (!isOpen) return null;
+
+  const canPreview = !!formData.title && !!formData.content;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-        <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Nuevo Email Broadcast</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FontAwesomeIcon icon={faTimes} className="h-6 w-6" />
-            </button>
+      {/* Main modal */}
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+
+        <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+            <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+              Nuevo Email Broadcast
+            </h3>
+            <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título del Email
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Información importante sobre el congreso"
-                />
-              </div>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Remitente
-                </label>
-                <input
-                  type="text"
-                  name="sender_name"
-                  value={formData.sender_name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            {/* Título + Remitente */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Field label="Título del email *">
+                <input type="text" name="title" value={formData.title} onChange={handleInput} required
+                  style={iS} placeholder="Ej: Información importante del congreso" />
+              </Field>
+              <Field label="Nombre del remitente *">
+                <input type="text" name="sender_name" value={formData.sender_name} onChange={handleInput} required style={iS} />
+              </Field>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Destinatarios
-              </label>
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="type"
-                    checked={formData.type === 'ALL_USERS'}
-                    onChange={() => handleTypeChange('ALL_USERS')}
-                    className="mr-2"
-                  />
-                  <span>Todos los usuarios registrados</span>
-                </label>
-                
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="type"
-                    checked={formData.type === 'SPECIFIC_EMAIL'}
-                    onChange={() => handleTypeChange('SPECIFIC_EMAIL')}
-                    className="mr-2"
-                  />
-                  <span>Email específico</span>
-                </label>
+            {/* Destinatarios */}
+            <Field label="Destinatarios">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {(['ALL_USERS', 'SPECIFIC_EMAIL'] as EmailBroadcastType[]).map(t => (
+                  <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                    <span
+                      onClick={() => handleType(t)}
+                      style={{ width: 18, height: 18, borderRadius: '50%', border: `1.5px solid ${formData.type === t ? NEON : LINE2}`, background: formData.type === t ? 'rgba(4,238,98,.15)' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all .15s' }}
+                    >
+                      {formData.type === t && <span style={{ width: 8, height: 8, borderRadius: '50%', background: NEON, display: 'block' }} />}
+                    </span>
+                    <span onClick={() => handleType(t)} style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: formData.type === t ? '#fff' : MUTE, cursor: 'pointer' }}>
+                      {t === 'ALL_USERS' ? '👥 Todos los usuarios registrados' : '✉️ Email específico'}
+                    </span>
+                  </label>
+                ))}
+                {formData.type === 'SPECIFIC_EMAIL' && (
+                  <input type="email" name="specific_email" value={formData.specific_email} onChange={handleInput} required
+                    style={{ ...iS, marginTop: 4 }} placeholder="usuario@example.com" />
+                )}
               </div>
+            </Field>
 
-              {formData.type === 'SPECIFIC_EMAIL' && (
-                <div className="mt-3">
-                  <input
-                    type="email"
-                    name="specific_email"
-                    value={formData.specific_email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="usuario@example.com"
-                  />
+            {/* Mensaje */}
+            <Field label="Mensaje *">
+              <textarea name="content" value={formData.content} onChange={handleInput} required rows={8}
+                style={{ ...iS, resize: 'vertical', minHeight: 140 } as React.CSSProperties}
+                placeholder="Escribe aquí el contenido del email..." />
+            </Field>
+
+            {/* Adjuntos */}
+            <Field label="Archivos adjuntos (opcional)">
+              <FileUploader onFilesChange={setSelectedFiles} maxSizeMB={5}
+                acceptedTypes={['pdf', 'doc', 'docx', 'jpg', 'png', 'webp']} maxFiles={3} />
+            </Field>
+
+            {/* Adjuntos automáticos */}
+            <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '16px 18px' }}>
+              <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 14 }}>
+                Adjuntos automáticos
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Boletos</div>
+                  <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario al email"
+                    checked={formData.include_ticket} name="include_ticket" onChange={handleCheckbox} />
+                  {formData.include_ticket && (
+                    <div style={{ paddingLeft: 28 }}>
+                      <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR en lugar de usar los existentes"
+                        checked={formData.force_regenerate_ticket} name="force_regenerate_ticket" onChange={handleCheckbox} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mensaje
-              </label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                required
-                rows={10}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Escriba aquí el contenido del email..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Archivos Adjuntos (Opcional)
-              </label>
-              <FileUploader
-                onFilesChange={setSelectedFiles}
-                maxSizeMB={5}
-                acceptedTypes={['pdf', 'doc', 'docx', 'jpg', 'png', 'webp']}
-                maxFiles={3}
-              />
-            </div>
-
-            <div className="border-t pt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Opciones de Adjuntos Automáticos
-              </label>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-600 mb-3">Boletos</h4>
-                  <div className="space-y-3">
-                    <label className="flex items-center group">
-                      <input
-                        type="checkbox"
-                        name="include_ticket"
-                        checked={formData.include_ticket}
-                        onChange={handleTicketCheckboxChange}
-                        className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                      />
-                      <span className="flex items-center">
-                        🎫 Incluir Boleto
-                        <span 
-                          className="ml-2 text-gray-400 cursor-help"
-                          title="Adjuntar automáticamente el boleto del usuario al email"
-                        >
-                          ℹ️
-                        </span>
-                      </span>
-                    </label>
-                    
-                    {formData.include_ticket && (
-                      <label className="flex items-center ml-6 group">
-                        <input
-                          type="checkbox"
-                          name="force_regenerate_ticket"
-                          checked={formData.force_regenerate_ticket}
-                          onChange={handleTicketCheckboxChange}
-                          className="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                        <span className="flex items-center">
-                          🔄 Regenerar Boleto
-                          <span 
-                            className="ml-2 text-gray-400 cursor-help"
-                            title="Generar nuevos PDF y códigos QR en lugar de usar los existentes"
-                          >
-                            ℹ️
-                          </span>
-                        </span>
-                      </label>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-600 mb-3">Certificados</h4>
-                  <div className="space-y-3">
-                    <label className="flex items-center group">
-                      <input
-                        type="checkbox"
-                        name="include_certificate"
-                        checked={formData.include_certificate}
-                        onChange={handleTicketCheckboxChange}
-                        className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                      />
-                      <span className="flex items-center">
-                        🏆 Incluir Certificado
-                        <span 
-                          className="ml-2 text-gray-400 cursor-help"
-                          title="Adjuntar automáticamente el certificado del usuario al email"
-                        >
-                          ℹ️
-                        </span>
-                      </span>
-                    </label>
-                    
-                    {formData.include_certificate && (
-                      <label className="flex items-center ml-6 group">
-                        <input
-                          type="checkbox"
-                          name="force_regenerate_certificate"
-                          checked={formData.force_regenerate_certificate}
-                          onChange={handleTicketCheckboxChange}
-                          className="mr-3 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                        />
-                        <span className="flex items-center">
-                          🔄 Regenerar Certificado
-                          <span 
-                            className="ml-2 text-gray-400 cursor-help"
-                            title="Generar nuevo PDF del certificado en lugar de usar el existente"
-                          >
-                            ℹ️
-                          </span>
-                        </span>
-                      </label>
-                    )}
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Certificados</div>
+                  <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario al email"
+                    checked={formData.include_certificate} name="include_certificate" onChange={handleCheckbox} />
+                  {formData.include_certificate && (
+                    <div style={{ paddingLeft: 28 }}>
+                      <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF del certificado"
+                        checked={formData.force_regenerate_certificate} name="force_regenerate_certificate" onChange={handleCheckbox} />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-between pt-4 border-t">
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: `1px solid ${LINE}` }}>
               <button
-                type="button"
-                onClick={() => setShowPreview(true)}
-                disabled={!formData.title || !formData.content}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                type="button" onClick={() => setShowPreview(true)} disabled={!canPreview}
+                style={{ padding: '9px 16px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: canPreview ? '#fff' : MUTE, cursor: canPreview ? 'pointer' : 'not-allowed', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13, opacity: canPreview ? 1 : .5 }}
               >
-                <FontAwesomeIcon icon={faEye} />
-                Vista Previa
+                👁 Vista previa
               </button>
-
-              <div className="space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={onClose} style={{ padding: '9px 20px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading || !formData.title || !formData.content}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Creando...' : 'Crear Broadcast'}
+                <button type="submit" disabled={loading || !formData.title || !formData.content}
+                  style={{ padding: '9px 24px', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: loading ? .6 : 1 }}>
+                  {loading ? 'Creando…' : 'Crear broadcast'}
                 </button>
               </div>
             </div>
@@ -435,7 +246,54 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Cre
         </div>
       </div>
 
-      {showPreview && <PreviewModal />}
+      {/* Preview modal */}
+      {showPreview && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(4px)' }} onClick={() => setShowPreview(false)} />
+          <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 600, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.7)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
+                Vista previa del email
+              </h3>
+              <button onClick={() => setShowPreview(false)} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ background: INK, border: `1px solid ${LINE2}`, borderRadius: 12, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+                De: <span style={{ color: '#fff' }}>{formData.sender_name}</span>
+              </div>
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? 'Todos los usuarios' : formData.specific_email}</span>
+              </div>
+              <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
+                {formData.title}
+              </div>
+              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: 'rgba(255,255,255,.8)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                {formData.content}
+              </div>
+              {selectedFiles.length > 0 && (
+                <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em' }}>Adjuntos</div>
+                  {selectedFiles.map((f, i) => (
+                    <span key={i} style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>📎 {f.name}</span>
+                  ))}
+                </div>
+              )}
+              {(formData.include_ticket || formData.include_certificate) && (
+                <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em' }}>Adjuntos automáticos</div>
+                  {formData.include_ticket && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>🎫 Boleto del usuario</span>}
+                  {formData.force_regenerate_ticket && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>🔄 Regenerar PDF y QR de boleto</span>}
+                  {formData.include_certificate && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>🏆 Certificado del usuario</span>}
+                  {formData.force_regenerate_certificate && <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#fff' }}>🔄 Regenerar PDF del certificado</span>}
+                </div>
+              )}
+            </div>
+            <button onClick={() => setShowPreview(false)} style={{ width: '100%', marginTop: 16, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+              Cerrar vista previa
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
