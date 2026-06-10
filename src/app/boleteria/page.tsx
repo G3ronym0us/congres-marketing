@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
+import { useCart } from '@/context/CartContext';
 import { TicketType } from '@/types/tickets';
 import '../landing.css';
 
 const FEATURED = TicketType.DIAMOND;
+const MAX_CANTIDAD = 10;
 
 const NOTES = [
   'Ninguna de las localidades incluye hospedaje, desayunos, almuerzos ni transportes.',
@@ -19,10 +21,22 @@ const NOTES = [
   'Cupos limitados por localidad. Precios sujetos a cambio según disponibilidad.',
 ];
 
+const precio = (n: number) =>
+  formatoPrecio(n).replace('COP', '').replace('$', '').trim();
+
 export default function BoleteriaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { addItem } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const { localidades, loading } = useLocalidades();
+
+  const [localidad, setLocalidad] = useState<string>(FEATURED);
+  const [cantidad, setCantidad] = useState(1);
+  const [incluirMemorias, setIncluirMemorias] = useState(false);
+
+  const detalles = localidades[localidad];
+  const precioMemorias = localidades['memorias']?.price ?? PRECIO_MEMORIAS;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -31,8 +45,44 @@ export default function BoleteriaPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const go = (type: string) =>
-    router.push(`/quantity-select?localidad=${type}`);
+  // Preselección por URL (?localidad=slug)
+  useEffect(() => {
+    const param = searchParams ? searchParams.get('localidad') : null;
+    if (param) setLocalidad(param);
+  }, [searchParams]);
+
+  // Si la localidad no existe en la API (slug viejo), usar la primera disponible
+  useEffect(() => {
+    if (loading || localidades[localidad]) return;
+    const first = Object.entries(localidades).find(([, t]) => t.pushable)?.[0];
+    if (first) setLocalidad(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, localidades, localidad]);
+
+  // Sincronizar memorias al cambiar de localidad (marcadas solo si vienen incluidas)
+  useEffect(() => {
+    if (detalles) setIncluirMemorias(!!detalles.withMemories);
+  }, [localidad, detalles?.withMemories]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const elegir = (type: string) => {
+    setLocalidad(type);
+    document.getElementById('configura')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const memoriasExtra = incluirMemorias && !detalles?.withMemories && !detalles?.noPermiteMemorias;
+  const total = detalles ? (detalles.price + (memoriasExtra ? precioMemorias : 0)) * cantidad : 0;
+
+  const handleAgregar = () => {
+    if (!detalles) return;
+    addItem(
+      localidad as TicketType,
+      cantidad,
+      incluirMemorias,
+      detalles.price,
+      precioMemorias,
+    );
+    router.push('/carrito');
+  };
 
   return (
     <div className="cnmp-root">
@@ -91,11 +141,12 @@ export default function BoleteriaPage() {
                     </article>
                   ))
                 : Object.entries(localidades)
-                .filter(([, t]) => t.pushable)
+                .filter(([key, t]) => key !== 'memorias' && t.pushable)
                 .map(([type, t]) => {
                 const isFeat = type === FEATURED;
+                const isSelected = type === localidad;
                 return (
-                  <article key={type} className={`bol-card${isFeat ? ' bol-feat' : ''}`}>
+                  <article key={type} className={`bol-card${isFeat ? ' bol-feat' : ''}${isSelected ? ' selected' : ''}`}>
                     {isFeat && <span className="tk-feat-tag">Más completo</span>}
 
                     <div className="bol-card-top">
@@ -110,7 +161,7 @@ export default function BoleteriaPage() {
 
                     <div className="bol-price">
                       <span className="bol-cur">COP </span>
-                      {formatoPrecio(t.price).replace('COP', '').replace('$', '').trim()}
+                      {precio(t.price)}
                     </div>
 
                     <ul className="tk-list">
@@ -121,45 +172,122 @@ export default function BoleteriaPage() {
                     </ul>
 
                     <button
-                      className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`}
+                      className={`btn ${isSelected ? 'btn-neon' : 'btn-ghost'}`}
                       style={{ width: '100%', justifyContent: 'center', marginTop: 'auto' }}
-                      onClick={() => go(type)}
+                      onClick={() => elegir(type)}
                     >
-                      Comprar entrada <span className="arr">→</span>
+                      {isSelected ? '✓ Seleccionada' : <>Elegir localidad <span className="arr">→</span></>}
                     </button>
                   </article>
                 );
               })}
             </div>
 
-            {/* ── MEMORIAS ADD-ON ── */}
-            <div className="bol-addon">
-              <div className="bol-addon-left">
-                <span className="eyebrow">Add-on opcional</span>
-                <h3 style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 'clamp(20px,3vw,28px)', marginTop: 10 }}>
-                  📀 Memorias del evento
-                </h3>
-                <p style={{ color: 'var(--mute)', marginTop: 10, fontSize: 15, maxWidth: '52ch' }}>
-                  Grabación completa de todas las conferencias, presentaciones de los speakers
-                  y material exclusivo del congreso. Acceso digital permanente.
-                  Disponible para todas las localidades <em>excepto</em> Diamante (ya incluido).
-                </p>
+            {/* ── CONFIGURA TU COMPRA ── */}
+            <div id="configura" style={{ scrollMarginTop: 100 }}>
+              <div className="sec-head" style={{ marginTop: 64, marginBottom: 32 }}>
+                <span className="eyebrow">Configura tu compra</span>
               </div>
-              <div className="bol-addon-right">
-                <div className="bol-addon-price">
-                  <span style={{ color: 'var(--mute)', fontSize: 14, fontFamily: 'var(--display)' }}>COP</span>
-                  <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'clamp(30px,4vw,42px)' }}>
-                    {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()}
-                  </span>
+
+              {loading ? (
+                <div className="qs-grid" aria-hidden="true">
+                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                    <span className="sk-line" style={{ width: 180, height: 52, borderRadius: 12 }} />
+                    <span className="sk-line" style={{ width: '80%', height: 40 }} />
+                  </div>
+                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <span className="sk-line" style={{ width: '60%', height: 16 }} />
+                    <span className="sk-line" style={{ width: '100%', height: 14 }} />
+                    <span className="sk-line" style={{ width: '100%', height: 30, marginTop: 10 }} />
+                    <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 14 }} />
+                  </div>
                 </div>
-                <p style={{ color: 'var(--mute-2)', fontSize: 12, fontFamily: 'var(--display)', letterSpacing: '.1em', textTransform: 'uppercase', marginTop: 4 }}>
-                  Se añade al momento de la compra
-                </p>
-              </div>
+              ) : (
+                <div className="qs-grid">
+                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                    <div>
+                      <span className="qs-label">Cantidad</span>
+                      <div className="qs-stepper">
+                        <button
+                          onClick={() => setCantidad(c => Math.max(1, c - 1))}
+                          disabled={cantidad <= 1}
+                          aria-label="Menos entradas"
+                        >−</button>
+                        <span className="num">{cantidad}</span>
+                        <button
+                          onClick={() => setCantidad(c => Math.min(MAX_CANTIDAD, c + 1))}
+                          disabled={cantidad >= MAX_CANTIDAD}
+                          aria-label="Más entradas"
+                        >+</button>
+                      </div>
+                      <p className="qs-hint">Hasta {MAX_CANTIDAD} entradas por compra.</p>
+                    </div>
+
+                    {detalles?.withMemories && (
+                      <p className="qs-included">✓ Esta localidad incluye las memorias del evento</p>
+                    )}
+
+                    {detalles && !detalles.withMemories && !detalles.noPermiteMemorias && (
+                      <div>
+                        <span className="qs-label">Add-on opcional</span>
+                        <div
+                          className={`qs-check${incluirMemorias ? ' on' : ''}`}
+                          onClick={() => setIncluirMemorias(v => !v)}
+                          role="checkbox"
+                          aria-checked={incluirMemorias}
+                        >
+                          <span className="box">{incluirMemorias ? '✓' : ''}</span>
+                          <span>
+                            <span className="tt">📀 Memorias del evento</span>
+                            <span className="dd" style={{ display: 'block' }}>
+                              Grabación completa de las conferencias, presentaciones de los
+                              speakers y material exclusivo. Acceso digital permanente, por entrada.
+                            </span>
+                          </span>
+                          <span className="pp">COP {precio(precioMemorias)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="qs-panel qs-summary">
+                    <span className="qs-label">Resumen</span>
+                    <div className="row">
+                      <span>{detalles?.name ?? 'Entrada'}</span>
+                      <span className="v">COP {precio(detalles?.price ?? 0)}</span>
+                    </div>
+                    {memoriasExtra && (
+                      <div className="row">
+                        <span>Memorias del evento</span>
+                        <span className="v">COP {precio(precioMemorias)}</span>
+                      </div>
+                    )}
+                    <div className="row">
+                      <span>Cantidad</span>
+                      <span className="v">×{cantidad}</span>
+                    </div>
+                    <div className="total">
+                      <span>Total</span>
+                      <span className="v">COP {precio(total)}</span>
+                    </div>
+                    <button
+                      className="btn btn-neon"
+                      style={{ width: '100%', justifyContent: 'center', marginTop: 24 }}
+                      onClick={handleAgregar}
+                      disabled={!detalles}
+                    >
+                      Agregar al carrito <span className="arr">→</span>
+                    </button>
+                    <p className="qs-hint" style={{ textAlign: 'center', marginTop: 12 }}>
+                      Los datos de los asistentes y el pago se completan en el carrito.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ── NOTAS ── */}
-            <div className="bol-notes">
+            <div className="bol-notes" style={{ marginTop: 32 }}>
               <span className="eyebrow" style={{ marginBottom: 20, display: 'block' }}>Notas importantes</span>
               <ul className="lp-list">
                 {NOTES.map((n, i) => (
@@ -178,7 +306,7 @@ export default function BoleteriaPage() {
               <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
               <p>Asegura tu lugar antes de que se agoten los cupos. Cada localidad tiene disponibilidad limitada.</p>
               <div className="btns">
-                <button className="btn btn-neon" onClick={() => go(FEATURED)}>
+                <button className="btn btn-neon" onClick={() => elegir(FEATURED)}>
                   Comprar entrada Diamante <span className="arr">→</span>
                 </button>
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">

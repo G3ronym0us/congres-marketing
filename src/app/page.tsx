@@ -580,7 +580,7 @@ export default function LandingPage() {
                         {t.features.map((f, j) => <li key={j}>{f}</li>)}
                         {t.withMemories && <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>}
                       </ul>
-                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href="/boleteria">
+                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?localidad=${type}`}>
                         Comprar <span className="arr">→</span>
                       </a>
                     </article>

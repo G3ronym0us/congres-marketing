@@ -1136,3 +1136,9 @@ section { position: relative; }
   font-size: 22px;
 }
 .qs-summary .total .v { color: var(--neon); }
+
+/* tarjeta de localidad seleccionada (boletería unificada) */
+.bol-card.selected {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 50px rgba(4,238,98,.12);
+}

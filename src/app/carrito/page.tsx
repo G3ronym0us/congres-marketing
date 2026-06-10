@@ -249,11 +249,11 @@ export default function Carrito() {
   }, [state.total]);
 
   const handleVolver = () => {
-    router.push('/quantity-select');
+    router.push('/boleteria');
   };
 
   const handleContinuarComprando = () => {
-    router.push('/quantity-select');
+    router.push('/boleteria');
   };
 
   const handleEliminarItem = (localidad: TicketType) => {
