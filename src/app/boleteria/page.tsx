@@ -64,11 +64,6 @@ export default function BoleteriaPage() {
     if (detalles) setIncluirMemorias(!!detalles.withMemories);
   }, [localidad, detalles?.withMemories]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const elegir = (type: string) => {
-    setLocalidad(type);
-    document.getElementById('configura')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const memoriasExtra = incluirMemorias && !detalles?.withMemories && !detalles?.noPermiteMemorias;
   const total = detalles ? (detalles.price + (memoriasExtra ? precioMemorias : 0)) * cantidad : 0;
 
@@ -101,110 +96,91 @@ export default function BoleteriaPage() {
         </div>
       </nav>
 
-      <main className="page" style={{ paddingTop: 100 }}>
+      <main className="page" style={{ paddingTop: 96 }}>
 
         {/* ── HEADER ── */}
         <section className="wrap" style={{ paddingBottom: 0 }}>
-          <div style={{ maxWidth: 720, marginBottom: 56 }}>
-            <span className="eyebrow">Colombia · 28–29 Ago 2026</span>
-            <h1 className="h-sec" style={{ marginTop: 16, fontSize: 'clamp(40px,6vw,72px)' }}>
-              Elige tu lugar<br />
-              <span style={{ color: 'var(--neon)' }}>en el congreso.</span>
+          <div style={{ maxWidth: 880, marginBottom: 28 }}>
+            <span className="eyebrow">Boletería · Colombia · 28–29 Ago 2026</span>
+            <h1 className="h-sec" style={{ marginTop: 12, fontSize: 'clamp(30px,4vw,48px)' }}>
+              Elige tu lugar <span style={{ color: 'var(--neon)' }}>en el congreso.</span>
             </h1>
-            <p className="lead">
-              Cupos limitados por localidad. Boletería independiente por ciudad —
-              esta página corresponde a la parada de <strong style={{ color: '#fff' }}>Colombia 2026</strong>.
+            <p className="lead" style={{ marginTop: 10, fontSize: 15 }}>
+              Cupos limitados por localidad. Boletería independiente por ciudad — esta
+              página corresponde a <strong style={{ color: '#fff' }}>Colombia 2026</strong>.
             </p>
           </div>
         </section>
 
-        {/* ── TICKET GRID ── */}
-        <section id="entradas-grid" className="band" style={{ paddingTop: 0 }}>
+        {/* ── SELECCIÓN + RESUMEN ── */}
+        <section id="entradas-grid" className="band" style={{ paddingTop: 0, paddingBottom: 56 }}>
           <div className="wrap">
 
-            <div className="bol-grid">
-              {loading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <article key={i} className="bol-card" aria-hidden="true">
-                      <div className="bol-card-top">
-                        <span className="sk-line" style={{ width: 34, height: 34, borderRadius: 10 }} />
-                        <span className="sk-line" style={{ width: '60%', height: 20 }} />
-                      </div>
-                      <span className="sk-line" style={{ width: '70%', height: 34 }} />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-                        <span className="sk-line" style={{ width: '100%', height: 13 }} />
-                        <span className="sk-line" style={{ width: '90%', height: 13 }} />
-                        <span className="sk-line" style={{ width: '95%', height: 13 }} />
-                        <span className="sk-line" style={{ width: '70%', height: 13 }} />
-                      </div>
-                      <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 'auto' }} />
-                    </article>
-                  ))
-                : Object.entries(localidades)
-                .filter(([key, t]) => key !== 'memorias' && t.pushable)
-                .map(([type, t]) => {
-                const isFeat = type === FEATURED;
-                const isSelected = type === localidad;
-                return (
-                  <article key={type} className={`bol-card${isFeat ? ' bol-feat' : ''}${isSelected ? ' selected' : ''}`}>
-                    {isFeat && <span className="tk-feat-tag">Más completo</span>}
-
-                    <div className="bol-card-top">
-                      <span className="bol-icon">{t.icon}</span>
-                      <div>
-                        <div className="bol-tier">{t.name}</div>
-                        {type === TicketType.STREAMING && (
-                          <div className="bol-sub">Acceso virtual</div>
-                        )}
+            {loading ? (
+              <div className="qs-grid" aria-hidden="true">
+                <div className="bsel-list">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bsel">
+                      <div className="bsel-head">
+                        <span className="sk-line" style={{ width: 28, height: 28, borderRadius: 8 }} />
+                        <span className="sk-line" style={{ flex: 1, height: 18 }} />
+                        <span className="sk-line" style={{ width: 90, height: 18 }} />
+                        <span className="sk-line" style={{ width: 20, height: 20, borderRadius: '50%' }} />
                       </div>
                     </div>
-
-                    <div className="bol-price">
-                      <span className="bol-cur">COP </span>
-                      {precio(t.price)}
-                    </div>
-
-                    <ul className="tk-list">
-                      {t.features.map((f, i) => <li key={i}>{f}</li>)}
-                      {t.withMemories && (
-                        <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>
-                      )}
-                    </ul>
-
-                    <button
-                      className={`btn ${isSelected ? 'btn-neon' : 'btn-ghost'}`}
-                      style={{ width: '100%', justifyContent: 'center', marginTop: 'auto' }}
-                      onClick={() => elegir(type)}
-                    >
-                      {isSelected ? '✓ Seleccionada' : <>Elegir localidad <span className="arr">→</span></>}
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
-
-            {/* ── CONFIGURA TU COMPRA ── */}
-            <div id="configura" style={{ scrollMarginTop: 100 }}>
-              <div className="sec-head" style={{ marginTop: 64, marginBottom: 32 }}>
-                <span className="eyebrow">Configura tu compra</span>
-              </div>
-
-              {loading ? (
-                <div className="qs-grid" aria-hidden="true">
-                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-                    <span className="sk-line" style={{ width: 180, height: 52, borderRadius: 12 }} />
-                    <span className="sk-line" style={{ width: '80%', height: 40 }} />
-                  </div>
-                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <span className="sk-line" style={{ width: '60%', height: 16 }} />
-                    <span className="sk-line" style={{ width: '100%', height: 14 }} />
-                    <span className="sk-line" style={{ width: '100%', height: 30, marginTop: 10 }} />
-                    <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 14 }} />
-                  </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="qs-grid">
-                  <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                <div className="qs-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <span className="sk-line" style={{ width: '60%', height: 16 }} />
+                  <span className="sk-line" style={{ width: '100%', height: 14 }} />
+                  <span className="sk-line" style={{ width: '100%', height: 14 }} />
+                  <span className="sk-line" style={{ width: '100%', height: 30, marginTop: 10 }} />
+                  <span className="sk-line" style={{ width: '100%', height: 46, borderRadius: 100, marginTop: 14 }} />
+                </div>
+              </div>
+            ) : (
+              <div className="qs-grid">
+
+                {/* Localidades como filas seleccionables */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                  <div className="bsel-list">
+                    {Object.entries(localidades)
+                      .filter(([key, t]) => key !== 'memorias' && t.pushable)
+                      .map(([type, t]) => {
+                        const isSelected = type === localidad;
+                        return (
+                          <article
+                            key={type}
+                            className={`bsel${isSelected ? ' active' : ''}`}
+                            onClick={() => setLocalidad(type)}
+                            role="radio"
+                            aria-checked={isSelected}
+                          >
+                            <div className="bsel-head">
+                              <span className="bsel-icon">{t.icon}</span>
+                              <div className="bsel-info">
+                                <div className="nm">
+                                  {t.name}
+                                  {type === FEATURED && <span className="tag">Más completo</span>}
+                                </div>
+                                {t.withMemories && <div className="sub">Incluye memorias del evento</div>}
+                                {type === TicketType.STREAMING && <div className="sub">Acceso virtual</div>}
+                              </div>
+                              <div className="bsel-price"><span className="cur">COP</span>{precio(t.price)}</div>
+                              <span className="bsel-radio" />
+                            </div>
+                            {isSelected && (
+                              <ul className="bsel-feats">
+                                {t.features.map((f, i) => <li key={i}>{f}</li>)}
+                              </ul>
+                            )}
+                          </article>
+                        );
+                      })}
+                  </div>
+
+                  {/* Cantidad + memorias */}
+                  <div className="qs-panel" style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' }}>
                     <div>
                       <span className="qs-label">Cantidad</span>
                       <div className="qs-stepper">
@@ -220,15 +196,11 @@ export default function BoleteriaPage() {
                           aria-label="Más entradas"
                         >+</button>
                       </div>
-                      <p className="qs-hint">Hasta {MAX_CANTIDAD} entradas por compra.</p>
+                      <p className="qs-hint">Hasta {MAX_CANTIDAD} por compra.</p>
                     </div>
 
-                    {detalles?.withMemories && (
-                      <p className="qs-included">✓ Esta localidad incluye las memorias del evento</p>
-                    )}
-
                     {detalles && !detalles.withMemories && !detalles.noPermiteMemorias && (
-                      <div>
+                      <div style={{ flex: 1, minWidth: 260 }}>
                         <span className="qs-label">Add-on opcional</span>
                         <div
                           className={`qs-check${incluirMemorias ? ' on' : ''}`}
@@ -240,16 +212,24 @@ export default function BoleteriaPage() {
                           <span>
                             <span className="tt">📀 Memorias del evento</span>
                             <span className="dd" style={{ display: 'block' }}>
-                              Grabación completa de las conferencias, presentaciones de los
-                              speakers y material exclusivo. Acceso digital permanente, por entrada.
+                              Grabación completa de las conferencias y material exclusivo.
+                              Acceso digital permanente, por entrada.
                             </span>
                           </span>
                           <span className="pp">COP {precio(precioMemorias)}</span>
                         </div>
                       </div>
                     )}
+                    {detalles?.withMemories && (
+                      <p className="qs-included" style={{ marginTop: 26 }}>
+                        ✓ Esta localidad incluye las memorias del evento
+                      </p>
+                    )}
                   </div>
+                </div>
 
+                {/* Resumen sticky */}
+                <div className="qs-sticky">
                   <div className="qs-panel qs-summary">
                     <span className="qs-label">Resumen</span>
                     <div className="row">
@@ -283,37 +263,19 @@ export default function BoleteriaPage() {
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* ── NOTAS ── */}
-            <div className="bol-notes" style={{ marginTop: 32 }}>
-              <span className="eyebrow" style={{ marginBottom: 20, display: 'block' }}>Notas importantes</span>
+            {/* ── NOTAS (colapsables) ── */}
+            <details className="bol-notes" style={{ marginTop: 24 }}>
+              <summary><span className="eyebrow">Notas importantes</span></summary>
               <ul className="lp-list">
                 {NOTES.map((n, i) => (
                   <li key={i}><span className="lp-list-dot">→</span>{n}</li>
                 ))}
               </ul>
-            </div>
+            </details>
 
-          </div>
-        </section>
-
-        {/* ── CTA ── */}
-        <section className="band" style={{ paddingTop: 0 }}>
-          <div className="wrap">
-            <div className="cta-band">
-              <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
-              <p>Asegura tu lugar antes de que se agoten los cupos. Cada localidad tiene disponibilidad limitada.</p>
-              <div className="btns">
-                <button className="btn btn-neon" onClick={() => elegir(FEATURED)}>
-                  Comprar entrada Diamante <span className="arr">→</span>
-                </button>
-                <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">
-                  Portafolio de patrocinio
-                </a>
-              </div>
-            </div>
           </div>
         </section>
 
