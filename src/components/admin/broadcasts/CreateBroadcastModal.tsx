@@ -134,10 +134,10 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
   return (
     <>
       {/* Main modal */}
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="adm-modal-overlay">
+        <div className="adm-modal-backdrop" onClick={onClose} />
 
-        <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+        <div className="adm-modal-card" style={{ maxWidth: 700 }}>
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -274,9 +274,9 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
 
       {/* Preview modal */}
       {showPreview && (
-        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(4px)' }} onClick={() => setShowPreview(false)} />
-          <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 600, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.7)' }}>
+        <div className="adm-modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="adm-modal-backdrop" style={{ background: 'rgba(0,0,0,.75)' }} onClick={() => setShowPreview(false)} />
+          <div className="adm-modal-card" style={{ maxWidth: 600 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
                 Vista previa del email

@@ -94,10 +94,10 @@ const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuc
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+    <div className="adm-modal-overlay">
+      <div className="adm-modal-backdrop" onClick={onClose} />
 
-      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 440, boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+      <div className="adm-modal-card" style={{ maxWidth: 440 }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>

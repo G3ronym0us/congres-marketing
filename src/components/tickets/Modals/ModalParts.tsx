@@ -3,7 +3,6 @@
 import React from 'react';
 
 const INK   = '#1A1418';
-const PANEL = '#2A2228';
 const LINE  = 'rgba(255,255,255,.09)';
 const MUTE  = 'rgba(255,255,255,.45)';
 const NEON  = '#04EE62';
@@ -13,18 +12,11 @@ export function DarkModal({ title, onClose, children }: {
   title: string; onClose: () => void; children: React.ReactNode;
 }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+    <div className="adm-modal-overlay">
       {/* Backdrop */}
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="adm-modal-backdrop" onClick={onClose} />
       {/* Card */}
-      <div style={{
-        position: 'relative', zIndex: 1,
-        background: PANEL, border: `1px solid ${LINE}`,
-        borderRadius: 20, padding: '28px 28px 24px',
-        width: '100%', maxWidth: 460,
-        maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 32px 80px rgba(0,0,0,.6)',
-      }}>
+      <div className="adm-modal-card" style={{ maxWidth: 460 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>

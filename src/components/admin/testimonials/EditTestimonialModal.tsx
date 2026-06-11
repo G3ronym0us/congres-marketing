@@ -8,7 +8,6 @@ import { updateTestimonial } from '@/services/testimonials';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
-const PANEL = '#2A2228';
 const NEON  = '#04EE62';
 const LINE  = 'rgba(255,255,255,.08)';
 const LINE2 = 'rgba(255,255,255,.14)';
@@ -66,10 +65,10 @@ const EditTestimonialModal: React.FC<Props> = ({ isOpen, onClose, testimonial, o
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+    <div className="adm-modal-overlay">
+      <div className="adm-modal-backdrop" onClick={onClose} />
 
-      <div style={{ position: 'relative', zIndex: 1, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,.6)' }}>
+      <div className="adm-modal-card" style={{ maxWidth: 560 }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
