@@ -206,6 +206,34 @@ const TicketsTable = () => {
     return [1, '…', currentPage - 1, currentPage, currentPage + 1, '…', totalPages];
   };
 
+  const renderActions = (item: Ticket) => (
+    <>
+      <IconBtn title="Reenviar correo" onClick={() => resendEmail(item.uuid)}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </IconBtn>
+      <IconBtn title="Descargar PDF" onClick={() => downloadPDF(item)}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+      </IconBtn>
+      <IconBtn title="Editar ticket" onClick={() => { setTicketEdit(item); setIsOpenEdit(true); }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </IconBtn>
+      <IconBtn title="Eliminar ticket" onClick={() => deleteTicket(item.uuid)} danger>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+        </svg>
+      </IconBtn>
+    </>
+  );
+
   /* ── shared input style for search ── */
   const searchStyle: React.CSSProperties = {
     background: 'rgba(255,255,255,.05)',
@@ -304,7 +332,8 @@ const TicketsTable = () => {
             No se encontraron tickets
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <>
+          <table className="tkt-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--line)' }}>
                 {['Documento', 'Asistente', 'Contacto', 'Localidad', 'Acciones'].map(h => (
@@ -355,35 +384,42 @@ const TicketsTable = () => {
                   {/* Acciones */}
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      <IconBtn title="Reenviar correo" onClick={() => resendEmail(item.uuid)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                          <polyline points="22,6 12,13 2,6"/>
-                        </svg>
-                      </IconBtn>
-                      <IconBtn title="Descargar PDF" onClick={() => downloadPDF(item)}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
-                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                        </svg>
-                      </IconBtn>
-                      <IconBtn title="Editar ticket" onClick={() => { setTicketEdit(item); setIsOpenEdit(true); }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </IconBtn>
-                      <IconBtn title="Eliminar ticket" onClick={() => deleteTicket(item.uuid)} danger>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
-                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
-                        </svg>
-                      </IconBtn>
+                      {renderActions(item)}
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Vista mobile: tarjetas apiladas (toggle en admin.css) */}
+          <div className="tkt-cards">
+            {currentItems.map(item => (
+              <div key={item.uuid} className="tkt-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>
+                      {!item.name ? <span style={{ color: 'var(--mute-2)', fontStyle: 'italic' }}>Reservada</span>
+                        : `${item.lastname?.toUpperCase()}, ${item.name}`}
+                    </div>
+                    <div style={{ color: 'var(--mute)', fontSize: 12, marginTop: 3, overflowWrap: 'anywhere' }}>
+                      {item.document || '—'}{item.phone ? ` · ${item.phone}` : ''}
+                    </div>
+                    {item.email && (
+                      <div style={{ color: 'var(--mute)', fontSize: 12, marginTop: 2, overflowWrap: 'anywhere' }}>
+                        {item.email}
+                      </div>
+                    )}
+                  </div>
+                  <TypeBadge type={item.type} />
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+                  {renderActions(item)}
+                </div>
+              </div>
+            ))}
+          </div>
+          </>
         )}
       </div>
 

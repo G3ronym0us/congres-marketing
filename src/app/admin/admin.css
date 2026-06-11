@@ -254,3 +254,14 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ── GESTIÓN DE TICKETS: tabla → tarjetas en mobile ── */
+.tkt-table { min-width: 640px; } /* en anchos intermedios el contenedor hace scroll-x en vez de aplastar columnas */
+.tkt-cards { display: none; }
+
+@media (max-width: 700px) {
+  .tkt-table { display: none; }
+  .tkt-cards { display: flex; flex-direction: column; }
+  .tkt-card  { padding: 14px 16px; }
+  .tkt-card + .tkt-card { border-top: 1px solid rgba(255,255,255,.06); }
+}
