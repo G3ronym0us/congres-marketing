@@ -1,5 +1,7 @@
 'use client';
 
+import ModalShell from '@/components/admin/ModalShell';
+
 import React from 'react';
 import {
   CreateLecturerData,
@@ -130,10 +132,7 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={handleClose} />
-
-      <div className="adm-modal-card" style={{ maxWidth: 720 }}>
+    <ModalShell onClose={handleClose} maxWidth={720}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -302,8 +301,7 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 };
 

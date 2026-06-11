@@ -1,5 +1,7 @@
 'use client';
 
+import ModalShell from '@/components/admin/ModalShell';
+
 import { useState } from 'react';
 import { CreateEmailBroadcastRequest, EmailBroadcastType } from '../../../types/emailBroadcast';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
@@ -134,10 +136,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
   return (
     <>
       {/* Main modal */}
-      <div className="adm-modal-overlay">
-        <div className="adm-modal-backdrop" onClick={onClose} />
-
-        <div className="adm-modal-card" style={{ maxWidth: 700 }}>
+      <ModalShell onClose={onClose} maxWidth={700}>
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -269,14 +268,11 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
               </div>
             </div>
           </form>
-        </div>
-      </div>
+      </ModalShell>
 
       {/* Preview modal */}
       {showPreview && (
-        <div className="adm-modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="adm-modal-backdrop" style={{ background: 'rgba(0,0,0,.75)' }} onClick={() => setShowPreview(false)} />
-          <div className="adm-modal-card" style={{ maxWidth: 600 }}>
+        <ModalShell onClose={() => setShowPreview(false)} maxWidth={600} zIndex={1100} backdropStyle={{ background: 'rgba(0,0,0,.75)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
                 Vista previa del email
@@ -317,8 +313,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
             <button onClick={() => setShowPreview(false)} style={{ width: '100%', marginTop: 16, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cerrar vista previa
             </button>
-          </div>
-        </div>
+        </ModalShell>
       )}
     </>
   );

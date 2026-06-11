@@ -1,5 +1,7 @@
 'use client';
 
+import ModalShell from '@/components/admin/ModalShell';
+
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { adminDiscountCodeService } from '@/services/discountCode';
@@ -69,10 +71,7 @@ export default function CreateDiscountCodeModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={onClose} />
-
-      <div className="adm-modal-card" style={{ maxWidth: 460 }}>
+    <ModalShell onClose={onClose} maxWidth={460}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -139,7 +138,6 @@ export default function CreateDiscountCodeModal({ onClose, onSuccess }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 }

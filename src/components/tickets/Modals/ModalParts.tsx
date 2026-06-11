@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import ModalShell from '@/components/admin/ModalShell';
 
 const INK   = '#1A1418';
 const LINE  = 'rgba(255,255,255,.09)';
@@ -12,11 +13,7 @@ export function DarkModal({ title, onClose, children }: {
   title: string; onClose: () => void; children: React.ReactNode;
 }) {
   return (
-    <div className="adm-modal-overlay">
-      {/* Backdrop */}
-      <div className="adm-modal-backdrop" onClick={onClose} />
-      {/* Card */}
-      <div className="adm-modal-card" style={{ maxWidth: 460 }}>
+    <ModalShell onClose={onClose} maxWidth={460}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
@@ -33,8 +30,7 @@ export function DarkModal({ title, onClose, children }: {
           </button>
         </div>
         {children}
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

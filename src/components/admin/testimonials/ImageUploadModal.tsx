@@ -1,5 +1,7 @@
 'use client';
 
+import ModalShell from '@/components/admin/ModalShell';
+
 import React, { useState, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { Testimonial } from '@/types/testimonials';
@@ -94,10 +96,7 @@ const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuc
   if (!isOpen) return null;
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={onClose} />
-
-      <div className="adm-modal-card" style={{ maxWidth: 440 }}>
+    <ModalShell onClose={onClose} maxWidth={440}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -187,8 +186,7 @@ const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuc
             Cerrar
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };
 

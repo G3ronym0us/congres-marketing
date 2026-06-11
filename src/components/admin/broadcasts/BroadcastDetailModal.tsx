@@ -1,5 +1,7 @@
 'use client';
 
+import ModalShell from '@/components/admin/ModalShell';
+
 import { useState } from 'react';
 import { EmailBroadcast, ResendEmailBroadcastRequest } from '../../../types/emailBroadcast';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
@@ -105,10 +107,7 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
     ? Math.round((broadcast.sent_count / broadcast.total_recipients) * 100) : 0;
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={onClose} />
-
-      <div className="adm-modal-card" style={{ maxWidth: 700 }}>
+    <ModalShell onClose={onClose} maxWidth={700}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -263,7 +262,6 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
             Cerrar
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }

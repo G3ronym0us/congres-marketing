@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import Swal from 'sweetalert2';
 import { CreateTestimonialInput } from '@/types/testimonials';
 import { createTestimonial } from '@/services/testimonials';
+import ModalShell from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -57,10 +58,7 @@ const CreateTestimonialModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
   if (!isOpen) return null;
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={onClose} />
-
-      <div className="adm-modal-card" style={{ maxWidth: 560 }}>
+    <ModalShell onClose={onClose} maxWidth={560}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -130,8 +128,7 @@ const CreateTestimonialModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 };
 

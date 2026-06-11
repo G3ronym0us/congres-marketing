@@ -8,6 +8,7 @@ import {
   deleteLocalidadType,
 } from '@/services/localidadTypes';
 import { LocalidadType, CreateLocalidadTypeInput } from '@/types/localidadTypes';
+import ModalShell from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -208,9 +209,7 @@ function LocalidadModal({
   };
 
   return (
-    <div className="adm-modal-overlay">
-      <div className="adm-modal-backdrop" onClick={onClose} />
-      <div className="adm-modal-card" style={{ maxWidth: 520 }}>
+    <ModalShell onClose={onClose} maxWidth={520}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
             {form.id ? 'Editar localidad' : 'Nueva localidad'}
@@ -291,8 +290,7 @@ function LocalidadModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

@@ -288,6 +288,7 @@
   max-height: 90vh;
   max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 32px 80px rgba(0,0,0,.6);
 }
 
