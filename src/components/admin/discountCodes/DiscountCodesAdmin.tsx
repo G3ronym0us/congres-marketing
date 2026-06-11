@@ -106,7 +106,7 @@ export default function DiscountCodesAdmin() {
             <div key={code.id} style={{ background: PANEL, border: `1px solid ${code.isActive ? LINE2 : LINE}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', opacity: code.isActive ? 1 : .6 }}>
 
               {/* Código + badge */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: '1 1 180px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                   <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 16, color: NEON, letterSpacing: '.05em' }}>
                     {code.code}
@@ -140,7 +140,7 @@ export default function DiscountCodesAdmin() {
               </div>
 
               {/* Acciones */}
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
                 <button onClick={() => handleToggle(code)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                   {code.isActive ? 'Desactivar' : 'Activar'}
                 </button>

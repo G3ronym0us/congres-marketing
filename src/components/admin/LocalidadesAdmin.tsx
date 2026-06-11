@@ -350,7 +350,7 @@ export default function LocalidadesAdmin() {
   return (
     <div style={{ padding: 0 }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: 0 }}>
             Localidades
@@ -374,13 +374,13 @@ export default function LocalidadesAdmin() {
             <div key={item.id} style={{
               background: PANEL, border: `1px solid ${item.active ? LINE2 : LINE}`,
               borderRadius: 14, padding: '16px 20px',
-              display: 'flex', alignItems: 'center', gap: 16,
+              display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
               opacity: item.active ? 1 : .5,
               transition: 'opacity .2s',
             }}>
               <div style={{ fontSize: 26, flexShrink: 0, minWidth: 36, textAlign: 'center' }}>{item.icon}</div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: '1 1 180px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
                   <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
                     {item.name}
@@ -417,7 +417,7 @@ export default function LocalidadesAdmin() {
                 <div style={{ fontSize: 11, color: MUTE2, fontFamily: 'Space Grotesk, sans-serif' }}>orden #{item.sortOrder}</div>
               </div>
 
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
                 <button onClick={() => handleToggle(item)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                   {item.active ? 'Desactivar' : 'Activar'}
                 </button>

@@ -157,6 +157,7 @@ const TestimonialsAdmin = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 16,
+              flexWrap: 'wrap',
               opacity: t.active ? 1 : .55,
               transition: 'opacity .2s',
             }}>
@@ -171,7 +172,7 @@ const TestimonialsAdmin = () => {
               )}
 
               {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: '1 1 180px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
                   <span style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
                     {t.firstName} {t.lastName}
@@ -228,7 +229,7 @@ const TestimonialsAdmin = () => {
 
       {/* ── Paginación ── */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20, flexWrap: 'wrap' }}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
             <button
               key={page}
