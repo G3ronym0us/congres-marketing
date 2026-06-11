@@ -1,6 +1,6 @@
 'use client';
 
-import ModalShell from '@/components/admin/ModalShell';
+import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 import { useState } from 'react';
 import { CreateEmailBroadcastRequest, EmailBroadcastType } from '../../../types/emailBroadcast';
@@ -129,6 +129,13 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
     }
   };
 
+  const isDirty = !!(formData.title || formData.content || formData.specific_email) || selectedFiles.length > 0;
+
+  const handleClose = async () => {
+    if (isDirty && !(await confirmDiscard())) return;
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const canPreview = !!formData.title && !!formData.content;
@@ -136,14 +143,14 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
   return (
     <>
       {/* Main modal */}
-      <ModalShell onClose={onClose} maxWidth={700}>
+      <ModalShell onClose={handleClose} maxWidth={700}>
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
             <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
               Nuevo Email Broadcast
             </h3>
-            <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
+            <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -258,7 +265,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                 👁 Vista previa
               </button>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={onClose} style={{ padding: '9px 20px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+                <button type="button" onClick={handleClose} style={{ padding: '9px 20px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
                   Cancelar
                 </button>
                 <button type="submit" disabled={loading || !formData.title || !formData.content}

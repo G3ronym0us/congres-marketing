@@ -1,6 +1,24 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import Swal from 'sweetalert2';
+
+/** Confirmación estándar antes de cerrar un formulario con cambios sin guardar. */
+export async function confirmDiscard(): Promise<boolean> {
+  const { isConfirmed } = await Swal.fire({
+    title: '¿Descartar cambios?',
+    text: 'Hay cambios sin guardar que se perderán.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Sí, descartar',
+    cancelButtonText: 'Seguir editando',
+    background: '#2A2228',
+    color: '#fff',
+  });
+  return isConfirmed;
+}
 
 /**
  * Carcasa compartida de los modales del admin: tarjeta centrada en desktop,
@@ -60,7 +78,15 @@ export default function ModalShell({
       card.style.transition = 'transform .25s cubic-bezier(.32,.72,.24,1)';
       if (drag.dy > 110) {
         card.style.transform = 'translateY(105%)';
-        setTimeout(() => onCloseRef.current(), 220);
+        setTimeout(() => {
+          onCloseRef.current();
+          // si el cierre fue vetado (p. ej. confirmación de descartar cambios),
+          // el modal sigue montado: regresa la tarjeta a su posición
+          requestAnimationFrame(() => {
+            card.style.transform = '';
+            setTimeout(() => { card.style.transition = ''; }, 260);
+          });
+        }, 220);
       } else {
         card.style.transform = '';
         setTimeout(() => { card.style.transition = ''; }, 260);

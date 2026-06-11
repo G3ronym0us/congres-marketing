@@ -1,6 +1,6 @@
 'use client';
 
-import ModalShell from '@/components/admin/ModalShell';
+import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 import React from 'react';
 import {
@@ -119,7 +119,20 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
     }
   };
 
-  const handleClose = () => { resetForm(); onClose(); };
+  const isDirty =
+    !!(firstName || lastName || title || country || position || nickname || biography ||
+       image || instagram || facebook || x || youtube) ||
+    experienceAreas.some(a => a.trim()) ||
+    awards.some(a => a.trim()) ||
+    createdMethodologies.some(m => m.trim()) ||
+    academicFormations.some(f => (f.title || '').trim() || (f.institution || '').trim() || (f.place || '').trim() || f.year) ||
+    publications.some(p => (p.title || '').trim() || (p.editorial || '').trim() || (p.role || '').trim() || (p.description || '').trim() || p.year);
+
+  const handleClose = async () => {
+    if (isDirty && !(await confirmDiscard())) return;
+    resetForm();
+    onClose();
+  };
 
   /* ── array helpers ── */
   const updateStr = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, i: number, v: string) => {

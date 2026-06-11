@@ -8,7 +8,7 @@ import {
   deleteLocalidadType,
 } from '@/services/localidadTypes';
 import { LocalidadType, CreateLocalidadTypeInput } from '@/types/localidadTypes';
-import ModalShell from '@/components/admin/ModalShell';
+import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -192,6 +192,15 @@ function LocalidadModal({
     }
   };
 
+  const isDirty =
+    JSON.stringify(form) !== JSON.stringify(initial) ||
+    featuresText !== (initial.features ?? []).join('\n');
+
+  const handleClose = async () => {
+    if (isDirty && !(await confirmDiscard())) return;
+    onClose();
+  };
+
   const field = (label: string, children: React.ReactNode) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
@@ -209,12 +218,12 @@ function LocalidadModal({
   };
 
   return (
-    <ModalShell onClose={onClose} maxWidth={520}>
+    <ModalShell onClose={handleClose} maxWidth={520}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
             {form.id ? 'Editar localidad' : 'Nueva localidad'}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE }}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -280,7 +289,7 @@ function LocalidadModal({
           {err && <p style={{ color: '#ff6b6b', fontSize: 12, margin: 0 }}>{err}</p>}
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-            <button type="button" onClick={onClose}
+            <button type="button" onClick={handleClose}
               style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>

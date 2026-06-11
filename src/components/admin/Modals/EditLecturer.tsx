@@ -1,6 +1,6 @@
 'use client';
 
-import ModalShell from '@/components/admin/ModalShell';
+import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 import React from 'react';
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
@@ -81,7 +81,7 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
     publications: lecturer.publications?.length ? lecturer.publications : [],
   });
 
-  const { control, handleSubmit, watch, reset, setValue, formState: { errors, isValid } } = useForm<UpdateLecturerData>({
+  const { control, handleSubmit, watch, reset, setValue, formState: { errors, isValid, isDirty } } = useForm<UpdateLecturerData>({
     defaultValues: getDefaults(),
     mode: 'onChange',
   });
@@ -110,7 +110,11 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
     try { await onSave(data); } finally { setIsLoading(false); }
   };
 
-  const handleClose = () => { reset(); onClose(); };
+  const handleClose = async () => {
+    if (isDirty && !(await confirmDiscard())) return;
+    reset();
+    onClose();
+  };
 
   const watchedImage     = watch('image');
   const watchedFirstName = watch('firstName');

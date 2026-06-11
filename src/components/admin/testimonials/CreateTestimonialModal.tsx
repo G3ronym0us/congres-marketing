@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import Swal from 'sweetalert2';
 import { CreateTestimonialInput } from '@/types/testimonials';
 import { createTestimonial } from '@/services/testimonials';
-import ModalShell from '@/components/admin/ModalShell';
+import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -38,7 +38,7 @@ interface Props {
 }
 
 const CreateTestimonialModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-  const { control, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } =
+  const { control, handleSubmit, formState: { errors, isSubmitting, isDirty }, reset, watch, setValue } =
     useForm<CreateTestimonialInput>({ defaultValues: { firstName: '', lastName: '', position: '', content: '', active: true } });
 
   const active      = watch('active');
@@ -55,17 +55,22 @@ const CreateTestimonialModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
     }
   };
 
+  const handleClose = async () => {
+    if (isDirty && !(await confirmDiscard())) return;
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
-    <ModalShell onClose={onClose} maxWidth={560}>
+    <ModalShell onClose={handleClose} maxWidth={560}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
             Nuevo testimonio
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -120,7 +125,7 @@ const CreateTestimonialModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
 
           {/* Footer */}
           <div style={{ display: 'flex', gap: 10, paddingTop: 8, borderTop: `1px solid ${LINE}` }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
+            <button type="button" onClick={handleClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>
             <button type="submit" disabled={isSubmitting} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isSubmitting ? .6 : 1 }}>
