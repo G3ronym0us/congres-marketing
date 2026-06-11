@@ -362,5 +362,23 @@ Docker :5434, front en :3001; usuario admin temporal creado y eliminado al final
 5. El filtro de tickets admin exige status en MAYÚSCULAS (`PAID`/`RESERVED`),
    consistente con el enum del front.
 
-**Pendiente**: corrida **e2e** de F3 (pago Wompi sandbox de punta a punta) y envío real
-de F11 (SMTP válido).
+**2026-06-11 — corrida e2e F3 (pago Wompi sandbox)**: ejecutada a nivel de API contra
+`sandbox.wompi.co` (el WidgetCheckout es solo una UI sobre esos mismos llamados; misma
+firma de integridad, mismo `/payments/verify`). Flujo: `POST /payments` (crea tickets
+PENDING + firma) → firma de integridad verificada contra
+`SHA256(ref+amount+COP+secret)` ✓ → pago real en sandbox con tarjeta de prueba
+`4242…` → **APPROVED** → `GET /payments/verify/:reference` → tickets a **PAID** ✓.
+Camino negativo: firma manipulada → Wompi responde `INPUT_VALIDATION_ERROR / "La firma
+es inválida"` ✓.
+
+⚠️→✅ **Bug encontrado y corregido** (backend `ba14590`, desplegado): `verifyTransaction`
+cargaba la transacción **sin la relación `tickets`**, así que `processTicketsForTransaction`
+recibía `undefined` y fallaba en silencio — el fallback `/payments/verify` del front nunca
+marcaba los tickets PAID (solo el webhook, que sí carga la relación, lo hacía). Si el
+webhook no llega, los tickets quedaban PENDING pese al pago aprobado. Corregido cargando
+`relations: { tickets: true }`.
+
+**Pendiente**: envío real de correos (F11 broadcasts y emails de boleto en F3), que
+requiere SMTP válido — no verificable en local. Una corrida e2e desde navegador real con
+el WidgetCheckout validaría además la UI del widget, pero la integración (firma, estados,
+verify) ya quedó cubierta a nivel de API.
