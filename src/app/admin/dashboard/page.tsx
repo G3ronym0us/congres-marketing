@@ -67,6 +67,25 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, []);
 
+  // Sincroniza el tab activo con ?tab= para que recargar y el botón atrás funcionen
+  useEffect(() => {
+    const readTab = () => {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      setActiveTab(tab && MENU_ITEMS.some(m => m.id === tab) ? tab : 'dashboard');
+    };
+    readTab();
+    window.addEventListener('popstate', readTab);
+    return () => window.removeEventListener('popstate', readTab);
+  }, []);
+
+  const changeTab = (tab: string) => {
+    setActiveTab(tab);
+    const url = tab === 'dashboard'
+      ? window.location.pathname
+      : `${window.location.pathname}?tab=${tab}`;
+    window.history.pushState(null, '', url);
+  };
+
   useEffect(() => {
     if (!isAuthLoading && !auth?.user) router.push('/admin/auth');
   }, [isAuthLoading, auth?.user, router]);
@@ -157,7 +176,7 @@ export default function Dashboard() {
         isOpen={sidebarOpen}
         toggleSidebar={() => setSidebarOpen(v => !v)}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={changeTab}
         menuItems={MENU_ITEMS}
         user={auth.user}
         onLogout={handleLogout}

@@ -104,6 +104,21 @@ const TicketsTable = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => { getTickets(); }, [edition]);
 
+  // Restaura la página desde ?page= al montar, para que sobreviva recargas
+  React.useEffect(() => {
+    const p = parseInt(new URLSearchParams(window.location.search).get('page') ?? '', 10);
+    if (p > 1) setCurrentPage(p);
+  }, []);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  };
+
   const getTickets = async () => {
     setIsLoading(true);
     try {
@@ -130,6 +145,12 @@ const TicketsTable = () => {
   const ITEMS = 15;
   const totalPages = Math.ceil(filteredData.length / ITEMS);
   const currentItems = filteredData.slice((currentPage - 1) * ITEMS, currentPage * ITEMS);
+
+  // Si al filtrar o recargar la página actual queda fuera de rango, vuelve a la última válida
+  React.useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) goToPage(totalPages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
 
   const resendEmail = async (uuid: string) => {
     const r = await resendEmailTicket(uuid);
@@ -267,7 +288,7 @@ const TicketsTable = () => {
             type="text"
             placeholder="Buscar por nombre, documento, email…"
             value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setSearchTerm(e.target.value); goToPage(1); }}
             style={searchStyle}
           />
         </div>
@@ -278,7 +299,7 @@ const TicketsTable = () => {
           value={edition ?? ''}
           onChange={e => {
             setEdition(e.target.value ? parseInt(e.target.value, 10) : undefined);
-            setCurrentPage(1);
+            goToPage(1);
           }}
           style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
           title="Filtrar por edición"
@@ -440,7 +461,7 @@ const TicketsTable = () => {
               ) : (
                 <button
                   key={p}
-                  onClick={() => setCurrentPage(Number(p))}
+                  onClick={() => goToPage(Number(p))}
                   style={{
                     padding: '5px 10px', borderRadius: 7, fontSize: 13, cursor: 'pointer',
                     fontFamily: 'Oxanium, sans-serif', fontWeight: 600,
