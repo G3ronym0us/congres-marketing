@@ -27,9 +27,20 @@ export async function loginUser(user: LoginUserInput) {
     };
   } catch (error: any) {
     console.error('Login error:', error.response?.data || error.message);
+    const code = error.response?.status;
+    let message: string;
+    if (!error.response) {
+      message = 'No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.';
+    } else if (code === 400 || code === 401 || code === 403) {
+      message = 'Usuario o contraseña incorrectos.';
+    } else if (code === 429) {
+      message = 'Demasiados intentos. Espera unos minutos antes de volver a intentar.';
+    } else {
+      message = 'Error del servidor. Intenta nuevamente en unos minutos.';
+    }
     return {
       status: 'fail',
-      error: error.response?.data?.message || 'Credenciales inválidas'
+      error: message
     };
   }
 }

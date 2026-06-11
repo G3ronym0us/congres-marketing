@@ -13,6 +13,7 @@ const Login = () => {
 
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -87,7 +88,7 @@ const Login = () => {
                 autoComplete="username"
                 placeholder="Ingrese su usuario"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setUsername(e.target.value); if (error) setError(''); }}
                 required
                 style={{
                   background: 'var(--ink-deep)',
@@ -115,33 +116,60 @@ const Login = () => {
               }}>
                 Contraseña
               </label>
-              <input
-                type="password"
-                autoComplete="current-password"
-                placeholder="Ingrese su contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{
-                  background: 'var(--ink-deep)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 10,
-                  padding: '12px 16px',
-                  color: 'var(--white)',
-                  fontFamily: 'var(--body)',
-                  fontSize: 15,
-                  outline: 'none',
-                  transition: 'border-color .2s',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => (e.target.style.borderColor = 'var(--neon-line)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--line)')}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="Ingrese su contraseña"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); if (error) setError(''); }}
+                  required
+                  style={{
+                    background: 'var(--ink-deep)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 10,
+                    padding: '12px 46px 12px 16px',
+                    color: 'var(--white)',
+                    fontFamily: 'var(--body)',
+                    fontSize: 15,
+                    outline: 'none',
+                    transition: 'border-color .2s',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = 'var(--neon-line)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--line)')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  style={{
+                    position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 8, display: 'flex', alignItems: 'center',
+                    color: showPassword ? 'var(--white)' : 'var(--mute)',
+                  }}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                      <path d="M14.12 14.12a3 3 0 11-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div style={{
+              <div role="alert" style={{
                 background: 'rgba(255,60,60,.08)',
                 border: '1px solid rgba(255,60,60,.25)',
                 borderRadius: 10,
