@@ -19,10 +19,14 @@ export async function getMe(token: string) {
 export async function loginUser(user: LoginUserInput) {
   try {
     const response = await apiClient.post('/auth/login', user);
-    
-    // La respuesta real del backend: { status: "ok", token: "..." }
+
+    // El backend responde 2xx incluso con credenciales malas:
+    // { status: "fail", error: "User not found" | "Invalid password" }
+    if (response.data.status === 'fail') {
+      return { status: 'fail', error: 'Usuario o contraseña incorrectos.' };
+    }
     return {
-      status: response.data.status || 'ok',
+      status: 'ok',
       token: response.data.token
     };
   } catch (error: any) {

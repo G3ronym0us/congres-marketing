@@ -323,5 +323,41 @@ done
 | `/lecturer/<alt-inexistente>` | ✅ 200 (sin crash) |
 | `/buy` (legacy) | ✅ 200 |
 
-Ninguna ruta crashea con el backend caído. Pendientes: corridas **local** (con backend)
-y **e2e** (Wompi sandbox + emails) de la matriz — F3, F5–F14.
+Ninguna ruta crashea con el backend caído.
+
+**2026-06-11 — corrida local** (backend `congress-marketing-be` en :3000 con Postgres
+Docker :5434, front en :3001; usuario admin temporal creado y eliminado al final):
+
+| Flujo | Resultado |
+|---|---|
+| F1 Landing con datos | ✅ `/localidad-types`, `/lecturers/*`, `/testimonials/active` → 200 con datos |
+| F2 Lecturer por alt | ✅ 200 con alt real |
+| F5 Ticket por uuid | ✅ 200 con uuid PAID real |
+| F6 Login | ✅ login OK → token; `/auth/me` OK; middleware: con cookie 200, sin cookie 307 |
+| F7 Edición + métricas + reporte | ✅ `currentEdition: 2026`; métricas por tipo; reporte PDF válido |
+| F8 Tickets admin | ✅ 315 tickets (PAID+RESERVED, edición 2025); descarga de boleto PDF válido |
+| F9 Conferencistas | ✅ listado 200 |
+| F10 Testimonios | ✅ listado 200 |
+| F11 Broadcasts | ✅ listado 200 con históricos (envío real no probado — SMTP) |
+| F12 Códigos descuento | ✅ ciclo completo: crear → validar público (`isValid: true`) → desactivar → eliminar |
+| F13 Certificados | ✅ status `enabled: false` |
+| F14 Localidades admin | ✅ listado 200 |
+| Seguridad | ✅ endpoints `/admin/*` y `/email-broadcasts` → 401 sin token |
+
+**Hallazgos de la corrida local**:
+1. ⚠️ `GET /tickets/metrics` responde **200 sin autenticación** (expone conteos de
+   ventas). Endurecer en el backend.
+2. ⚠️ `POST /auth/login` responde **201 con `{status:'fail'}`** ante credenciales malas
+   en vez de 401, y el mensaje (`User not found` / `Invalid password`) revela si el
+   usuario existe. El front ya lo mapea a un mensaje genérico; idealmente el backend
+   debería responder 401 con mensaje único.
+3. La BD local restaurada de backup tenía las **secuencias de IDs desincronizadas**
+   (INSERT → 500 por PK duplicada). Corregido localmente con `setval(...)` en las 14
+   tablas. Si se restaura otro backup, repetir.
+4. SMTP local falla por credenciales (esperado): los flujos que envían correo
+   (boletos, broadcasts, reenvíos) solo son verificables en e2e/producción.
+5. El filtro de tickets admin exige status en MAYÚSCULAS (`PAID`/`RESERVED`),
+   consistente con el enum del front.
+
+**Pendiente**: corrida **e2e** de F3 (pago Wompi sandbox de punta a punta) y envío real
+de F11 (SMTP válido).
