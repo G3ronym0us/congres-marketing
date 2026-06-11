@@ -345,12 +345,15 @@ Docker :5434, front en :3001; usuario admin temporal creado y eliminado al final
 | Seguridad | ✅ endpoints `/admin/*` y `/email-broadcasts` → 401 sin token |
 
 **Hallazgos de la corrida local**:
-1. ⚠️ `GET /tickets/metrics` responde **200 sin autenticación** (expone conteos de
-   ventas). Endurecer en el backend.
-2. ⚠️ `POST /auth/login` responde **201 con `{status:'fail'}`** ante credenciales malas
-   en vez de 401, y el mensaje (`User not found` / `Invalid password`) revela si el
-   usuario existe. El front ya lo mapea a un mensaje genérico; idealmente el backend
-   debería responder 401 con mensaje único.
+1. ✅ **Corregido** (backend `22058d7`, desplegado y verificado en prod 2026-06-11):
+   `GET /tickets/metrics` respondía sin autenticación. Al revisar, el controller de
+   tickets no tenía ningún guard — también estaban expuestos `/tickets/approved`
+   (PII de todos los asistentes), `POST /tickets/send-massive-email` (cualquiera
+   podía disparar correos masivos) y `/tickets/report/*`. Todos requieren JWT ahora;
+   `/tickets/:uuid` y `/tickets/certificate/:uuid` siguen públicos por diseño.
+2. ✅ **Corregido** (mismo deploy): `POST /auth/login` respondía 201 con
+   `{status:'fail'}` y mensajes que revelaban si el usuario existía. Ahora responde
+   **401 con mensaje único** "Credenciales inválidas". El front maneja ambos formatos.
 3. La BD local restaurada de backup tenía las **secuencias de IDs desincronizadas**
    (INSERT → 500 por PK duplicada). Corregido localmente con `setval(...)` en las 14
    tablas. Si se restaura otro backup, repetir.
