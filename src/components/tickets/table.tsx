@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import {
   deleteTickets,
   downloadTicket,
+  downloadTicketsExcel,
   getTicketsApproved,
   resendEmailTicket,
   adminSaveTickets,
@@ -92,6 +93,7 @@ const TicketsTable = () => {
   const [data, setData] = React.useState<Ticket[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isExporting, setIsExporting] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
 
@@ -171,6 +173,25 @@ const TicketsTable = () => {
       URL.revokeObjectURL(url);
     } catch {
       toast('error', 'Error al descargar PDF');
+    }
+  };
+
+  const exportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await downloadTicketsExcel(edition);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tickets-cnmp-${edition ?? 'actual'}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast('error', 'Error al descargar el Excel');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -325,6 +346,15 @@ const TicketsTable = () => {
             <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
           </svg>
           Actualizar
+        </button>
+
+        {/* Export Excel */}
+        <button className="adm-btn" onClick={exportExcel} disabled={isLoading || isExporting} style={{ whiteSpace: 'nowrap' }} title="Descargar Excel de la edición seleccionada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ ...s16, ...(isExporting ? { animation: 'spin 1s linear infinite' } : {}) }}>
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          {isExporting ? 'Generando…' : 'Excel'}
         </button>
 
         {/* New ticket */}

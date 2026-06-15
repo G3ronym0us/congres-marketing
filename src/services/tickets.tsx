@@ -108,6 +108,14 @@ export async function downloadTicket(uuid: string): Promise<Blob> {
   }
 }
 
+export async function downloadTicketsExcel(edition?: number): Promise<Blob> {
+  const response = await apiClient.get('/tickets/report/excel', {
+    responseType: 'blob',
+    params: edition ? { edition } : undefined,
+  });
+  return response.data;
+}
+
 export async function resendEmailTicket(
   uuid: string,
 ): Promise<{ status: string }> {
