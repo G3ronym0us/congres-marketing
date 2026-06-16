@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { adminDiscountCodeService, discountUtils } from '@/services/discountCode';
 import { DiscountCode } from '@/types/discountCode';
+import { Edition } from '@/types/edition';
+import EditionSelect from '@/components/admin/EditionSelect';
 import CreateDiscountCodeModal from './CreateDiscountCodeModal';
 import EditDiscountCodeModal from './EditDiscountCodeModal';
 
@@ -28,16 +30,25 @@ const StatusBadge = ({ code }: { code: DiscountCode }) => {
   return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: NEON, background: 'rgba(4,238,98,.1)', borderRadius: 6, padding: '3px 9px' }}>Activo</span>;
 };
 
-export default function DiscountCodesAdmin() {
+export default function DiscountCodesAdmin({
+  editionId,
+  editions = [],
+  onEditionChange,
+}: {
+  editionId?: number;
+  editions?: Edition[];
+  onEditionChange?: (id: number) => void;
+}) {
   const [codes, setCodes]             = useState<DiscountCode[]>([]);
   const [loading, setLoading]         = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCode, setEditingCode] = useState<DiscountCode | null>(null);
 
   const load = async () => {
+    if (!editionId) { setCodes([]); setLoading(false); return; }
     try {
       setLoading(true);
-      setCodes(await adminDiscountCodeService.getAllCodes());
+      setCodes(await adminDiscountCodeService.getAllCodes(editionId));
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'Error al cargar los códigos de descuento' });
     } finally {
@@ -45,7 +56,7 @@ export default function DiscountCodesAdmin() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [editionId]);
 
   const handleDelete = async (id: number) => {
     const { isConfirmed } = await Swal.fire({
@@ -86,10 +97,19 @@ export default function DiscountCodesAdmin() {
             {codes.length} en total · {activeCount} activos
           </p>
         </div>
-        <button onClick={() => setIsCreateOpen(true)} className="adm-btn neon">
-          + Crear código
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <EditionSelect editions={editions} editionId={editionId} onChange={onEditionChange} />
+          <button onClick={() => setIsCreateOpen(true)} className="adm-btn neon" disabled={!editionId}>
+            + Crear código
+          </button>
+        </div>
       </div>
+
+      {!editionId && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          Selecciona una edición para gestionar sus códigos de descuento.
+        </div>
+      )}
 
       {/* Lista */}
       {loading ? (
@@ -159,8 +179,9 @@ export default function DiscountCodesAdmin() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Modales */}
-      {isCreateOpen && (
+      {isCreateOpen && editionId && (
         <CreateDiscountCodeModal
+          editionId={editionId}
           onClose={() => setIsCreateOpen(false)}
           onSuccess={() => { setIsCreateOpen(false); load(); }}
         />

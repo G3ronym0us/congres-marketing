@@ -2,6 +2,7 @@
 
 export interface DiscountCode {
   id: number;
+  edition: number;
   code: string;
   discountPercentage: string;
   maxUses: number;
@@ -13,6 +14,7 @@ export interface DiscountCode {
 }
 
 export interface CreateDiscountCodeInput {
+  edition: number;
   code: string;
   discountPercentage: number;
   maxUses: number;
@@ -29,6 +31,7 @@ export interface UpdateDiscountCodeInput {
 
 export interface ValidateDiscountCodeInput {
   code: string;
+  edition?: number;
 }
 
 export interface ValidateDiscountCodeResponse {

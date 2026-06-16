@@ -17,6 +17,8 @@ import {
   update,
   uploadImage,
 } from '@/services/user';
+import { Edition } from '@/types/edition';
+import EditionSelect from '@/components/admin/EditionSelect';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -41,7 +43,15 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
-const LecturersTable = () => {
+const LecturersTable = ({
+  editionId,
+  editions = [],
+  onEditionChange,
+}: {
+  editionId?: number;
+  editions?: Edition[];
+  onEditionChange?: (id: number) => void;
+}) => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [data, setData] = React.useState<Lecturer[]>([]);
@@ -52,12 +62,11 @@ const LecturersTable = () => {
   const [lecturerEdit, setLecturerEdit] = React.useState<Lecturer | null>(null);
   const [typeFilter, setTypeFilter] = React.useState<'all' | 'INTERNATIONAL' | 'NATIONAL'>('all');
   const [showFilter, setShowFilter] = React.useState<'all' | 'visible' | 'hidden'>('all');
-  const [editionFilter, setEditionFilter] = React.useState<number | undefined>(undefined);
 
   const itemsPerPage = 10;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  React.useEffect(() => { getLecturers(); }, [editionFilter]);
+  React.useEffect(() => { getLecturers(); }, [editionId]);
 
   React.useEffect(() => {
     let filtered = data;
@@ -79,9 +88,10 @@ const LecturersTable = () => {
   }, [data, searchTerm, typeFilter, showFilter]);
 
   const getLecturers = async () => {
+    if (!editionId) { setData([]); setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      setData(await getAll(editionFilter));
+      setData(await getAll(editionId));
     } catch {
       Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al cargar conferencistas', showConfirmButton: false, timer: 1500 });
     } finally {
@@ -120,7 +130,7 @@ const LecturersTable = () => {
   const handleCreate = async (lecturer: CreateLecturerData): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true);
     try {
-      const response = await create(lecturer);
+      const response = await create({ ...lecturer, edition: editionId });
       if (response instanceof Error) {
         Swal.fire({ icon: 'error', title: 'Error', text: response.message });
         return { success: false, message: response.message };
@@ -183,9 +193,12 @@ const LecturersTable = () => {
             {intl} internacionales · {natl} nacionales · {vis} visibles
           </p>
         </div>
-        <button onClick={() => setIsOpen(true)} className="adm-btn neon">
-          + Nuevo conferencista
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <EditionSelect editions={editions} editionId={editionId} onChange={onEditionChange} />
+          <button onClick={() => setIsOpen(true)} className="adm-btn neon" disabled={!editionId}>
+            + Nuevo conferencista
+          </button>
+        </div>
       </div>
 
       {/* ── Filtros ── */}
@@ -225,22 +238,6 @@ const LecturersTable = () => {
           <option value="all">Todos</option>
           <option value="visible">Visibles</option>
           <option value="hidden">Ocultos</option>
-        </select>
-
-        {/* Edición */}
-        <select
-          value={editionFilter ?? ''}
-          onChange={e => setEditionFilter(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-          style={{ ...inputStyle, width: 'auto', flex: '0 1 150px', cursor: 'pointer' }}
-          title="Filtrar por edición"
-        >
-          <option value="">Edición actual</option>
-          {Array.from(
-            { length: new Date().getFullYear() - 2025 + 2 },
-            (_, i) => 2025 + i,
-          ).map(year => (
-            <option key={year} value={year}>{year}</option>
-          ))}
         </select>
       </div>
 

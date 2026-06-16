@@ -42,6 +42,7 @@ type CartAction =
     }
   | { type: 'APPLY_DISCOUNT'; payload: { discount: AppliedDiscount } }
   | { type: 'REMOVE_DISCOUNT' }
+  | { type: 'SET_EDITION'; payload: { editionId: number; editionSlug: string } }
   | { type: 'RESTORE_CART'; payload: CartState }
   | { type: 'CLEAR_CART' };
 
@@ -50,6 +51,8 @@ const initialState: CartState = {
   items: [],
   total: 0,
   appliedDiscount: null,
+  editionId: null,
+  editionSlug: null,
 };
 
 // Clave para almacenar el carrito en localStorage
@@ -268,6 +271,17 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return newState;
     }
 
+    case 'SET_EDITION': {
+      const { editionId, editionSlug } = action.payload;
+      // Si el carrito pertenece a otra edición, se vacía para no mezclar localidades.
+      const sameEdition = state.editionId === editionId;
+      const newState: CartState = sameEdition
+        ? { ...state, editionId, editionSlug }
+        : { ...initialState, editionId, editionSlug };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
     case 'RESTORE_CART': {
       return action.payload;
     }
@@ -298,6 +312,7 @@ interface CartContextType {
   updateAttendee: (ticketId: string, attendee: AttendeeData) => void;
   applyDiscount: (discount: AppliedDiscount) => void;
   removeDiscount: () => void;
+  setEdition: (editionId: number, editionSlug: string) => void;
   clearCart: () => void;
 }
 
@@ -362,6 +377,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     dispatch({ type: 'REMOVE_DISCOUNT' });
   };
 
+  const setEdition = (editionId: number, editionSlug: string) => {
+    dispatch({ type: 'SET_EDITION', payload: { editionId, editionSlug } });
+  };
+
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
   };
@@ -377,6 +396,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         updateAttendee,
         applyDiscount,
         removeDiscount,
+        setEdition,
         clearCart,
       }}
     >

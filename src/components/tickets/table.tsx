@@ -21,6 +21,7 @@ import {
 } from '@/types/tickets';
 import TicketModal from './Modals/CreateTicket';
 import EditTicketModal from './Modals/EditTicket';
+import { Edition } from '@/types/edition';
 
 /* ── helpers ── */
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -87,7 +88,15 @@ const s16 = { width: 14, height: 14 };
 
 /* ══════════════════════════════════════════════════ */
 
-const TicketsTable = () => {
+const TicketsTable = ({
+  editionId,
+  editions = [],
+  onEditionChange,
+}: {
+  editionId?: number;
+  editions?: Edition[];
+  onEditionChange?: (id: number) => void;
+}) => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [data, setData] = React.useState<Ticket[]>([]);
@@ -97,7 +106,8 @@ const TicketsTable = () => {
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
 
-  const [edition, setEdition] = React.useState<number | undefined>(undefined);
+  // La edición a visualizar la decide el selector global del dashboard
+  const edition = editionId;
 
   const [filters] = React.useState<FilterGetTicketsInput>({
     status: [TicketStatus.PAID, TicketStatus.RESERVED],
@@ -315,24 +325,24 @@ const TicketsTable = () => {
         </div>
 
         {/* Edition filter */}
-        <select
-          className="adm-btn"
-          value={edition ?? ''}
-          onChange={e => {
-            setEdition(e.target.value ? parseInt(e.target.value, 10) : undefined);
-            goToPage(1);
-          }}
-          style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
-          title="Filtrar por edición"
-        >
-          <option value="" style={{ color: '#000' }}>Edición actual</option>
-          {Array.from(
-            { length: new Date().getFullYear() - 2025 + 2 },
-            (_, i) => 2025 + i,
-          ).map(year => (
-            <option key={year} value={year} style={{ color: '#000' }}>{year}</option>
-          ))}
-        </select>
+        {editions.length > 0 && (
+          <select
+            className="adm-btn"
+            value={editionId ?? ''}
+            onChange={e => {
+              onEditionChange?.(parseInt(e.target.value, 10));
+              goToPage(1);
+            }}
+            style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+            title="Filtrar por edición"
+          >
+            {editions.map(ed => (
+              <option key={ed.id} value={ed.id} style={{ color: '#000' }}>
+                {ed.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Count */}
         <span style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, color: 'var(--mute-2)', whiteSpace: 'nowrap' }}>

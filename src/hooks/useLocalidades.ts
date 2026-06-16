@@ -11,13 +11,21 @@ import { getLocalidadTypes } from '@/services/localidadTypes';
  * Los estilos visuales (color/border) no existen en la API, así que se
  * heredan del registro estático con el mismo slug.
  */
-export const useLocalidades = () => {
+export const useLocalidades = (edition?: number) => {
   const [localidades, setLocalidades] =
     useState<Record<string, LocalidadDetalle>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getLocalidadTypes()
+    // Sin edición no llamamos a la API (evita mezclar localidades de varias ediciones);
+    // mostramos el fallback estático hasta que se resuelva la edición.
+    if (!edition) {
+      setLocalidades(localidadesData);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getLocalidadTypes(edition)
       .then(types => {
         if (!Array.isArray(types) || types.length === 0) {
           setLocalidades(localidadesData);
@@ -48,7 +56,7 @@ export const useLocalidades = () => {
         setLocalidades(localidadesData);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [edition]);
 
   return { localidades, loading };
 };

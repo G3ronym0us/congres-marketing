@@ -8,6 +8,8 @@ import {
   deleteLocalidadType,
 } from '@/services/localidadTypes';
 import { LocalidadType, CreateLocalidadTypeInput } from '@/types/localidadTypes';
+import { Edition } from '@/types/edition';
+import EditionSelect from '@/components/admin/EditionSelect';
 import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
@@ -26,7 +28,7 @@ const fmt = (n: number) =>
     : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
 const EMPTY: CreateLocalidadTypeInput = {
-  slug: '', name: '', price: 0, icon: '🎫',
+  edition: 0, slug: '', name: '', price: 0, icon: '🎫',
   features: [], withMemories: false, active: true, pushable: true, sortOrder: 0,
 };
 
@@ -304,7 +306,15 @@ function LocalidadModal({
 }
 
 /* ── main component ── */
-export default function LocalidadesAdmin() {
+export default function LocalidadesAdmin({
+  editionId,
+  editions = [],
+  onEditionChange,
+}: {
+  editionId?: number;
+  editions?: Edition[];
+  onEditionChange?: (id: number) => void;
+}) {
   const [items, setItems] = useState<LocalidadType[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<(CreateLocalidadTypeInput & { id?: number }) | null>(null);
@@ -318,11 +328,12 @@ export default function LocalidadesAdmin() {
   };
 
   const load = async () => {
+    if (!editionId) { setItems([]); setLoading(false); return; }
     setLoading(true);
-    try { setItems(await getLocalidadTypes()); } finally { setLoading(false); }
+    try { setItems(await getLocalidadTypes(editionId)); } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [editionId]);
 
   const handleSave = async (data: CreateLocalidadTypeInput & { id?: number }) => {
     if (data.id) {
@@ -330,7 +341,7 @@ export default function LocalidadesAdmin() {
       await updateLocalidadType(id, rest);
       showToast('Localidad actualizada');
     } else {
-      await createLocalidadType(data);
+      await createLocalidadType({ ...data, edition: editionId! });
       showToast('Localidad creada');
     }
     setModal(null);
@@ -362,10 +373,19 @@ export default function LocalidadesAdmin() {
             Tipos de entrada disponibles en el evento
           </p>
         </div>
-        <button onClick={() => setModal({ ...EMPTY })} className="adm-btn neon">
-          + Nueva localidad
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <EditionSelect editions={editions} editionId={editionId} onChange={onEditionChange} />
+          <button onClick={() => setModal({ ...EMPTY, edition: editionId ?? 0 })} className="adm-btn neon" disabled={!editionId}>
+            + Nueva localidad
+          </button>
+        </div>
       </div>
+
+      {!editionId && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          Selecciona una edición para gestionar sus localidades.
+        </div>
+      )}
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
@@ -426,7 +446,7 @@ export default function LocalidadesAdmin() {
                 </button>
                 <button
                   onClick={() => setModal({
-                    id: item.id,
+                    id: item.id, edition: item.edition,
                     slug: item.slug, name: item.name, price: item.price,
                     icon: item.icon, features: item.features, withMemories: item.withMemories,
                     active: item.active, pushable: item.pushable, sortOrder: item.sortOrder,

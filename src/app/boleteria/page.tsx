@@ -7,6 +7,8 @@ import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import { useCart } from '@/context/CartContext';
 import { TicketType } from '@/types/tickets';
+import { Edition } from '@/types/edition';
+import { getPublicEditions, getEditionBySlug } from '@/services/editions';
 import '../landing.css';
 
 const FEATURED = TicketType.DIAMOND;
@@ -27,9 +29,12 @@ const precio = (n: number) =>
 export default function BoleteriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addItem } = useCart();
+  const { addItem, setEdition } = useCart();
   const [scrolled, setScrolled] = useState(false);
-  const { localidades, loading } = useLocalidades();
+  const [edition, setEditionData] = useState<Edition | null>(null);
+  const [editionLoading, setEditionLoading] = useState(true);
+  const { localidades, loading: localidadesLoading } = useLocalidades(edition?.id);
+  const loading = editionLoading || localidadesLoading;
 
   const [localidad, setLocalidad] = useState<string>(FEATURED);
   const [cantidad, setCantidad] = useState(1);
@@ -44,6 +49,30 @@ export default function BoleteriaPage() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Resolver la edición: por slug en la URL (?ed=...) o la primera abierta a ventas
+  useEffect(() => {
+    let cancelled = false;
+    const resolveEdition = async () => {
+      setEditionLoading(true);
+      const slug = searchParams?.get('ed');
+      let ed: Edition | null = null;
+      if (slug) {
+        ed = await getEditionBySlug(slug);
+      }
+      if (!ed) {
+        const list = await getPublicEditions();
+        ed = list.find(e => e.salesOpen) ?? list[0] ?? null;
+      }
+      if (cancelled) return;
+      setEditionData(ed);
+      if (ed) setEdition(ed.id, ed.slug);
+      setEditionLoading(false);
+    };
+    resolveEdition();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Preselección por URL (?localidad=slug)
   useEffect(() => {
@@ -68,7 +97,12 @@ export default function BoleteriaPage() {
   const total = detalles ? (detalles.price + (memoriasExtra ? precioMemorias : 0)) * cantidad : 0;
 
   const handleAgregar = () => {
-    if (!detalles) return;
+    if (!detalles || !edition) return;
+    if (!edition.salesOpen) {
+      alert('Esta edición aún no está abierta para compras.');
+      return;
+    }
+    setEdition(edition.id, edition.slug);
     addItem(
       localidad as TicketType,
       cantidad,
@@ -101,13 +135,18 @@ export default function BoleteriaPage() {
         {/* ── HEADER ── */}
         <section className="wrap" style={{ paddingBottom: 0 }}>
           <div style={{ maxWidth: 880, marginBottom: 28 }}>
-            <span className="eyebrow">Boletería · Colombia · 28–29 Ago 2026</span>
+            <span className="eyebrow">
+              Boletería · {edition ? `${edition.city ?? edition.country}${edition.display?.dateShort ? ` · ${edition.display.dateShort}` : ''}` : '…'}
+            </span>
             <h1 className="h-sec" style={{ marginTop: 12, fontSize: 'clamp(30px,4vw,48px)' }}>
               Elige tu lugar <span style={{ color: 'var(--neon)' }}>en el congreso.</span>
             </h1>
             <p className="lead" style={{ marginTop: 10, fontSize: 15 }}>
               Cupos limitados por localidad. Boletería independiente por ciudad — esta
-              página corresponde a <strong style={{ color: '#fff' }}>Colombia 2026</strong>.
+              página corresponde a <strong style={{ color: '#fff' }}>{edition?.name ?? 'esta edición'}</strong>.
+              {edition && !edition.salesOpen && (
+                <span style={{ color: 'var(--neon)' }}> · Ventas próximamente.</span>
+              )}
             </p>
           </div>
         </section>

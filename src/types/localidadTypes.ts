@@ -1,5 +1,6 @@
 export interface LocalidadType {
   id: number;
+  edition: number;
   slug: string;
   name: string;
   price: number;
@@ -14,6 +15,7 @@ export interface LocalidadType {
 }
 
 export interface CreateLocalidadTypeInput {
+  edition: number;
   slug: string;
   name: string;
   price: number;

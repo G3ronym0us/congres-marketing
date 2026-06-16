@@ -65,6 +65,7 @@ export interface CreateLecturerData {
   publications?: CreatePublication[];
   createdMethodologies?: string[];
   show: boolean;
+  edition?: number;
 }
 
 export interface CreateSocialMedia {

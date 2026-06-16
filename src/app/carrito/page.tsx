@@ -20,8 +20,10 @@ import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
 import { AttendeeData, TicketType } from '@/types/tickets';
-import { discountCodeService, discountUtils } from '@/services/discountCode';
+import { discountUtils } from '@/services/discountCode';
 import { AppliedDiscount } from '@/types/discountCode';
+import { Edition } from '@/types/edition';
+import { getEditionBySlug } from '@/services/editions';
 import DiscountCodeInput from '@/components/tickets/DiscountCodeInput';
 import Script from 'next/script';
 import axios from 'axios';
@@ -36,8 +38,8 @@ interface DescuentoEtapa {
   etiqueta: string;
 }
 
-// Definir las etapas de descuento según la imagen
-const etapasDescuento: DescuentoEtapa[] = [
+// Etapas de descuento por defecto (legado) si la edición no define las suyas
+const etapasDescuentoDefault: DescuentoEtapa[] = [
   {
     fechaInicio: new Date('2025-04-27'),
     fechaFin: new Date('2025-05-04'),
@@ -82,7 +84,8 @@ export default function Carrito() {
     applyDiscount,
     removeDiscount,
   } = useCart();
-  const { localidades } = useLocalidades();
+  const { localidades } = useLocalidades(state.editionId ?? undefined);
+  const [edition, setEditionData] = useState<Edition | null>(null);
   const [total, setTotal] = useState(0);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -103,6 +106,27 @@ export default function Carrito() {
   const [totalConDescuento, setTotalConDescuento] = useState(0);
   const [montoDescuento, setMontoDescuento] = useState(0);
 
+  // Etapas de descuento por fecha: las de la edición si existen, si no las de legado
+  const etapasDescuento: DescuentoEtapa[] =
+    edition?.discountStages && edition.discountStages.length > 0
+      ? edition.discountStages.map((e) => ({
+          fechaInicio: new Date(e.fechaInicio),
+          fechaFin: new Date(e.fechaFin),
+          porcentaje: e.porcentaje,
+          etiqueta: e.etiqueta,
+        }))
+      : etapasDescuentoDefault;
+
+  // Cargar la edición del carrito (para etapas de descuento y validaciones)
+  useEffect(() => {
+    if (!state.editionSlug) { setEditionData(null); return; }
+    let cancelled = false;
+    getEditionBySlug(state.editionSlug).then((ed) => {
+      if (!cancelled) setEditionData(ed);
+    });
+    return () => { cancelled = true; };
+  }, [state.editionSlug]);
+
   // Determinar el descuento aplicable según la fecha actual
   useEffect(() => {
     const hoy = new Date();
@@ -110,7 +134,8 @@ export default function Carrito() {
       (etapa) => hoy >= etapa.fechaInicio && hoy <= etapa.fechaFin,
     );
     setDescuentoActual(descuentoEncontrado || null);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edition]);
 
   // Calcular total con descuentos cuando cambia el total o los descuentos
   useEffect(() => {
@@ -324,6 +349,11 @@ export default function Carrito() {
   const handleProcederPago = async () => {
     if (!isAllDataComplete) return;
 
+    if (!state.editionId) {
+      alert('No se pudo determinar la edición del carrito. Vuelve a la boletería.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -353,6 +383,7 @@ export default function Carrito() {
         `${process.env.NEXT_PUBLIC_API_URL}payments`,
         {
           reference: reference,
+          editionId: state.editionId,
           amountInCents: amountInCents,
           discountCode: state.appliedDiscount?.code || null,
           tickets: state.items.flatMap((item) => {
@@ -891,6 +922,7 @@ export default function Carrito() {
                       onDiscountRemoved={handleDiscountRemoved}
                       appliedDiscount={state.appliedDiscount}
                       disabled={loading}
+                      editionId={state.editionId ?? undefined}
                     />
                   </div>
 

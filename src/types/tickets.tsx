@@ -189,4 +189,7 @@ export interface CartState {
   items: CartItem[];
   total: number;
   appliedDiscount?: { code: string; percentage: number } | null;
+  // Edición a la que pertenece el carrito (no se mezclan localidades de ediciones distintas)
+  editionId?: number | null;
+  editionSlug?: string | null;
 }

@@ -4,6 +4,8 @@ import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getInternationalWithTitle, getNationalWithTitle } from '@/services/user';
 import { getActiveTestimonials } from '@/services/testimonials';
+import { getPublicEditions } from '@/services/editions';
+import { Edition } from '@/types/edition';
 import { Lecturer } from '@/types/lecturer';
 import { Testimonial } from '@/types/testimonials';
 import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
@@ -115,6 +117,13 @@ const CITIES: Record<CityId, CityData> = {
 
 const ORDER: CityId[] = ['col', 'rd', 'mx'];
 
+// Mapeo de la ciudad de la landing al slug de su edición en el backend
+const CITY_SLUG: Record<CityId, string> = {
+  col: 'colombia-2026',
+  rd: 'santo-domingo-2026',
+  mx: 'mexico-2027',
+};
+
 const AUDIENCE = [
   { ix: '01', text: 'Eres candidato a una elección y necesitas una narrativa ganadora.' },
   { ix: '02', text: 'Eres consultor, estratega o jefe de campaña y quieres estar al nivel de los grandes.' },
@@ -135,12 +144,16 @@ export default function LandingPage() {
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const { localidades, loading: localidadesLoading } = useLocalidades();
+  const [editionsBySlug, setEditionsBySlug] = useState<Record<string, Edition>>({});
+
+  const activeEdition = editionsBySlug[CITY_SLUG[activeCity]] ?? null;
+  const { localidades, loading: localidadesLoading } = useLocalidades(activeEdition?.id);
 
   const cdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
 
   const city = CITIES[activeCity];
+  const ventasAbiertas = !!activeEdition?.salesOpen;
   const sw = swapOut ? 'swap out' : 'swap';
   const year = new Date().getFullYear();
 
@@ -182,17 +195,32 @@ export default function LandingPage() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  // Fetch lecturers and testimonials from API
+  // Cargar ediciones públicas (para resolver la edición de cada ciudad)
   useEffect(() => {
-    Promise.all([
-      getInternationalWithTitle(),
-      getNationalWithTitle(),
-      getActiveTestimonials(),
-    ]).then(([intl, natl, tsts]) => {
-      setLecturers([...intl, ...natl].filter(l => l.show));
-      setTestimonials(tsts);
-    }).catch(console.error);
+    getPublicEditions()
+      .then(list => {
+        const map: Record<string, Edition> = {};
+        list.forEach(e => { map[e.slug] = e; });
+        setEditionsBySlug(map);
+      })
+      .catch(console.error);
   }, []);
+
+  // Testimonios (globales)
+  useEffect(() => {
+    getActiveTestimonials().then(setTestimonials).catch(console.error);
+  }, []);
+
+  // Conferencistas de la edición activa (se recargan al cambiar de ciudad)
+  useEffect(() => {
+    const editionId = activeEdition?.id;
+    Promise.all([
+      getInternationalWithTitle(editionId),
+      getNationalWithTitle(editionId),
+    ]).then(([intl, natl]) => {
+      setLecturers([...intl, ...natl].filter(l => l.show));
+    }).catch(console.error);
+  }, [activeEdition?.id]);
 
   // Reveal observer — runs after every render to pick up newly mounted elements
   useEffect(() => {
@@ -549,7 +577,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {city.id === 'col' ? (
+            {ventasAbiertas ? (
               <div className={`tk-grid ${sw}`}>
                 {localidadesLoading
                   ? Array.from({ length: 3 }).map((_, i) => (
@@ -580,7 +608,7 @@ export default function LandingPage() {
                         {t.features.map((f, j) => <li key={j}>{f}</li>)}
                         {t.withMemories && <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>}
                       </ul>
-                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?localidad=${type}`}>
+                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?ed=${CITY_SLUG[activeCity]}&localidad=${type}`}>
                         Comprar <span className="arr">→</span>
                       </a>
                     </article>
@@ -600,7 +628,7 @@ export default function LandingPage() {
               </div>
             )}
 
-            {city.id === 'col' && (
+            {ventasAbiertas && (
               <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 16, textAlign: 'center' }}>
                 Add-on opcional: <strong style={{ color: '#fff' }}>Memorias del evento</strong> — COP {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()} · disponible al momento de la compra.
               </p>
@@ -668,7 +696,7 @@ export default function LandingPage() {
               <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
               <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad, boletería independiente.</p>
               <div className="btns">
-                <a className="btn btn-neon" href="/boleteria">Inscríbete ahora <span className="arr">→</span></a>
+                <a className="btn btn-neon" href={`/boleteria?ed=${CITY_SLUG[activeCity]}`}>Inscríbete ahora <span className="arr">→</span></a>
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">Portafolio de patrocinio</a>
               </div>
             </div>

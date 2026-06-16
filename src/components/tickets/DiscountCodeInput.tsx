@@ -9,6 +9,7 @@ interface DiscountCodeInputProps {
   onDiscountRemoved: () => void;
   appliedDiscount?: { code: string; percentage: number } | null;
   disabled?: boolean;
+  editionId?: number;
 }
 
 export default function DiscountCodeInput({
@@ -16,6 +17,7 @@ export default function DiscountCodeInput({
   onDiscountRemoved,
   appliedDiscount,
   disabled = false,
+  editionId,
 }: DiscountCodeInputProps) {
   const [code, setCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -33,6 +35,7 @@ export default function DiscountCodeInput({
     try {
       const response: ValidateDiscountCodeResponse = await discountCodeService.validateCode({
         code: code.trim(),
+        edition: editionId,
       });
 
       if (response.isValid && response.discountPercentage) {
