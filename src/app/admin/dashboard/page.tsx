@@ -49,7 +49,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 const TYPE_ICONS: Record<string, string> = {
-  diamond: '💎', vip: '🟣', general: '🔵',
+  diamond: '💎', gold: '🥇', silver: '🥈', vip: '🟣', general: '🔵',
   streaming: '🌐', allied: '🤝', staff: '👥', journalist: '🎤',
 };
 

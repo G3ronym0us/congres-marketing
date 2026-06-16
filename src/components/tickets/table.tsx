@@ -26,6 +26,8 @@ import { Edition } from '@/types/edition';
 /* ── helpers ── */
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   diamond:    { bg: 'rgba(4,238,98,.12)',   color: '#04EE62' },
+  gold:       { bg: 'rgba(224,165,38,.15)', color: '#e0a526' },
+  silver:     { bg: 'rgba(156,163,175,.15)',color: '#cbd5e1' },
   vip:        { bg: 'rgba(168,85,247,.15)', color: '#c084fc' },
   general:    { bg: 'rgba(59,130,246,.15)', color: '#60a5fa' },
   streaming:  { bg: 'rgba(6,182,212,.15)',  color: '#22d3ee' },
@@ -34,7 +36,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   journalist: { bg: 'rgba(250,204,21,.12)', color: '#fbbf24' },
 };
 const TYPE_ICONS: Record<string, string> = {
-  diamond: '💎', vip: '🟣', general: '🔵',
+  diamond: '💎', gold: '🥇', silver: '🥈', vip: '🟣', general: '🔵',
   streaming: '🌐', allied: '🤝', staff: '👥', journalist: '🎤',
 };
 

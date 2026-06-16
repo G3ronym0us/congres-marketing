@@ -4,6 +4,9 @@ import { SelectedAddOn } from '@/types/addOn';
 
 export enum TicketType {
   DIAMOND = 'diamond',
+  GOLD = 'gold',
+  SILVER = 'silver',
+  // Slugs legados (ediciones antiguas); se conservan por compatibilidad
   VIP = 'vip',
   GENERAL = 'general',
   STREAMING = 'streaming',
@@ -67,8 +70,10 @@ export interface SeatRows {
 
 export const ticketTypeColors = {
   [TicketType.DIAMOND]: '#0000FF', // Azul fuerte para Diamante
-  [TicketType.VIP]: '#FF1493', // Rosa fuerte para VIP
-  [TicketType.GENERAL]: '#FFA500', // Naranja-rojo para General
+  [TicketType.GOLD]: '#E0A526', // Dorado para Oro
+  [TicketType.SILVER]: '#9CA3AF', // Plateado para Plata
+  [TicketType.VIP]: '#FF1493', // Rosa fuerte para VIP (legado)
+  [TicketType.GENERAL]: '#FFA500', // Naranja para General (legado)
 };
 
 export interface SeatUsed {
@@ -122,6 +127,8 @@ export interface AdminEditTicketInput {
 
 export const traductions = {
   [TicketType.DIAMOND]: 'DIAMANTE',
+  [TicketType.GOLD]: 'ORO',
+  [TicketType.SILVER]: 'PLATA',
   [TicketType.VIP]: 'VIP',
   [TicketType.GENERAL]: 'GENERAL',
   [TicketType.STREAMING]: 'STREAMING',
