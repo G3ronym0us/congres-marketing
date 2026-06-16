@@ -13,7 +13,6 @@ import {
 } from '@/services/tickets';
 import {
   TicketStatus,
-  TicketType,
   FilterGetTicketsInput,
   AdminCreateTicketInput,
   AdminEditTicketInput,
@@ -22,6 +21,7 @@ import {
 import TicketModal from './Modals/CreateTicket';
 import EditTicketModal from './Modals/EditTicket';
 import { Edition } from '@/types/edition';
+import { getLocalidadTypes } from '@/services/localidadTypes';
 
 /* ── helpers ── */
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -40,7 +40,7 @@ const TYPE_ICONS: Record<string, string> = {
   streaming: '🌐', allied: '🤝', staff: '👥', journalist: '🎤',
 };
 
-function TypeBadge({ type }: { type: string }) {
+function TypeBadge({ type, icon, label }: { type: string; icon?: string; label?: string }) {
   const c = TYPE_COLORS[type] ?? { bg: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.6)' };
   return (
     <span style={{
@@ -51,7 +51,7 @@ function TypeBadge({ type }: { type: string }) {
       fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
       whiteSpace: 'nowrap',
     }}>
-      {TYPE_ICONS[type] ?? '🎫'} {type}
+      {icon ?? TYPE_ICONS[type] ?? '🎫'} {label ?? type}
     </span>
   );
 }
@@ -107,9 +107,23 @@ const TicketsTable = ({
   const [isExporting, setIsExporting] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
+  // Metadatos de localidades de la edición (icono/nombre por slug) — dinámico
+  const [localidadMeta, setLocalidadMeta] = React.useState<Record<string, { icon: string; name: string }>>({});
 
   // La edición a visualizar la decide el selector global del dashboard
   const edition = editionId;
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    if (!editionId) { setLocalidadMeta({}); return; }
+    getLocalidadTypes(editionId).then(types => {
+      const map: Record<string, { icon: string; name: string }> = {};
+      (Array.isArray(types) ? types : []).forEach(t => {
+        map[t.slug] = { icon: t.icon || '🎫', name: t.name };
+      });
+      setLocalidadMeta(map);
+    }).catch(() => setLocalidadMeta({}));
+  }, [editionId]);
 
   const [filters] = React.useState<FilterGetTicketsInput>({
     status: [TicketStatus.PAID, TicketStatus.RESERVED],
@@ -441,7 +455,7 @@ const TicketsTable = ({
 
                   {/* Localidad */}
                   <td style={{ padding: '12px 16px' }}>
-                    <TypeBadge type={item.type} />
+                    <TypeBadge type={item.type} icon={localidadMeta[item.type]?.icon} label={localidadMeta[item.type]?.name} />
                   </td>
 
                   {/* Acciones */}
@@ -474,7 +488,7 @@ const TicketsTable = ({
                       </div>
                     )}
                   </div>
-                  <TypeBadge type={item.type} />
+                  <TypeBadge type={item.type} icon={localidadMeta[item.type]?.icon} label={localidadMeta[item.type]?.name} />
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
                   {renderActions(item)}
@@ -524,10 +538,10 @@ const TicketsTable = ({
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {isOpen && (
-        <TicketModal isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={handleReserveTickets} />
+        <TicketModal isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={handleReserveTickets} editionId={editionId} />
       )}
       {isOpenEdit && ticketEdit && (
-        <EditTicketModal isOpen={isOpenEdit} onClose={() => setIsOpenEdit(false)} onSave={handleEditTicket} ticket={ticketEdit} />
+        <EditTicketModal isOpen={isOpenEdit} onClose={() => setIsOpenEdit(false)} onSave={handleEditTicket} ticket={ticketEdit} editionId={editionId} />
       )}
     </div>
   );

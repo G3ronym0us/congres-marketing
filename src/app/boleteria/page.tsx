@@ -11,7 +11,6 @@ import { Edition } from '@/types/edition';
 import { getPublicEditions, getEditionBySlug } from '@/services/editions';
 import '../landing.css';
 
-const FEATURED = TicketType.DIAMOND;
 const MAX_CANTIDAD = 10;
 
 const NOTES = [
@@ -36,10 +35,15 @@ export default function BoleteriaPage() {
   const { localidades, loading: localidadesLoading } = useLocalidades(edition?.id);
   const loading = editionLoading || localidadesLoading;
 
-  const [localidad, setLocalidad] = useState<string>(FEATURED);
+  const [localidad, setLocalidad] = useState<string>('');
   const [cantidad, setCantidad] = useState(1);
   // Ids de los add-ons opcionales seleccionados para esta localidad
   const [selectedOptional, setSelectedOptional] = useState<number[]>([]);
+
+  // Localidad destacada: la de mayor precio entre las comprables (dinámico)
+  const featuredSlug = Object.entries(localidades)
+    .filter(([key, t]) => key !== 'memorias' && t.pushable)
+    .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
 
   const detalles = localidades[localidad];
   const includedAddOns = (detalles?.addOns ?? []).filter(a => a.included);
@@ -82,13 +86,12 @@ export default function BoleteriaPage() {
     if (param) setLocalidad(param);
   }, [searchParams]);
 
-  // Si la localidad no existe en la API (slug viejo), usar la primera disponible
+  // Si la localidad no existe en la API (slug viejo o sin seleccionar), usar la destacada
   useEffect(() => {
     if (loading || localidades[localidad]) return;
-    const first = Object.entries(localidades).find(([, t]) => t.pushable)?.[0];
-    if (first) setLocalidad(first);
+    if (featuredSlug) setLocalidad(featuredSlug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, localidades, localidad]);
+  }, [loading, localidades, localidad, featuredSlug]);
 
   // Al cambiar de localidad se reinicia la selección de add-ons opcionales
   useEffect(() => {
@@ -209,7 +212,7 @@ export default function BoleteriaPage() {
                               <div className="bsel-info">
                                 <div className="nm">
                                   {t.name}
-                                  {type === FEATURED && <span className="tag">Más completo</span>}
+                                  {type === featuredSlug && <span className="tag">Más completo</span>}
                                 </div>
                                 {t.withMemories && <div className="sub">Incluye memorias del evento</div>}
                                 {type === TicketType.STREAMING && <div className="sub">Acceso virtual</div>}

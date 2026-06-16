@@ -19,6 +19,7 @@ import LocalidadesAdmin from '@/components/admin/LocalidadesAdmin';
 import AddOnsAdmin from '@/components/admin/addOns/AddOnsAdmin';
 import EditionsAdmin from '@/components/admin/editions/EditionsAdmin';
 import { adminEditionService } from '@/services/editions';
+import { getLocalidadTypes } from '@/services/localidadTypes';
 import { Edition } from '@/types/edition';
 import '../admin.css';
 
@@ -77,6 +78,8 @@ export default function Dashboard() {
   const [defaultEdition, setDefaultEdition] = useState<number | null>(null);
   const [viewEdition, setViewEdition] = useState<number | undefined>(undefined);
   const [isSwitchingEdition, setIsSwitchingEdition] = useState(false);
+  // Icono/nombre por slug de localidad de la edición vista (gráfico dinámico)
+  const [localidadMeta, setLocalidadMeta] = useState<Record<string, { icon: string; name: string }>>({});
 
   const auth = useContext(AuthContext);
   const router = useRouter();
@@ -148,6 +151,20 @@ export default function Dashboard() {
     loadEditions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthLoading, auth?.user]);
+
+  // Localidades de la edición vista (para íconos/nombres dinámicos del gráfico)
+  useEffect(() => {
+    if (!viewEdition) { setLocalidadMeta({}); return; }
+    getLocalidadTypes(viewEdition)
+      .then(types => {
+        const map: Record<string, { icon: string; name: string }> = {};
+        (Array.isArray(types) ? types : []).forEach(t => {
+          map[t.slug] = { icon: t.icon || '🎫', name: t.name };
+        });
+        setLocalidadMeta(map);
+      })
+      .catch(() => setLocalidadMeta({}));
+  }, [viewEdition]);
 
   const handleLogout = () => { auth?.logout(); router.push('/admin/auth'); };
 
@@ -319,7 +336,7 @@ export default function Dashboard() {
                           <div key={t.type} className="adm-bar-item">
                             <div className="adm-bar-meta">
                               <span className="adm-bar-name">
-                                {TYPE_ICONS[t.type] ?? '🎫'} {t.type}
+                                {localidadMeta[t.type]?.icon ?? TYPE_ICONS[t.type] ?? '🎫'} {localidadMeta[t.type]?.name ?? t.type}
                               </span>
                               <span className="adm-bar-nums">
                                 {t.paid} pag · {t.reserved} res · {t.total} total

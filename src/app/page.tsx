@@ -11,7 +11,6 @@ import { Testimonial } from '@/types/testimonials';
 import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
-import { TicketType } from '@/types/tickets';
 import './landing.css';
 
 type CityId = 'col' | 'rd' | 'mx';
@@ -154,6 +153,10 @@ export default function LandingPage() {
 
   const city = CITIES[activeCity];
   const ventasAbiertas = !!activeEdition?.salesOpen;
+  // Localidad destacada: la de mayor precio entre las comprables (dinámico)
+  const featuredSlug = Object.entries(localidades)
+    .filter(([key, t]) => key !== 'memorias' && t.pushable)
+    .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
   const sw = swapOut ? 'swap out' : 'swap';
   const year = new Date().getFullYear();
 
@@ -595,7 +598,7 @@ export default function LandingPage() {
                   : Object.entries(localidades)
                   .filter(([, t]) => t.pushable)
                   .map(([type, t]) => {
-                  const isFeat = type === TicketType.DIAMOND;
+                  const isFeat = type === featuredSlug;
                   return (
                     <article key={type} className={`tk${isFeat ? ' feat' : ''} reveal`}>
                       {isFeat && <span className="tk-feat-tag">Más vendido</span>}
