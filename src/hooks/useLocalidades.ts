@@ -47,6 +47,17 @@ export const useLocalidades = (edition?: number) => {
               color: base?.color ?? 'bg-white/10',
               border: base?.border ?? 'border-white/20',
               noPermiteMemorias: base?.noPermiteMemorias,
+              addOns: (t.addOns ?? [])
+                .filter(a => a.addOn?.active)
+                .map(a => ({
+                  id: a.addOn.id,
+                  slug: a.addOn.slug,
+                  name: a.addOn.name,
+                  price: a.addOn.price,
+                  icon: a.addOn.icon,
+                  description: a.addOn.description,
+                  included: a.included,
+                })),
             };
           });
         setLocalidades(merged);

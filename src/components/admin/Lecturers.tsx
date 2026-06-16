@@ -11,6 +11,7 @@ import {
 } from '@/types/lecturer';
 import {
   create,
+  copyLecturer,
   deleteLecturer as deleteLecturerService,
   getAll,
   toggleShow,
@@ -19,6 +20,7 @@ import {
 } from '@/services/user';
 import { Edition } from '@/types/edition';
 import EditionSelect from '@/components/admin/EditionSelect';
+import ModalShell from '@/components/admin/ModalShell';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -43,6 +45,111 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+/* ── Modal: copiar conferencistas desde otra edición ── */
+function CopyFromEditionModal({
+  editions,
+  currentEditionId,
+  onClose,
+  onCopied,
+}: {
+  editions: Edition[];
+  currentEditionId?: number;
+  onClose: () => void;
+  onCopied: () => void;
+}) {
+  const sources = editions.filter((e) => e.id !== currentEditionId);
+  const [sourceId, setSourceId] = React.useState<number | undefined>(sources[0]?.id);
+  const [list, setList] = React.useState<Lecturer[]>([]);
+  const [loadingList, setLoadingList] = React.useState(false);
+  const [copyingId, setCopyingId] = React.useState<number | null>(null);
+  const [copiedIds, setCopiedIds] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    if (!sourceId) { setList([]); return; }
+    setLoadingList(true);
+    getAll(sourceId)
+      .then(setList)
+      .catch(() => setList([]))
+      .finally(() => setLoadingList(false));
+  }, [sourceId]);
+
+  const handleCopy = async (l: Lecturer) => {
+    if (!currentEditionId) return;
+    setCopyingId(l.id);
+    try {
+      await copyLecturer(l.id, currentEditionId);
+      setCopiedIds((prev) => [...prev, l.id]);
+      onCopied();
+    } catch {
+      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al copiar', showConfirmButton: false, timer: 1500 });
+    } finally {
+      setCopyingId(null);
+    }
+  };
+
+  return (
+    <ModalShell onClose={onClose} maxWidth={560}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
+          Copiar conferencista de otra edición
+        </h3>
+        <button onClick={onClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE }}>✕</button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+        <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+          Edición origen
+        </label>
+        <select
+          value={sourceId ?? ''}
+          onChange={(e) => setSourceId(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+          style={{ ...inputStyle, cursor: 'pointer' }}
+        >
+          {sources.map((e) => (
+            <option key={e.id} value={e.id}>{e.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {loadingList ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+          <div style={{ width: 28, height: 28, border: `2px solid rgba(4,238,98,.2)`, borderTopColor: NEON, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : list.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px 0', color: MUTE, fontFamily: 'Space Grotesk, sans-serif' }}>
+          Esta edición no tiene conferencistas.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflowY: 'auto' }}>
+          {list.map((l) => {
+            const done = copiedIds.includes(l.id);
+            return (
+              <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: '10px 14px' }}>
+                <img src={l.image} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 14, color: '#fff' }}>{l.firstName} {l.lastName}</div>
+                  <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {[l.position, l.country].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleCopy(l)}
+                  disabled={copyingId === l.id || done}
+                  className={`adm-btn${done ? '' : ' neon'}`}
+                  style={{ fontSize: 11, padding: '6px 12px', flexShrink: 0 }}
+                >
+                  {done ? '✓ Copiado' : copyingId === l.id ? 'Copiando…' : 'Copiar'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </ModalShell>
+  );
+}
+
 const LecturersTable = ({
   editionId,
   editions = [],
@@ -57,6 +164,7 @@ const LecturersTable = ({
   const [data, setData] = React.useState<Lecturer[]>([]);
   const [filteredData, setFilteredData] = React.useState<Lecturer[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isCopyOpen, setIsCopyOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [lecturerEdit, setLecturerEdit] = React.useState<Lecturer | null>(null);
@@ -195,6 +303,9 @@ const LecturersTable = ({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <EditionSelect editions={editions} editionId={editionId} onChange={onEditionChange} />
+          <button onClick={() => setIsCopyOpen(true)} className="adm-btn" disabled={!editionId || editions.length < 2}>
+            Copiar de otra edición
+          </button>
           <button onClick={() => setIsOpen(true)} className="adm-btn neon" disabled={!editionId}>
             + Nuevo conferencista
           </button>
@@ -373,6 +484,14 @@ const LecturersTable = ({
           onClose={() => { setIsOpenEdit(false); setLecturerEdit(null); }}
           onSave={handleEdit}
           lecturer={lecturerEdit}
+        />
+      )}
+      {isCopyOpen && (
+        <CopyFromEditionModal
+          editions={editions}
+          currentEditionId={editionId}
+          onClose={() => setIsCopyOpen(false)}
+          onCopied={getLecturers}
         />
       )}
     </div>

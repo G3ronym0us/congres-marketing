@@ -16,7 +16,7 @@ import {
   faTags,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '@/context/CartContext';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
 import { AttendeeData, TicketType } from '@/types/tickets';
@@ -78,7 +78,7 @@ export default function Carrito() {
     state,
     removeItem,
     removeTicket,
-    toggleMemorias,
+    toggleAddOn,
     updateAttendee,
     clearCart,
     applyDiscount,
@@ -289,8 +289,12 @@ export default function Carrito() {
     removeTicket(ticketId);
   };
 
-  const handleToggleMemorias = (ticketId: string, incluirMemorias: boolean) => {
-    toggleMemorias(ticketId, !incluirMemorias);
+  const handleToggleAddOn = (
+    ticketId: string,
+    addOn: { id: number; slug: string; name: string; price: number },
+    on: boolean,
+  ) => {
+    toggleAddOn(ticketId, addOn, on);
   };
 
   const handleToggleSection = (localidad: string) => {
@@ -329,6 +333,7 @@ export default function Carrito() {
         icon: '🎫',
         withMemories: false,
         noPermiteMemorias: false,
+        addOns: [],
       }
     );
   };
@@ -339,7 +344,7 @@ export default function Carrito() {
     state.items.forEach((item) => {
       item.tickets.forEach((ticket) => {
         subtotal +=
-          ticket.price + (ticket.withMemories && ticket.type !== TicketType.DIAMOND ? ticket.priceMemories : 0);
+          ticket.price + ticket.addOns.reduce((s, a) => s + a.price, 0);
       });
     });
     return subtotal;
@@ -364,20 +369,6 @@ export default function Carrito() {
         throw new Error('No hay tickets en el carrito');
       }
 
-      const ticketsData = [];
-
-      state.items.forEach((item) => {
-        item.tickets.forEach((ticket) => {
-          ticketsData.push({
-            type: ticket.type,
-            withMemories: ticket.withMemories,
-            price: ticket.price,
-            priceMemories: ticket.priceMemories,
-            attendee: ticket.attendee,
-          });
-        });
-      });
-
       // 1. Crear tickets en el backend y obtener la firma de integridad
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}payments`,
@@ -389,9 +380,11 @@ export default function Carrito() {
           tickets: state.items.flatMap((item) => {
             return item.tickets.map((ticket) => ({
               type: ticket.type,
-              withMemories: ticket.withMemories,
+              withMemories: false,
               price: ticket.price,
-              priceMemories: ticket.priceMemories,
+              priceMemories: 0,
+              // Solo los add-ons opcionales (precio > 0); los incluidos los aplica el backend
+              addOns: ticket.addOns.filter((a) => a.price > 0).map((a) => a.id),
               attendee: ticket.attendee,
             }));
           }),
@@ -674,10 +667,10 @@ export default function Carrito() {
                                     return (
                                       total +
                                       ticket.price +
-                                      (ticket.withMemories &&
-                                      ticket.type !== TicketType.DIAMOND
-                                        ? ticket.priceMemories
-                                        : 0)
+                                      ticket.addOns.reduce(
+                                        (s, a) => s + a.price,
+                                        0,
+                                      )
                                     );
                                   }, 0),
                                 )}
@@ -741,45 +734,55 @@ export default function Carrito() {
 
                                   {/* Opciones del ticket individual */}
                                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                                    {!localidadDetails.withMemories &&
-                                      !localidadDetails.noPermiteMemorias && (
-                                        <div className="flex items-center">
-                                          <input
-                                            type="checkbox"
-                                            id={`memorias-${ticket.id}`}
-                                            checked={ticket.withMemories}
-                                            onChange={() =>
-                                              handleToggleMemorias(
-                                                ticket.id,
-                                                ticket.withMemories,
-                                              )
-                                            }
-                                            className="mr-2"
-                                          />
-                                          <label
-                                            htmlFor={`memorias-${ticket.id}`}
-                                            className="text-gray-300 text-sm cursor-pointer"
-                                          >
-                                            Incluir memorias (+
-                                            {formatoPrecio(PRECIO_MEMORIAS)})
-                                          </label>
-                                        </div>
-                                      )}
-
-                                    {localidadDetails.withMemories && (
-                                      <div className="text-green-400 text-sm">
-                                        Memorias incluidas
-                                      </div>
-                                    )}
+                                    <div className="flex flex-col gap-2">
+                                      {(localidadDetails.addOns ?? [])
+                                        .filter((a) => !a.included)
+                                        .map((a) => {
+                                          const on = ticket.addOns.some(
+                                            (x) => x.id === a.id,
+                                          );
+                                          return (
+                                            <div key={a.id} className="flex items-center">
+                                              <input
+                                                type="checkbox"
+                                                id={`addon-${a.id}-${ticket.id}`}
+                                                checked={on}
+                                                onChange={() =>
+                                                  handleToggleAddOn(
+                                                    ticket.id,
+                                                    { id: a.id, slug: a.slug, name: a.name, price: a.price },
+                                                    !on,
+                                                  )
+                                                }
+                                                className="mr-2"
+                                              />
+                                              <label
+                                                htmlFor={`addon-${a.id}-${ticket.id}`}
+                                                className="text-gray-300 text-sm cursor-pointer"
+                                              >
+                                                {a.icon ?? '➕'} {a.name} (+
+                                                {formatoPrecio(a.price)})
+                                              </label>
+                                            </div>
+                                          );
+                                        })}
+                                      {(localidadDetails.addOns ?? [])
+                                        .filter((a) => a.included)
+                                        .map((a) => (
+                                          <div key={a.id} className="text-green-400 text-sm">
+                                            ✓ {a.name} incluido
+                                          </div>
+                                        ))}
+                                    </div>
 
                                     <div className="flex items-center">
                                       <span className="text-white mr-4">
                                         {formatoPrecio(
                                           ticket.price +
-                                            (ticket.withMemories &&
-                                            ticket.type !== TicketType.DIAMOND
-                                              ? ticket.priceMemories
-                                              : 0),
+                                            ticket.addOns.reduce(
+                                              (s, a) => s + a.price,
+                                              0,
+                                            ),
                                         )}
                                       </span>
 
@@ -818,52 +821,32 @@ export default function Carrito() {
                           item.localidad,
                         );
 
-                        // Calcular precios con y sin memorias
-                        const ticketsConMemorias = item.tickets.filter(
-                          (t) => t.withMemories,
-                        );
-                        const ticketsSinMemorias = item.tickets.filter(
-                          (t) => !t.withMemories,
+                        // Total de add-ons (de pago) de este grupo de tickets
+                        const addOnsTotal = item.tickets.reduce(
+                          (sum, t) =>
+                            sum + t.addOns.reduce((s, a) => s + a.price, 0),
+                          0,
                         );
 
                         return (
                           <div key={`summary-${item.localidad}`}>
-                            {ticketsSinMemorias.length > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-300">
-                                  {ticketsSinMemorias.length} x{' '}
-                                  {localidadDetails.name}
-                                </span>
-                                <span className="text-white">
-                                  {formatoPrecio(
-                                    ticketsSinMemorias.reduce(
-                                      (sum, t) => sum + t.price,
-                                      0,
-                                    ),
-                                  )}
-                                </span>
-                              </div>
-                            )}
-
-                            {ticketsConMemorias.length > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-300">
-                                  {`${ticketsConMemorias.length} x ${localidadDetails.name} ${localidadDetails.withMemories ? '(Incluye memorias)' : '+ Memorias'}`}
-                                </span>
-                                <span className="text-white">
-                                  {formatoPrecio(
-                                    ticketsConMemorias.reduce(
-                                      (sum, t) =>
-                                        sum +
-                                        t.price +
-                                        (t.withMemories &&
-                                        t.type !== TicketType.DIAMOND
-                                          ? t.priceMemories
-                                          : 0),
-                                      0,
-                                    ),
-                                  )}
-                                </span>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-300">
+                                {item.tickets.length} x {localidadDetails.name}
+                              </span>
+                              <span className="text-white">
+                                {formatoPrecio(
+                                  item.tickets.reduce(
+                                    (sum, t) => sum + t.price,
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                            {addOnsTotal > 0 && (
+                              <div className="flex justify-between text-xs text-gray-400 pl-2">
+                                <span>+ Add-ons</span>
+                                <span>{formatoPrecio(addOnsTotal)}</span>
                               </div>
                             )}
                           </div>

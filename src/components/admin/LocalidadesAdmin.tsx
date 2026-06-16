@@ -9,6 +9,8 @@ import {
 } from '@/services/localidadTypes';
 import { LocalidadType, CreateLocalidadTypeInput } from '@/types/localidadTypes';
 import { Edition } from '@/types/edition';
+import { AddOn, LocalidadAddOnItem } from '@/types/addOn';
+import { getAddOns, adminAddOnService } from '@/services/addOns';
 import EditionSelect from '@/components/admin/EditionSelect';
 import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
@@ -161,20 +163,40 @@ function IconPicker({
 /* ── modal ── */
 function LocalidadModal({
   initial,
+  availableAddOns,
+  initialAddOns,
   onSave,
   onClose,
 }: {
   initial: CreateLocalidadTypeInput & { id?: number };
-  onSave: (data: CreateLocalidadTypeInput & { id?: number }) => Promise<void>;
+  availableAddOns: AddOn[];
+  initialAddOns: LocalidadAddOnItem[];
+  onSave: (
+    data: CreateLocalidadTypeInput & { id?: number },
+    addOnItems: LocalidadAddOnItem[],
+  ) => Promise<void>;
   onClose: () => void;
 }) {
   const [form, setForm] = useState<CreateLocalidadTypeInput & { id?: number }>(initial);
   const [featuresText, setFeaturesText] = useState((initial.features ?? []).join('\n'));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  // Selección de add-ons: id -> { offered, included }
+  const [addOnSel, setAddOnSel] = useState<Record<number, { offered: boolean; included: boolean }>>(
+    () => {
+      const map: Record<number, { offered: boolean; included: boolean }> = {};
+      initialAddOns.forEach(a => { map[a.addOnId] = { offered: true, included: a.included }; });
+      return map;
+    },
+  );
 
   const set = (k: keyof CreateLocalidadTypeInput, v: unknown) =>
     setForm(f => ({ ...f, [k]: v }));
+
+  const addOnItems = (): LocalidadAddOnItem[] =>
+    availableAddOns
+      .filter(a => addOnSel[a.id]?.offered)
+      .map(a => ({ addOnId: a.id, included: !!addOnSel[a.id]?.included }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,7 +207,7 @@ function LocalidadModal({
         .split('\n')
         .map(l => l.trim())
         .filter(Boolean);
-      await onSave({ ...form, features });
+      await onSave({ ...form, features }, addOnItems());
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setErr(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Error al guardar');
@@ -196,7 +218,8 @@ function LocalidadModal({
 
   const isDirty =
     JSON.stringify(form) !== JSON.stringify(initial) ||
-    featuresText !== (initial.features ?? []).join('\n');
+    featuresText !== (initial.features ?? []).join('\n') ||
+    JSON.stringify(addOnItems()) !== JSON.stringify(initialAddOns);
 
   const handleClose = async () => {
     if (isDirty && !(await confirmDiscard())) return;
@@ -288,6 +311,43 @@ function LocalidadModal({
             ))}
           </div>
 
+          {/* Add-ons que ofrece esta localidad */}
+          {availableAddOns.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE }}>
+                Add-ons que ofrece
+              </label>
+              {availableAddOns.map(a => {
+                const sel = addOnSel[a.id] ?? { offered: false, included: false };
+                return (
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: '8px 12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#fff', fontSize: 13, fontFamily: 'Space Grotesk, sans-serif', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={sel.offered}
+                        onChange={e => setAddOnSel(s => ({ ...s, [a.id]: { offered: e.target.checked, included: e.target.checked ? sel.included : false } }))}
+                        style={{ accentColor: NEON, width: 16, height: 16 }}
+                      />
+                      {a.icon ?? '➕'} {a.name}
+                      <span style={{ color: MUTE2 }}>{a.price === 0 ? 'Gratis' : fmt(a.price)}</span>
+                    </label>
+                    {sel.offered && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: sel.included ? NEON : MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
+                        <input
+                          type="checkbox"
+                          checked={sel.included}
+                          onChange={e => setAddOnSel(s => ({ ...s, [a.id]: { offered: true, included: e.target.checked } }))}
+                          style={{ accentColor: NEON, width: 14, height: 14 }}
+                        />
+                        Incluido (gratis)
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {err && <p style={{ color: '#ff6b6b', fontSize: 12, margin: 0 }}>{err}</p>}
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
@@ -316,8 +376,10 @@ export default function LocalidadesAdmin({
   onEditionChange?: (id: number) => void;
 }) {
   const [items, setItems] = useState<LocalidadType[]>([]);
+  const [availableAddOns, setAvailableAddOns] = useState<AddOn[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<(CreateLocalidadTypeInput & { id?: number }) | null>(null);
+  const [modalAddOns, setModalAddOns] = useState<LocalidadAddOnItem[]>([]);
   const [toast, setToast] = useState('');
   const toastRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -328,21 +390,38 @@ export default function LocalidadesAdmin({
   };
 
   const load = async () => {
-    if (!editionId) { setItems([]); setLoading(false); return; }
+    if (!editionId) { setItems([]); setAvailableAddOns([]); setLoading(false); return; }
     setLoading(true);
-    try { setItems(await getLocalidadTypes(editionId)); } finally { setLoading(false); }
+    try {
+      const [locs, addOns] = await Promise.all([
+        getLocalidadTypes(editionId),
+        getAddOns(editionId),
+      ]);
+      setItems(locs);
+      setAvailableAddOns(addOns.filter(a => a.active));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [editionId]);
 
-  const handleSave = async (data: CreateLocalidadTypeInput & { id?: number }) => {
+  const handleSave = async (
+    data: CreateLocalidadTypeInput & { id?: number },
+    addOnItems: LocalidadAddOnItem[],
+  ) => {
+    let localidadId = data.id;
     if (data.id) {
       const { id, ...rest } = data;
       await updateLocalidadType(id, rest);
       showToast('Localidad actualizada');
     } else {
-      await createLocalidadType({ ...data, edition: editionId! });
+      const created = await createLocalidadType({ ...data, edition: editionId! });
+      localidadId = created.id;
       showToast('Localidad creada');
+    }
+    if (localidadId) {
+      await adminAddOnService.setLocalidadAddOns(localidadId, addOnItems);
     }
     setModal(null);
     load();
@@ -375,7 +454,7 @@ export default function LocalidadesAdmin({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <EditionSelect editions={editions} editionId={editionId} onChange={onEditionChange} />
-          <button onClick={() => setModal({ ...EMPTY, edition: editionId ?? 0 })} className="adm-btn neon" disabled={!editionId}>
+          <button onClick={() => { setModalAddOns([]); setModal({ ...EMPTY, edition: editionId ?? 0 }); }} className="adm-btn neon" disabled={!editionId}>
             + Nueva localidad
           </button>
         </div>
@@ -445,12 +524,17 @@ export default function LocalidadesAdmin({
                   {item.active ? 'Desactivar' : 'Activar'}
                 </button>
                 <button
-                  onClick={() => setModal({
-                    id: item.id, edition: item.edition,
-                    slug: item.slug, name: item.name, price: item.price,
-                    icon: item.icon, features: item.features, withMemories: item.withMemories,
-                    active: item.active, pushable: item.pushable, sortOrder: item.sortOrder,
-                  })}
+                  onClick={() => {
+                    setModalAddOns(
+                      (item.addOns ?? []).map(a => ({ addOnId: a.addOn.id, included: a.included })),
+                    );
+                    setModal({
+                      id: item.id, edition: item.edition,
+                      slug: item.slug, name: item.name, price: item.price,
+                      icon: item.icon, features: item.features, withMemories: item.withMemories,
+                      active: item.active, pushable: item.pushable, sortOrder: item.sortOrder,
+                    });
+                  }}
                   className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}
                 >
                   Editar
@@ -471,7 +555,13 @@ export default function LocalidadesAdmin({
       )}
 
       {modal && (
-        <LocalidadModal initial={modal} onSave={handleSave} onClose={() => setModal(null)} />
+        <LocalidadModal
+          initial={modal}
+          availableAddOns={availableAddOns}
+          initialAddOns={modalAddOns}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
       )}
 
       {toast && (

@@ -1,3 +1,5 @@
+import { LocalidadAddOn } from '@/types/addOn';
+
 export interface LocalidadType {
   id: number;
   edition: number;
@@ -10,6 +12,7 @@ export interface LocalidadType {
   active: boolean;
   pushable: boolean;
   sortOrder: number;
+  addOns?: LocalidadAddOn[];
   createdAt: string;
   updatedAt: string;
 }

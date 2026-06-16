@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import { useCart } from '@/context/CartContext';
@@ -38,10 +38,12 @@ export default function BoleteriaPage() {
 
   const [localidad, setLocalidad] = useState<string>(FEATURED);
   const [cantidad, setCantidad] = useState(1);
-  const [incluirMemorias, setIncluirMemorias] = useState(false);
+  // Ids de los add-ons opcionales seleccionados para esta localidad
+  const [selectedOptional, setSelectedOptional] = useState<number[]>([]);
 
   const detalles = localidades[localidad];
-  const precioMemorias = localidades['memorias']?.price ?? PRECIO_MEMORIAS;
+  const includedAddOns = (detalles?.addOns ?? []).filter(a => a.included);
+  const optionalAddOns = (detalles?.addOns ?? []).filter(a => !a.included);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -88,13 +90,20 @@ export default function BoleteriaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, localidades, localidad]);
 
-  // Sincronizar memorias al cambiar de localidad (marcadas solo si vienen incluidas)
+  // Al cambiar de localidad se reinicia la selección de add-ons opcionales
   useEffect(() => {
-    if (detalles) setIncluirMemorias(!!detalles.withMemories);
-  }, [localidad, detalles?.withMemories]); // eslint-disable-line react-hooks/exhaustive-deps
+    setSelectedOptional([]);
+  }, [localidad]);
 
-  const memoriasExtra = incluirMemorias && !detalles?.withMemories && !detalles?.noPermiteMemorias;
-  const total = detalles ? (detalles.price + (memoriasExtra ? precioMemorias : 0)) * cantidad : 0;
+  const optionalTotal = optionalAddOns
+    .filter(a => selectedOptional.includes(a.id))
+    .reduce((s, a) => s + a.price, 0);
+  const total = detalles ? (detalles.price + optionalTotal) * cantidad : 0;
+
+  const toggleOptional = (id: number) =>
+    setSelectedOptional(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
+    );
 
   const handleAgregar = () => {
     if (!detalles || !edition) return;
@@ -103,13 +112,13 @@ export default function BoleteriaPage() {
       return;
     }
     setEdition(edition.id, edition.slug);
-    addItem(
-      localidad as TicketType,
-      cantidad,
-      incluirMemorias,
-      detalles.price,
-      precioMemorias,
-    );
+    const addOns = [
+      ...includedAddOns.map(a => ({ id: a.id, slug: a.slug, name: a.name, price: 0 })),
+      ...optionalAddOns
+        .filter(a => selectedOptional.includes(a.id))
+        .map(a => ({ id: a.id, slug: a.slug, name: a.name, price: a.price })),
+    ];
+    addItem(localidad as TicketType, cantidad, detalles.price, addOns);
     router.push('/carrito');
   };
 
@@ -238,31 +247,36 @@ export default function BoleteriaPage() {
                       <p className="qs-hint">Hasta {MAX_CANTIDAD} por compra.</p>
                     </div>
 
-                    {detalles && !detalles.withMemories && !detalles.noPermiteMemorias && (
-                      <div style={{ flex: 1, minWidth: 260 }}>
-                        <span className="qs-label">Add-on opcional</span>
-                        <div
-                          className={`qs-check${incluirMemorias ? ' on' : ''}`}
-                          onClick={() => setIncluirMemorias(v => !v)}
-                          role="checkbox"
-                          aria-checked={incluirMemorias}
-                        >
-                          <span className="box">{incluirMemorias ? '✓' : ''}</span>
-                          <span>
-                            <span className="tt">📀 Memorias del evento</span>
-                            <span className="dd" style={{ display: 'block' }}>
-                              Grabación completa de las conferencias y material exclusivo.
-                              Acceso digital permanente, por entrada.
-                            </span>
-                          </span>
-                          <span className="pp">COP {precio(precioMemorias)}</span>
-                        </div>
+                    {(optionalAddOns.length > 0 || includedAddOns.length > 0) && (
+                      <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {optionalAddOns.length > 0 && <span className="qs-label">Add-ons opcionales</span>}
+                        {optionalAddOns.map(a => {
+                          const on = selectedOptional.includes(a.id);
+                          return (
+                            <div
+                              key={a.id}
+                              className={`qs-check${on ? ' on' : ''}`}
+                              onClick={() => toggleOptional(a.id)}
+                              role="checkbox"
+                              aria-checked={on}
+                            >
+                              <span className="box">{on ? '✓' : ''}</span>
+                              <span>
+                                <span className="tt">{a.icon ?? '➕'} {a.name}</span>
+                                {a.description && (
+                                  <span className="dd" style={{ display: 'block' }}>{a.description}</span>
+                                )}
+                              </span>
+                              <span className="pp">COP {precio(a.price)}</span>
+                            </div>
+                          );
+                        })}
+                        {includedAddOns.map(a => (
+                          <p key={a.id} className="qs-included">
+                            ✓ Incluye: {a.name}
+                          </p>
+                        ))}
                       </div>
-                    )}
-                    {detalles?.withMemories && (
-                      <p className="qs-included" style={{ marginTop: 26 }}>
-                        ✓ Esta localidad incluye las memorias del evento
-                      </p>
                     )}
                   </div>
                 </div>
@@ -275,12 +289,14 @@ export default function BoleteriaPage() {
                       <span>{detalles?.name ?? 'Entrada'}</span>
                       <span className="v">COP {precio(detalles?.price ?? 0)}</span>
                     </div>
-                    {memoriasExtra && (
-                      <div className="row">
-                        <span>Memorias del evento</span>
-                        <span className="v">COP {precio(precioMemorias)}</span>
-                      </div>
-                    )}
+                    {optionalAddOns
+                      .filter(a => selectedOptional.includes(a.id))
+                      .map(a => (
+                        <div className="row" key={a.id}>
+                          <span>{a.name}</span>
+                          <span className="v">COP {precio(a.price)}</span>
+                        </div>
+                      ))}
                     <div className="row">
                       <span>Cantidad</span>
                       <span className="v">×{cantidad}</span>

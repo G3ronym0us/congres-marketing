@@ -115,6 +115,16 @@ export async function update(id: number, lecturer: UpdateLecturerData): Promise<
   return response;
 }
 
+export async function copyLecturer(
+  id: number,
+  editionId: number,
+): Promise<Lecturer> {
+  const response = await apiClient
+    .post(`/lecturers/${id}/copy`, { editionId })
+    .then((res) => res.data);
+  return response;
+}
+
 export async function deleteLecturer(id: number): Promise<void> {
   const response = await apiClient.delete(`/lecturers/${id}`).then((res) => res.data).catch((err) => {
     console.error('Error deleting lecturer:', err);

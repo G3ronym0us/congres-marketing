@@ -16,6 +16,7 @@ import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
 import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAdmin';
 import CertificatesAdmin from '@/components/admin/certificates/CertificatesAdmin';
 import LocalidadesAdmin from '@/components/admin/LocalidadesAdmin';
+import AddOnsAdmin from '@/components/admin/addOns/AddOnsAdmin';
 import EditionsAdmin from '@/components/admin/editions/EditionsAdmin';
 import { adminEditionService } from '@/services/editions';
 import { Edition } from '@/types/edition';
@@ -31,6 +32,7 @@ const MENU_ITEMS = [
   { id: 'discount-codes', label: 'Códigos de Descuento',icon: null },
   { id: 'certificates',   label: 'Certificados',        icon: null },
   { id: 'localidades',    label: 'Localidades',         icon: null },
+  { id: 'addons',         label: 'Add-ons',             icon: null },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -43,6 +45,7 @@ const PAGE_TITLES: Record<string, string> = {
   'discount-codes': 'Códigos de Descuento',
   certificates:   'Certificados',
   localidades:    'Localidades',
+  addons:         'Add-ons',
 };
 
 const TYPE_ICONS: Record<string, string> = {
@@ -372,6 +375,7 @@ export default function Dashboard() {
           {activeTab === 'discount-codes' && <DiscountCodesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
           {activeTab === 'certificates'   && <CertificatesAdmin />}
           {activeTab === 'localidades'    && <LocalidadesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
+          {activeTab === 'addons'         && <AddOnsAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
 
         </main>
       </div>

@@ -1,5 +1,7 @@
 // @/types/tickets.ts
 
+import { SelectedAddOn } from '@/types/addOn';
+
 export enum TicketType {
   DIAMOND = 'diamond',
   VIP = 'vip',
@@ -149,9 +151,8 @@ export interface AttendeeData {
 export interface CartTicket {
   id: string; // ID único por ticket
   type: TicketType; // El tipo de localidad
-  withMemories: boolean;
-  price: number;
-  priceMemories: number;
+  price: number; // precio de la localidad
+  addOns: SelectedAddOn[]; // complementos seleccionados para este ticket
   attendee: AttendeeData; // Cada ticket tiene UN asistente
 }
 export interface Ticket {
@@ -168,6 +169,16 @@ export interface Ticket {
   certificateUrl?: string; // URL del certificado (solo si está habilitado)
 }
 
+export interface LocalidadAddOnOption {
+  id: number;
+  slug: string;
+  name: string;
+  price: number;
+  icon?: string;
+  description?: string | null;
+  included: boolean;
+}
+
 export interface LocalidadDetalle {
   name: string;
   price: number;
@@ -178,6 +189,7 @@ export interface LocalidadDetalle {
   withMemories: boolean;
   pushable: boolean;
   noPermiteMemorias?: boolean;
+  addOns?: LocalidadAddOnOption[];
 }
 
 export interface CartItem {
