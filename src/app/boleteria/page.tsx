@@ -31,6 +31,7 @@ export default function BoleteriaPage() {
   const { addItem, setEdition } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [edition, setEditionData] = useState<Edition | null>(null);
+  const [allEditions, setAllEditions] = useState<Edition[]>([]);
   const [editionLoading, setEditionLoading] = useState(true);
   const { localidades, loading: localidadesLoading } = useLocalidades(edition?.id);
   const loading = editionLoading || localidadesLoading;
@@ -54,6 +55,11 @@ export default function BoleteriaPage() {
     window.addEventListener('scroll', onScroll);
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Lista de ediciones visibles (para el footer "La Gira", sin datos quemados)
+  useEffect(() => {
+    getPublicEditions().then(setAllEditions).catch(() => setAllEditions([]));
   }, []);
 
   // Resolver la edición: por slug en la URL (?ed=...) o la primera abierta a ventas
@@ -347,9 +353,9 @@ export default function BoleteriaPage() {
               </div>
               <div className="foot-col">
                 <h4>La Gira</h4>
-                <a href="/#tour">Colombia 2026</a>
-                <a href="/#tour">Santo Domingo 2026</a>
-                <a href="/#tour">Cd. de México 2027</a>
+                {allEditions.map(e => (
+                  <a key={e.id} href={`/boleteria?ed=${e.slug}`}>{e.city ?? e.country} {e.year}</a>
+                ))}
               </div>
               <div className="foot-col">
                 <h4>Evento</h4>
@@ -365,7 +371,7 @@ export default function BoleteriaPage() {
             </div>
             <div className="foot-bottom">
               <span>© {new Date().getFullYear()} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">3 CIUDADES · 3 PAÍSES · 1 COMUNIDAD</span>
+              <span className="mono">{allEditions.length} {allEditions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(allEditions.map(e => e.country)).size} {new Set(allEditions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
             </div>
           </div>
         </footer>

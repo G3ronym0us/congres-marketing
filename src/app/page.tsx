@@ -8,119 +8,47 @@ import { getPublicEditions } from '@/services/editions';
 import { Edition } from '@/types/edition';
 import { Lecturer } from '@/types/lecturer';
 import { Testimonial } from '@/types/testimonials';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import './landing.css';
 
-type CityId = 'col' | 'rd' | 'mx';
-
-interface Speaker { confirmed: boolean; role: string; }
-interface ScheduleRow { t: string; title: string; d: string; tag: string; }
-interface ScheduleDay { label: string; rows: ScheduleRow[]; }
-interface CityData {
-  id: CityId; leg: string; city: string; country: string; flag: string;
+interface CityView {
+  slug: string; leg: string; city: string; country: string; flag: string;
   venue: string; dateShort: string; dateLong: string; year: string;
   iso: string; status: string; statusType: string;
   stat: { a: string; b: string; c: string; d: string };
-  speakers: Speaker[]; days: ScheduleDay[];
+  speakers: { confirmed: boolean; role: string }[];
+  days: { label: string; rows: { t: string; title: string; d: string; tag: string }[] }[];
 }
 
-const CITIES: Record<CityId, CityData> = {
-  col: {
-    id: 'col', leg: 'Parada 01', city: 'Colombia', country: 'Colombia', flag: 'CO',
-    venue: 'Sede por confirmar', dateShort: '28–29 Ago 2026', dateLong: '28 y 29 de Agosto, 2026',
-    year: '2026', iso: '2026-08-28T09:00:00', status: 'Próxima parada', statusType: 'next',
-    stat: { a: '500', b: '12', c: '2', d: '7' },
-    speakers: [
-      { confirmed: true,  role: 'Estratega de campaña' },
-      { confirmed: true,  role: 'Consultor político internacional' },
-      { confirmed: true,  role: 'Directora de comunicación' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: true,  role: 'Analista de data electoral' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Día 01 · 28 Ago',
-        rows: [
-          { t: '08:00', title: 'Registro & acreditación', d: 'Apertura de puertas y networking de bienvenida', tag: 'Networking' },
-          { t: '09:30', title: 'Keynote de apertura', d: 'El nuevo mapa del poder en Latinoamérica', tag: 'Keynote' },
-          { t: '11:00', title: 'Narrativa que gana elecciones', d: 'Construcción de relato y posicionamiento de candidato', tag: 'Masterclass' },
-          { t: '13:00', title: 'Almuerzo & alianzas', d: 'Espacio de conexión con consultores y marcas', tag: 'Break' },
-          { t: '14:30', title: 'Data, IA y micro-segmentación', d: 'Cómo leer al votante en tiempo real', tag: 'Panel' },
-          { t: '16:30', title: 'Panel precandidatos', d: 'Conversación abierta con figuras de la contienda', tag: 'Panel' },
-        ],
-      },
-      {
-        label: 'Día 02 · 29 Ago',
-        rows: [
-          { t: '09:00', title: 'Guerra digital y redes', d: 'Estrategias de contenido y manejo de crisis', tag: 'Masterclass' },
-          { t: '11:00', title: 'Oratoria y debate', d: 'Entrenamiento de mensaje frente a cámara', tag: 'Taller' },
-          { t: '13:00', title: 'Almuerzo', d: '', tag: 'Break' },
-          { t: '14:30', title: 'Financiamiento y movilización', d: 'Del territorio a la urna', tag: 'Panel' },
-          { t: '16:30', title: 'Cierre & premiación', d: 'Reconocimientos y networking final', tag: 'Cierre' },
-        ],
-      },
-    ],
-  },
-
-  rd: {
-    id: 'rd', leg: 'Parada 02', city: 'Santo Domingo', country: 'República Dominicana', flag: 'RD',
-    venue: 'Sede por confirmar', dateShort: 'Nov 2026', dateLong: 'Noviembre, 2026',
-    year: '2026', iso: '2026-11-13T09:00:00', status: 'Próximamente', statusType: 'soon',
-    stat: { a: '400', b: '10', c: '2', d: '6' },
-    speakers: [
-      { confirmed: true,  role: 'Consultor regional Caribe' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Agenda por confirmar',
-        rows: [{ t: '—', title: 'Programación en construcción', d: 'La agenda de Santo Domingo se anunciará pronto', tag: 'Pronto' }],
-      },
-    ],
-  },
-
-  mx: {
-    id: 'mx', leg: 'Parada 03', city: 'Ciudad de México', country: 'México', flag: 'MX',
-    venue: 'Sede por confirmar', dateShort: 'Feb 2027', dateLong: 'Febrero, 2027',
-    year: '2027', iso: '2027-02-12T09:00:00', status: 'Próximamente', statusType: 'soon',
-    stat: { a: '600', b: '14', c: '2', d: '8' },
-    speakers: [
-      { confirmed: true,  role: 'Estratega electoral LATAM' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Agenda por confirmar',
-        rows: [{ t: '—', title: 'Programación en construcción', d: 'La agenda de Ciudad de México se anunciará pronto', tag: 'Pronto' }],
-      },
-    ],
-  },
+// Construye la vista de la landing a partir de una edición del backend (todo dinámico,
+// sin datos quemados: los campos de presentación viven en edition.display).
+const toCityView = (e: Edition): CityView => {
+  const d = e.display ?? {};
+  return {
+    slug: e.slug,
+    leg: d.leg ?? '',
+    city: e.city || e.country,
+    country: e.country,
+    flag: d.flag ?? '',
+    venue: e.venue ?? '',
+    dateShort: d.dateShort ?? '',
+    dateLong: d.dateLong ?? '',
+    year: String(e.year),
+    iso: e.eventStartDate ?? d.iso ?? '',
+    status: d.status ?? '',
+    statusType: d.statusType ?? 'soon',
+    stat: d.stat ?? { a: '', b: '', c: '', d: '' },
+    speakers: d.speakers ?? [],
+    days: d.days ?? [],
+  };
 };
 
-const ORDER: CityId[] = ['col', 'rd', 'mx'];
-
-// Mapeo de la ciudad de la landing al slug de su edición en el backend
-const CITY_SLUG: Record<CityId, string> = {
-  col: 'colombia-2026',
-  rd: 'santo-domingo-2026',
-  mx: 'mexico-2027',
+const EMPTY_VIEW: CityView = {
+  slug: '', leg: '', city: '', country: '', flag: '', venue: '',
+  dateShort: '', dateLong: '', year: '', iso: '', status: '', statusType: 'soon',
+  stat: { a: '', b: '', c: '', d: '' }, speakers: [], days: [],
 };
 
 const AUDIENCE = [
@@ -135,7 +63,7 @@ const AUDIENCE = [
 export default function LandingPage() {
   const router = useRouter();
 
-  const [activeCity, setActiveCity] = useState<CityId>('col');
+  const [activeSlug, setActiveSlug] = useState<string>('');
   const [activeDay, setActiveDay] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -143,22 +71,42 @@ export default function LandingPage() {
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [editionsBySlug, setEditionsBySlug] = useState<Record<string, Edition>>({});
+  // Ediciones visibles (ordenadas) — fuente única de la landing
+  const [editions, setEditions] = useState<Edition[]>([]);
 
-  const activeEdition = editionsBySlug[CITY_SLUG[activeCity]] ?? null;
+  const activeEdition =
+    editions.find(e => e.slug === activeSlug) ?? editions[0] ?? null;
   const { localidades, loading: localidadesLoading } = useLocalidades(activeEdition?.id);
 
   const cdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
 
-  const city = CITIES[activeCity];
+  // Vistas derivadas de las ediciones (nada hardcodeado)
+  const cityViews = editions.map(toCityView);
+  const city = activeEdition ? toCityView(activeEdition) : EMPTY_VIEW;
   const ventasAbiertas = !!activeEdition?.salesOpen;
   // Localidad destacada: la de mayor precio entre las comprables (dinámico)
   const featuredSlug = Object.entries(localidades)
     .filter(([key, t]) => key !== 'memorias' && t.pushable)
     .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
+  // Add-ons opcionales de la edición (distintos), derivados de las localidades
+  const optionalAddOns = Array.from(
+    new Map(
+      Object.values(localidades)
+        .flatMap(l => l.addOns ?? [])
+        .filter(a => !a.included)
+        .map(a => [a.id, a]),
+    ).values(),
+  );
   const sw = swapOut ? 'swap out' : 'swap';
   const year = new Date().getFullYear();
+  // Rango de años de la gira, derivado de las ediciones (sin hardcodear)
+  const giraYears = editions.map(e => e.year);
+  const yearRange = giraYears.length
+    ? Math.min(...giraYears) === Math.max(...giraYears)
+      ? `${Math.min(...giraYears)}`
+      : `${Math.min(...giraYears)} — ${Math.max(...giraYears)}`
+    : '';
 
   const startCountdown = useCallback((iso: string) => {
     if (cdRef.current) clearInterval(cdRef.current);
@@ -186,11 +134,11 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Countdown
+  // Countdown (usa la fecha real de la edición activa)
   useEffect(() => {
-    startCountdown(city.iso);
+    if (city.iso) startCountdown(city.iso);
     return () => { if (cdRef.current) clearInterval(cdRef.current); };
-  }, [activeCity, city.iso, startCountdown]);
+  }, [activeSlug, city.iso, startCountdown]);
 
   // Menu body overflow
   useEffect(() => {
@@ -198,13 +146,14 @@ export default function LandingPage() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  // Cargar ediciones públicas (para resolver la edición de cada ciudad)
+  // Cargar ediciones públicas (fuente única de la landing)
   useEffect(() => {
     getPublicEditions()
       .then(list => {
-        const map: Record<string, Edition> = {};
-        list.forEach(e => { map[e.slug] = e; });
-        setEditionsBySlug(map);
+        setEditions(list);
+        setActiveSlug(prev =>
+          prev || (list.find(e => e.salesOpen) ?? list[0])?.slug || '',
+        );
       })
       .catch(console.error);
   }, []);
@@ -253,11 +202,11 @@ export default function LandingPage() {
     return () => ob.disconnect();
   }, []);
 
-  const switchCity = (id: CityId) => {
-    if (id === activeCity) return;
+  const switchCity = (slug: string) => {
+    if (slug === activeSlug) return;
     setSwapOut(true);
     setTimeout(() => {
-      setActiveCity(id);
+      setActiveSlug(slug);
       setActiveDay(0);
       setSwapOut(false);
     }, 320);
@@ -321,13 +270,13 @@ export default function LandingPage() {
 
               {/* CITY SELECTOR */}
               <div className="city-tabs" role="tablist" aria-label="Selecciona ciudad">
-                {ORDER.map((id, i) => (
-                  <button key={id} className={`city-tab${activeCity === id ? ' active' : ''}`}
-                    data-city={id} role="tab" onClick={() => switchCity(id)}>
+                {cityViews.map((c, i) => (
+                  <button key={c.slug} className={`city-tab${activeSlug === c.slug ? ' active' : ''}`}
+                    data-city={c.slug} role="tab" onClick={() => switchCity(c.slug)}>
                     <span className="ct-dot" />
-                    <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {CITIES[id].flag}</div>
-                    <div className="ct-name">{CITIES[id].city}</div>
-                    <div className="ct-date">{CITIES[id].dateShort}</div>
+                    <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {c.flag}</div>
+                    <div className="ct-name">{c.city}</div>
+                    <div className="ct-date">{c.dateShort}</div>
                   </button>
                 ))}
               </div>
@@ -382,8 +331,8 @@ export default function LandingPage() {
             {/* lista duplicada: el loop infinito del CSS necesita dos copias */}
             {[0, 1].map(copy => (
               <Fragment key={copy}>
-                {ORDER.map(id => (
-                  <span key={id} className="it"><span className="star">✦</span> {CITIES[id].city} · {CITIES[id].dateShort}</span>
+                {cityViews.map(c => (
+                  <span key={c.slug} className="it"><span className="star">✦</span> {c.city} · {c.dateShort}</span>
                 ))}
                 <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
               </Fragment>
@@ -395,7 +344,7 @@ export default function LandingPage() {
         <section className="tour band" id="tour">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">La Gira 2026 — 2027</span>
+              <span className="eyebrow">La Gira {yearRange}</span>
               <h2 className="h-sec">Un mismo congreso,<br />tres capitales del poder.</h2>
               <p className="lead">Por primera vez, el CNMP se convierte en una gira internacional. Tres paradas, tres países, una sola comunidad que está redefiniendo cómo se hace política en la región.</p>
             </div>
@@ -403,10 +352,9 @@ export default function LandingPage() {
             <div className="route">
               <div className="route-line"><div className="fill" id="route-fill" /></div>
               <div className="route-stops">
-                {ORDER.map((id, i) => {
-                  const c = CITIES[id];
+                {cityViews.map((c, i) => {
                   return (
-                    <div key={id} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
+                    <div key={c.slug} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
                       <div className="node" />
                       <div className="stop-card">
                         <div className="leg">{c.leg}</div>
@@ -576,7 +524,7 @@ export default function LandingPage() {
               <p className={`tk-note ${sw}`}>
                 <span className="chip">Entradas independientes</span>
                 Precios para <strong style={{ color: '#fff', fontWeight: 600 }}>{city.city}</strong>
-                {city.id === 'col' ? ', en pesos colombianos (COP)' : ''}. Cada ciudad tiene su propia boletería.
+                , en pesos colombianos (COP). Cada ciudad tiene su propia boletería.
               </p>
             </div>
 
@@ -611,7 +559,7 @@ export default function LandingPage() {
                         {t.features.map((f, j) => <li key={j}>{f}</li>)}
                         {t.withMemories && <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>}
                       </ul>
-                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?ed=${CITY_SLUG[activeCity]}&localidad=${type}`}>
+                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?ed=${activeSlug}&localidad=${type}`}>
                         Comprar <span className="arr">→</span>
                       </a>
                     </article>
@@ -631,9 +579,17 @@ export default function LandingPage() {
               </div>
             )}
 
-            {ventasAbiertas && (
+            {ventasAbiertas && optionalAddOns.length > 0 && (
               <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 16, textAlign: 'center' }}>
-                Add-on opcional: <strong style={{ color: '#fff' }}>Memorias del evento</strong> — COP {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()} · disponible al momento de la compra.
+                Add-ons opcionales:{' '}
+                {optionalAddOns.map((a, i) => (
+                  <Fragment key={a.id}>
+                    {i > 0 && ' · '}
+                    <strong style={{ color: '#fff' }}>{a.name}</strong>{' '}
+                    (COP {formatoPrecio(a.price).replace('COP', '').replace('$', '').trim()})
+                  </Fragment>
+                ))}
+                {' '}· disponibles al momento de la compra.
               </p>
             )}
           </div>
@@ -699,7 +655,7 @@ export default function LandingPage() {
               <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
               <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad, boletería independiente.</p>
               <div className="btns">
-                <a className="btn btn-neon" href={`/boleteria?ed=${CITY_SLUG[activeCity]}`}>Inscríbete ahora <span className="arr">→</span></a>
+                <a className="btn btn-neon" href={`/boleteria?ed=${activeSlug}`}>Inscríbete ahora <span className="arr">→</span></a>
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">Portafolio de patrocinio</a>
               </div>
             </div>
@@ -716,9 +672,9 @@ export default function LandingPage() {
               </div>
               <div className="foot-col">
                 <h4>La Gira</h4>
-                <a href="#tour">Colombia 2026</a>
-                <a href="#tour">Santo Domingo 2026</a>
-                <a href="#tour">Cd. de México 2027</a>
+                {cityViews.map(c => (
+                  <a key={c.slug} href={`/boleteria?ed=${c.slug}`}>{c.city} {c.year}</a>
+                ))}
               </div>
               <div className="foot-col">
                 <h4>Evento</h4>
@@ -736,7 +692,7 @@ export default function LandingPage() {
             </div>
             <div className="foot-bottom">
               <span>© {year} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">3 CIUDADES · 3 PAÍSES · 1 COMUNIDAD</span>
+              <span className="mono">{editions.length} {editions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(editions.map(e => e.country)).size} {new Set(editions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
             </div>
           </div>
         </footer>
