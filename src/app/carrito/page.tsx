@@ -25,6 +25,8 @@ import { AppliedDiscount } from '@/types/discountCode';
 import { Edition } from '@/types/edition';
 import { getEditionBySlug } from '@/services/editions';
 import DiscountCodeInput from '@/components/tickets/DiscountCodeInput';
+import EditionBanner from '@/components/tickets/EditionBanner';
+import ConfirmPurchaseModal from '@/components/tickets/ConfirmPurchaseModal';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
@@ -91,6 +93,11 @@ export default function Carrito() {
     Record<string, boolean>
   >({});
   const [isAllDataComplete, setIsAllDataComplete] = useState(false);
+  // Modal de confirmación de edición antes de iniciar el pago
+  const [showConfirm, setShowConfirm] = useState(false);
+  // Nombre de la edición comprada (para la pantalla de éxito, donde el carrito
+  // ya se limpió y el objeto `edition` queda en null)
+  const [purchasedEditionName, setPurchasedEditionName] = useState<string | null>(null);
 
   // Estados adicionales para Wompi
   const [wompiReady, setWompiReady] = useState(false);
@@ -213,6 +220,7 @@ export default function Carrito() {
     const statusUpper = status.toUpperCase();
     switch (statusUpper) {
       case 'APPROVED':
+        setPurchasedEditionName(edition?.name ?? null);
         clearCart();
         setEnviado(true);
         setErrorMessage(undefined);
@@ -350,6 +358,18 @@ export default function Carrito() {
     return subtotal;
   };
 
+  // Abre el modal de confirmación de edición antes de iniciar el pago
+  const handleSolicitarPago = () => {
+    if (!isAllDataComplete || loading) return;
+    setShowConfirm(true);
+  };
+
+  // Confirmada la edición, se procede con el pago real
+  const handleConfirmarPago = () => {
+    setShowConfirm(false);
+    handleProcederPago();
+  };
+
   // Nueva función para iniciar el proceso de pago con Wompi
   const handleProcederPago = async () => {
     if (!isAllDataComplete) return;
@@ -420,6 +440,7 @@ export default function Carrito() {
               result.transaction.status === 'APPROVED'
             ) {
               // Limpiar el carrito y mostrar confirmación
+              setPurchasedEditionName(edition?.name ?? null);
               clearCart();
               setEnviado(true);
               setErrorMessage(undefined); // Limpiar cualquier mensaje de error previo
@@ -497,6 +518,7 @@ export default function Carrito() {
       // Manejar diferentes estados
       switch (transaction.status) {
         case 'APPROVED':
+          setPurchasedEditionName(transaction.editionName ?? edition?.name ?? null);
           clearCart();
           setEnviado(true);
           setErrorMessage(undefined);
@@ -546,6 +568,11 @@ export default function Carrito() {
         strategy="afterInteractive"
       />
 
+      {/* Recordatorio persistente de la edición que se está comprando */}
+      {!enviado && state.items.length > 0 && (
+        <EditionBanner edition={edition} onChange={handleVolver} />
+      )}
+
       <div className="min-h-screen bg-gradient-to-r from-[#0f1424] to-[#1a0a12] py-12 px-4">
         <div className="container mx-auto max-w-4xl">
           <button
@@ -574,6 +601,15 @@ export default function Carrito() {
                 Hemos enviado un correo con los detalles de tu compra y las
                 instrucciones para acceder al evento.
               </p>
+
+              {purchasedEditionName && (
+                <p className="text-gray-300 mb-3">
+                  Edición:{' '}
+                  <span className="text-white font-medium">
+                    {purchasedEditionName}
+                  </span>
+                </p>
+              )}
 
               <p className="text-gray-300 mb-6">
                 Número de referencia:{' '}
@@ -1032,7 +1068,7 @@ export default function Carrito() {
                     </button>
 
                     <button
-                      onClick={handleProcederPago}
+                      onClick={handleSolicitarPago}
                       disabled={!isAllDataComplete || loading}
                       className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg transition-opacity ${!isAllDataComplete || loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
                     >
@@ -1057,6 +1093,20 @@ export default function Carrito() {
           )}
         </div>
       </div>
+
+      <ConfirmPurchaseModal
+        open={showConfirm}
+        edition={edition}
+        items={state.items.map((item) => ({
+          name: getLocalidadDetails(item.localidad).name,
+          qty: item.tickets.length,
+        }))}
+        totalLabel={formatoPrecio(totalConDescuento)}
+        loading={loading}
+        onConfirm={handleConfirmarPago}
+        onClose={() => setShowConfirm(false)}
+        onChangeEdition={handleVolver}
+      />
     </>
   );
 }

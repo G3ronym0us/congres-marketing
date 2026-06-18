@@ -138,6 +138,20 @@ export default function BoleteriaPage() {
       {/* NAVBAR */}
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/"><img className="logo" src="/logo-principal.png" alt="CNMP 2026" /></a>
+        {edition && (
+          <span
+            title={`Estás comprando para ${edition.name}`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 100,
+              border: '1px solid var(--line)', background: 'rgba(255,255,255,.05)',
+              fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap',
+              maxWidth: '50vw', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}
+          >
+            🎟 <span style={{ color: 'var(--neon)' }}>{edition.city ?? edition.country}</span> {edition.year}
+          </span>
+        )}
         <div className="nav-links">
           <a href="/#tour">La Gira</a>
           <a href="/#speakers">Speakers</a>
