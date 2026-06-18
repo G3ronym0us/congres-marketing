@@ -1276,6 +1276,16 @@ section { position: relative; }
 }
 .soon-toast-cta:hover { border-color: var(--neon); background: rgba(255, 255, 255, .05); }
 
+/* En mobile el toast va arriba (debajo del nav) para no chocar con el botón flotante de WhatsApp */
+@media (max-width: 600px) {
+  .soon-toast {
+    bottom: auto; top: 72px;
+    width: calc(100vw - 24px); max-width: none;
+    transform: translateX(-50%) translateY(-24px);
+  }
+  .soon-toast.show { transform: translateX(-50%) translateY(0); }
+}
+
 /* Pill "Pronto" en el footer La Gira */
 .foot-col a .soon-pill {
   margin-left: 8px; font-size: 10px; font-weight: 700;
