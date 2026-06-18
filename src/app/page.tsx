@@ -11,6 +11,7 @@ import { Testimonial } from '@/types/testimonials';
 import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
+import { formatEditionDateLong, formatEditionDateShort } from '@/utils/editionFormat';
 import './landing.css';
 
 interface CityView {
@@ -33,8 +34,10 @@ const toCityView = (e: Edition): CityView => {
     country: e.country,
     flag: d.flag ?? '',
     venue: e.venue ?? '',
-    dateShort: d.dateShort ?? '',
-    dateLong: d.dateLong ?? '',
+    // Textos derivados de las fechas del evento (fuente única); si no hay fechas,
+    // se cae al texto de presentación legacy (display.dateShort/dateLong).
+    dateShort: formatEditionDateShort(e) || d.dateShort || '',
+    dateLong: formatEditionDateLong(e) || d.dateLong || '',
     year: String(e.year),
     iso: d.iso ?? e.eventStartDate ?? '',
     status: d.status ?? '',

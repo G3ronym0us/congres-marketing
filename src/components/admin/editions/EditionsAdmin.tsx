@@ -40,6 +40,9 @@ const toLocalInput = (s?: string | null): string => {
 const toIso = (s?: string): string | undefined =>
   !s ? undefined : s.length === 16 ? `${s}:00` : s;
 
+// timestamp/fecha del backend -> valor para <input type="date"> ("YYYY-MM-DD")
+const toDateInput = (s?: string | null): string => (s ? String(s).slice(0, 10) : '');
+
 const inputStyle: React.CSSProperties = {
   background: INK, color: '#fff', border: `1px solid ${LINE2}`,
   borderRadius: 10, padding: '10px 14px',
@@ -49,8 +52,10 @@ const inputStyle: React.CSSProperties = {
 
 type FormState = CreateEditionInput & {
   id?: number;
-  // Fecha/hora del evento para el countdown (se guarda en display.iso)
+  // Fecha y hora de inicio (alimenta countdown y todos los textos de fecha)
   iso?: string;
+  // Fecha de finalización, solo fecha (opcional) -> eventEndDate
+  endDate?: string;
   sourceEditionId?: number;
   cloneLocalidades?: boolean;
   cloneLecturers?: boolean;
@@ -149,11 +154,21 @@ function EditionModal({
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {field('Fecha y hora del evento (alimenta el countdown)',
-            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="datetime-local" value={form.iso ?? ''}
+          {field('Fecha y hora de inicio *',
+            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="datetime-local" required value={form.iso ?? ''}
               onChange={e => set('iso', e.target.value)} />
           )}
+          {field('Fecha de finalización (opcional)',
+            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="date" value={form.endDate ?? ''}
+              min={toDateInput(form.iso)}
+              onChange={e => set('endDate', e.target.value)} />
+          )}
         </div>
+        <p style={{ margin: '-8px 0 0', fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+          La fecha de inicio alimenta el countdown y todos los textos de fecha de la web
+          (hero, La Gira, pestañas). El texto se genera solo: 1 día → “28 de Agosto, 2026”,
+          2 días → “28 y 29 de Agosto, 2026”, +2 → “del 28 al 31 de Agosto, 2026”.
+        </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {field('Estado',
@@ -326,8 +341,9 @@ export default function EditionsAdmin({
                   onClick={() => setModal({ mode: 'edit', data: {
                     id: e.id, slug: e.slug, name: e.name, year: e.year, country: e.country,
                     city: e.city ?? '', venue: e.venue ?? '',
-                    // Fecha/hora del countdown: display.iso (sin drift de zona) o eventStartDate
+                    // Fecha/hora de inicio: display.iso (sin drift de zona) o eventStartDate
                     iso: toLocalInput(e.display?.iso ?? e.eventStartDate),
+                    endDate: toDateInput(e.eventEndDate),
                     display: e.display ?? undefined,
                     status: e.status, salesOpen: e.salesOpen, visible: e.visible, sortOrder: e.sortOrder,
                   } })}
@@ -374,7 +390,7 @@ export default function EditionsAdmin({
 // espeja a eventStartDate para reportes.
 function stripFormMeta(data: FormState): CreateEditionInput {
   const {
-    id, iso, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
+    id, iso, endDate, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
     display, eventStartDate, eventEndDate, ...rest
   } = data as FormState;
   const isoIso = toIso(iso);
@@ -382,5 +398,7 @@ function stripFormMeta(data: FormState): CreateEditionInput {
     ...rest,
     display: { ...(display ?? {}), ...(isoIso ? { iso: isoIso } : {}) },
     eventStartDate: isoIso,
+    // Solo fecha; null para limpiarla si se quita en edición.
+    eventEndDate: endDate ? endDate : null,
   };
 }

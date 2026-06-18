@@ -53,7 +53,7 @@ export interface CreateEditionInput {
   city?: string;
   venue?: string;
   eventStartDate?: string;
-  eventEndDate?: string;
+  eventEndDate?: string | null;
   status?: EditionStatus;
   salesOpen?: boolean;
   visible?: boolean;
