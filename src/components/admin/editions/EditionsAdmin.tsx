@@ -28,6 +28,18 @@ const slugify = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+// ISO/iso del backend -> valor para <input type="datetime-local"> ("YYYY-MM-DDTHH:mm")
+const toLocalInput = (s?: string | null): string => {
+  if (!s) return '';
+  if (s.includes('T')) return s.slice(0, 16);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T09:00`;
+  return s.slice(0, 16);
+};
+
+// valor del input -> ISO v\u00e1lido para el backend (asegura segundos)
+const toIso = (s?: string): string | undefined =>
+  !s ? undefined : s.length === 16 ? `${s}:00` : s;
+
 const inputStyle: React.CSSProperties = {
   background: INK, color: '#fff', border: `1px solid ${LINE2}`,
   borderRadius: 10, padding: '10px 14px',
@@ -37,6 +49,8 @@ const inputStyle: React.CSSProperties = {
 
 type FormState = CreateEditionInput & {
   id?: number;
+  // Fecha/hora del evento para el countdown (se guarda en display.iso)
+  iso?: string;
   sourceEditionId?: number;
   cloneLocalidades?: boolean;
   cloneLecturers?: boolean;
@@ -135,13 +149,9 @@ function EditionModal({
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {field('Inicio del evento',
-            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="date" value={form.eventStartDate ?? ''}
-              onChange={e => set('eventStartDate', e.target.value)} />
-          )}
-          {field('Fin del evento',
-            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="date" value={form.eventEndDate ?? ''}
-              onChange={e => set('eventEndDate', e.target.value)} />
+          {field('Fecha y hora del evento (alimenta el countdown)',
+            <input style={{ ...inputStyle, colorScheme: 'dark' }} type="datetime-local" value={form.iso ?? ''}
+              onChange={e => set('iso', e.target.value)} />
           )}
         </div>
 
@@ -316,8 +326,9 @@ export default function EditionsAdmin({
                   onClick={() => setModal({ mode: 'edit', data: {
                     id: e.id, slug: e.slug, name: e.name, year: e.year, country: e.country,
                     city: e.city ?? '', venue: e.venue ?? '',
-                    eventStartDate: e.eventStartDate?.slice(0, 10) ?? '',
-                    eventEndDate: e.eventEndDate?.slice(0, 10) ?? '',
+                    // Fecha/hora del countdown: display.iso (sin drift de zona) o eventStartDate
+                    iso: toLocalInput(e.display?.iso ?? e.eventStartDate),
+                    display: e.display ?? undefined,
                     status: e.status, salesOpen: e.salesOpen, visible: e.visible, sortOrder: e.sortOrder,
                   } })}
                   className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}
@@ -358,15 +369,18 @@ export default function EditionsAdmin({
   );
 }
 
-// Quita los campos auxiliares del formulario antes de mandar al backend
+// Quita los campos auxiliares del formulario antes de mandar al backend.
+// La fecha/hora del countdown se guarda en display.iso (sin drift de zona) y se
+// espeja a eventStartDate para reportes.
 function stripFormMeta(data: FormState): CreateEditionInput {
   const {
-    id, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
-    eventStartDate, eventEndDate, ...rest
-  } = data as FormState & { mode_edit?: boolean };
+    id, iso, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
+    display, eventStartDate, eventEndDate, ...rest
+  } = data as FormState;
+  const isoIso = toIso(iso);
   return {
     ...rest,
-    eventStartDate: eventStartDate || undefined,
-    eventEndDate: eventEndDate || undefined,
+    display: { ...(display ?? {}), ...(isoIso ? { iso: isoIso } : {}) },
+    eventStartDate: isoIso,
   };
 }

@@ -36,7 +36,7 @@ const toCityView = (e: Edition): CityView => {
     dateShort: d.dateShort ?? '',
     dateLong: d.dateLong ?? '',
     year: String(e.year),
-    iso: e.eventStartDate ?? d.iso ?? '',
+    iso: d.iso ?? e.eventStartDate ?? '',
     status: d.status ?? '',
     statusType: d.statusType ?? 'soon',
     stat: d.stat ?? { a: '', b: '', c: '', d: '' },

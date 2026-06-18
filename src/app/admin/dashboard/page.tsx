@@ -56,8 +56,8 @@ const TYPE_ICONS: Record<string, string> = {
 
 // Fecha de referencia de una edición (para ordenar por más reciente)
 const editionDate = (e: Edition): number => {
-  if (e.eventStartDate) return new Date(e.eventStartDate).getTime();
   if (e.display?.iso) return new Date(e.display.iso).getTime();
+  if (e.eventStartDate) return new Date(e.eventStartDate).getTime();
   return new Date(e.year, 0, 1).getTime();
 };
 
@@ -86,10 +86,10 @@ export default function Dashboard() {
   const { metrics, loading: metricsLoading, refetch } = useMetrics(viewEdition);
 
   const selectedEdition = editions.find(e => e.id === viewEdition);
-  const eventDate = selectedEdition?.eventStartDate
-    ? new Date(selectedEdition.eventStartDate)
-    : selectedEdition?.display?.iso
-      ? new Date(selectedEdition.display.iso)
+  const eventDate = selectedEdition?.display?.iso
+    ? new Date(selectedEdition.display.iso)
+    : selectedEdition?.eventStartDate
+      ? new Date(selectedEdition.eventStartDate)
       : null;
   const daysLeft = eventDate
     ? Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86400000))
