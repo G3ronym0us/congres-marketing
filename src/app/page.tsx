@@ -73,6 +73,10 @@ export default function LandingPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   // Ediciones visibles (ordenadas) — fuente única de la landing
   const [editions, setEditions] = useState<Edition[]>([]);
+  // Estados de carga para mostrar skeletons mientras llegan los datos
+  const [editionsLoading, setEditionsLoading] = useState(true);
+  const [lecturersLoading, setLecturersLoading] = useState(true);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
 
   const activeEdition =
     editions.find(e => e.slug === activeSlug) ?? editions[0] ?? null;
@@ -155,23 +159,29 @@ export default function LandingPage() {
           prev || (list.find(e => e.salesOpen) ?? list[0])?.slug || '',
         );
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setEditionsLoading(false));
   }, []);
 
   // Testimonios (globales)
   useEffect(() => {
-    getActiveTestimonials().then(setTestimonials).catch(console.error);
+    getActiveTestimonials()
+      .then(setTestimonials)
+      .catch(console.error)
+      .finally(() => setTestimonialsLoading(false));
   }, []);
 
   // Conferencistas de la edición activa (se recargan al cambiar de ciudad)
   useEffect(() => {
     const editionId = activeEdition?.id;
+    setLecturersLoading(true);
     Promise.all([
       getInternationalWithTitle(editionId),
       getNationalWithTitle(editionId),
     ]).then(([intl, natl]) => {
       setLecturers([...intl, ...natl].filter(l => l.show));
-    }).catch(console.error);
+    }).catch(console.error)
+      .finally(() => setLecturersLoading(false));
   }, [activeEdition?.id]);
 
   // Reveal observer — runs after every render to pick up newly mounted elements
@@ -214,6 +224,48 @@ export default function LandingPage() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  // Aviso amigable cuando se intenta comprar en una edición sin ventas activas
+  const [soon, setSoon] = useState(false);
+  const soonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerSoon = (el?: HTMLElement | null) => {
+    setSoon(true);
+    // Re-dispara la animación de "shake" en el botón pulsado
+    if (el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+    if (soonTimerRef.current) clearTimeout(soonTimerRef.current);
+    soonTimerRef.current = setTimeout(() => setSoon(false), 4200);
+  };
+
+  useEffect(() => () => {
+    if (soonTimerRef.current) clearTimeout(soonTimerRef.current);
+  }, []);
+
+  // Todos los CTA de compra van directo a la boletería; si la edición activa
+  // aún no tiene ventas abiertas, se evita navegar y se muestra el aviso.
+  const handleBuyClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (ventasAbiertas) return;
+    e.preventDefault();
+    triggerSoon(e.currentTarget);
+  };
+
+  const renderBuyCTA = (label: string, onClickExtra?: () => void) => (
+    <a
+      className={`btn btn-neon${ventasAbiertas ? '' : ' btn-soon'}`}
+      href={`/boleteria?ed=${activeSlug}`}
+      onClick={(e) => {
+        handleBuyClick(e);
+        onClickExtra?.();
+      }}
+    >
+      {ventasAbiertas ? label : 'Próximamente'}{' '}
+      <span className="arr">{ventasAbiertas ? '→' : '✦'}</span>
+    </a>
+  );
+
   const delayClass = (i: number) => ['', ' d1', ' d2', ' d3'][i % 4];
 
   return (
@@ -229,7 +281,7 @@ export default function LandingPage() {
           <a href="#agenda">Agenda</a>
           <a href="#entradas">Entradas</a>
           <a href="#contacto">Contacto</a>
-          <a className="btn btn-neon" href="#entradas">Inscríbete <span className="arr">→</span></a>
+          {renderBuyCTA('Inscríbete')}
         </div>
         <button className="nav-burger" onClick={() => setMenuOpen(v => !v)} aria-label="Menú" aria-expanded={menuOpen}>
           <span /><span /><span />
@@ -243,7 +295,7 @@ export default function LandingPage() {
         <a href="#agenda" onClick={closeMenu}>Agenda</a>
         <a href="#entradas" onClick={closeMenu}>Entradas</a>
         <a href="#contacto" onClick={closeMenu}>Contacto</a>
-        <a className="btn btn-neon" href="#entradas" onClick={closeMenu}>Inscríbete <span className="arr">→</span></a>
+        {renderBuyCTA('Inscríbete', closeMenu)}
       </div>
       <div className={`mmenu-scrim${menuOpen ? ' open' : ''}`} onClick={closeMenu} />
 
@@ -255,7 +307,9 @@ export default function LandingPage() {
             <div className="hero-left">
               <span className="hero-status">
                 <span className="pulse" />
-                <span className={sw}>{city.status}</span>
+                {editionsLoading
+                  ? <span className="sk-line" style={{ width: 150, height: 12 }} />
+                  : <span className={sw}>{city.status}</span>}
               </span>
 
               <h1>
@@ -264,13 +318,29 @@ export default function LandingPage() {
                 <span className="ln outline">que ganan.</span>
               </h1>
 
-              <p className={`hero-sub ${sw}`}>
-                El Congreso Nacional de Marketing Político aterriza en {city.city}. {city.dateLong}. Estrategia, narrativa e inteligencia para quienes hacen política en serio.
-              </p>
+              {editionsLoading ? (
+                <div className="hero-sub" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span className="sk-line" style={{ width: '95%', height: 15 }} />
+                  <span className="sk-line" style={{ width: '78%', height: 15 }} />
+                </div>
+              ) : (
+                <p className={`hero-sub ${sw}`}>
+                  El Congreso Nacional de Marketing Político aterriza en {city.city}. {city.dateLong}. Estrategia, narrativa e inteligencia para quienes hacen política en serio.
+                </p>
+              )}
 
               {/* CITY SELECTOR */}
               <div className="city-tabs" role="tablist" aria-label="Selecciona ciudad">
-                {cityViews.map((c, i) => (
+                {editionsLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="city-tab" aria-hidden="true" style={{ pointerEvents: 'none' }}>
+                        <span className="ct-dot" />
+                        <div className="ct-idx"><span className="sk-line" style={{ width: 46, height: 11 }} /></div>
+                        <div className="ct-name"><span className="sk-line" style={{ width: 82, height: 16, marginTop: 6 }} /></div>
+                        <div className="ct-date"><span className="sk-line" style={{ width: 60, height: 11, marginTop: 6 }} /></div>
+                      </div>
+                    ))
+                  : cityViews.map((c, i) => (
                   <button key={c.slug} className={`city-tab${activeSlug === c.slug ? ' active' : ''}`}
                     data-city={c.slug} role="tab" onClick={() => switchCity(c.slug)}>
                     <span className="ct-dot" />
@@ -282,22 +352,28 @@ export default function LandingPage() {
               </div>
 
               <div className="hero-cta">
-                <a className="btn btn-neon" href="#entradas">Comprar entrada <span className="arr">→</span></a>
+                {renderBuyCTA('Comprar entrada')}
                 <a className="btn btn-ghost" href="#tour">Ver la gira</a>
               </div>
 
               <div className="hero-meta">
                 <div className="item">
                   <span className="k">Sede actual</span>
-                  <span className={`v ${sw}`}>{city.city}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 70, height: 14 }} /> : city.city}
+                  </span>
                 </div>
                 <div className="item">
                   <span className="k">Fecha</span>
-                  <span className={`v ${sw}`}>{city.dateLong}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 110, height: 14 }} /> : city.dateLong}
+                  </span>
                 </div>
                 <div className="item">
                   <span className="k">País</span>
-                  <span className={`v ${sw}`}>{city.country}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 64, height: 14 }} /> : city.country}
+                  </span>
                 </div>
               </div>
             </div>
@@ -306,18 +382,30 @@ export default function LandingPage() {
             <aside className="hero-right">
               <div className="cd-card">
                 <div className="cd-top">
-                  <span className={`cd-city ${sw}`}>{city.city}</span>
-                  <span className={`cd-code ${sw}`}>{city.flag}</span>
+                  <span className={`cd-city ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 84, height: 16 }} /> : city.city}
+                  </span>
+                  <span className={`cd-code ${sw}`}>{editionsLoading ? '' : city.flag}</span>
                 </div>
                 <div className="cd-label">Faltan</div>
                 <div className="cd-grid">
-                  <div className="cd-cell"><div className="num">{cd.d}</div><div className="unit">Días</div></div>
-                  <div className="cd-cell"><div className="num">{cd.h}</div><div className="unit">Horas</div></div>
-                  <div className="cd-cell"><div className="num">{cd.m}</div><div className="unit">Min</div></div>
-                  <div className="cd-cell"><div className="num">{cd.s}</div><div className="unit">Seg</div></div>
+                  {['Días', 'Horas', 'Min', 'Seg'].map((unit, i) => (
+                    <div key={unit} className="cd-cell">
+                      <div className="num">
+                        {editionsLoading
+                          ? <span className="sk-line" style={{ width: 34, height: 30, margin: '0 auto' }} />
+                          : [cd.d, cd.h, cd.m, cd.s][i]}
+                      </div>
+                      <div className="unit">{unit}</div>
+                    </div>
+                  ))}
                 </div>
                 <div className="cd-foot">
-                  <span className={`venue ${sw}`}>{city.dateShort} · <strong>{city.country}</strong></span>
+                  <span className={`venue ${sw}`}>
+                    {editionsLoading
+                      ? <span className="sk-line" style={{ width: 120, height: 12 }} />
+                      : <>{city.dateShort} · <strong>{city.country}</strong></>}
+                  </span>
                   <span className="cd-live mono">EN VIVO PRONTO</span>
                 </div>
               </div>
@@ -352,7 +440,21 @@ export default function LandingPage() {
             <div className="route">
               <div className="route-line"><div className="fill" id="route-fill" /></div>
               <div className="route-stops">
-                {cityViews.map((c, i) => {
+                {editionsLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="stop">
+                        <div className="node" />
+                        <div className="stop-card">
+                          <div className="leg"><span className="sk-line" style={{ width: 64, height: 11 }} /></div>
+                          <div className="code"><span className="sk-line" style={{ width: 42, height: 22, marginTop: 6 }} /></div>
+                          <div className="city"><span className="sk-line" style={{ width: 96, height: 18, marginTop: 8 }} /></div>
+                          <div className="country"><span className="sk-line" style={{ width: 72, height: 12, marginTop: 6 }} /></div>
+                          <div className="when"><span className="sk-line" style={{ width: 120, height: 12, marginTop: 8 }} /></div>
+                          <span className="sk-line" style={{ width: 76, height: 20, marginTop: 12, borderRadius: 100 }} />
+                        </div>
+                      </div>
+                    ))
+                  : cityViews.map((c, i) => {
                   return (
                     <div key={c.slug} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
                       <div className="node" />
@@ -373,19 +475,35 @@ export default function LandingPage() {
             {/* Stats */}
             <div className="stats" style={{ marginTop: 64 }}>
               <div className="stat reveal">
-                <div className="n"><span className={sw}>{city.stat.a}</span><span className="suf">+</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 72, height: 38 }} />
+                    : <><span className={sw}>{city.stat.a}</span><span className="suf">+</span></>}
+                </div>
                 <div className="l">Asistentes esperados</div>
               </div>
               <div className="stat reveal d1">
-                <div className="n"><span className={sw}>{city.stat.b}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.b}</span>}
+                </div>
                 <div className="l">Conferencistas</div>
               </div>
               <div className="stat reveal d2">
-                <div className="n"><span className={sw}>{city.stat.c}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.c}</span>}
+                </div>
                 <div className="l">Días de contenido</div>
               </div>
               <div className="stat reveal d3">
-                <div className="n"><span className={sw}>{city.stat.d}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.d}</span>}
+                </div>
                 <div className="l">Países representados</div>
               </div>
             </div>
@@ -401,7 +519,19 @@ export default function LandingPage() {
               <p className="lead">Estrategas, consultores y analistas de toda la región. Algunos ya confirmados, otros que revelaremos en las próximas semanas.</p>
             </div>
             <div className="spk-grid">
-              {lecturers.length === 0
+              {lecturersLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <article key={`sk-${i}`} className="spk">
+                      <div className="spk-photo">
+                        <span className="sk-line" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
+                      </div>
+                      <div className="spk-body">
+                        <div className="nm"><span className="sk-line" style={{ width: '70%', height: 16 }} /></div>
+                        <div className="rl"><span className="sk-line" style={{ width: '45%', height: 12, marginTop: 8 }} /></div>
+                      </div>
+                    </article>
+                  ))
+                : lecturers.length === 0
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <article key={i} className="spk reveal">
                       <div className="spk-photo">
@@ -474,24 +604,48 @@ export default function LandingPage() {
               <h2 className="h-sec">Dos días, agenda<br />de alto rendimiento.</h2>
             </div>
             <div className={sw}>
-              <div className="sch-days">
-                {city.days.map((d, i) => (
-                  <button key={i} className={`day-btn${activeDay === i ? ' active' : ''}`}
-                    onClick={() => setActiveDay(i)}>{d.label}</button>
-                ))}
-              </div>
-              <div className="sch-list">
-                {city.days[activeDay]?.rows.map((r, i) => (
-                  <div key={i} className="sch-row">
-                    <div className="time">{r.t}</div>
-                    <div>
-                      <div className="ttl">{r.title}</div>
-                      {r.d && <div className="dsc">{r.d}</div>}
-                    </div>
-                    <div className="tag">{r.tag}</div>
+              {editionsLoading ? (
+                <>
+                  <div className="sch-days">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <span key={i} className="sk-line" style={{ width: 130, height: 40, borderRadius: 100 }} />
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div className="sch-list">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="sch-row">
+                        <div className="time"><span className="sk-line" style={{ width: 58, height: 13 }} /></div>
+                        <div>
+                          <div className="ttl"><span className="sk-line" style={{ width: '55%', height: 15 }} /></div>
+                          <div className="dsc"><span className="sk-line" style={{ width: '35%', height: 12, marginTop: 6 }} /></div>
+                        </div>
+                        <div className="tag"><span className="sk-line" style={{ width: 52, height: 18 }} /></div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="sch-days">
+                    {city.days.map((d, i) => (
+                      <button key={i} className={`day-btn${activeDay === i ? ' active' : ''}`}
+                        onClick={() => setActiveDay(i)}>{d.label}</button>
+                    ))}
+                  </div>
+                  <div className="sch-list">
+                    {city.days[activeDay]?.rows.map((r, i) => (
+                      <div key={i} className="sch-row">
+                        <div className="time">{r.t}</div>
+                        <div>
+                          <div className="ttl">{r.title}</div>
+                          {r.d && <div className="dsc">{r.d}</div>}
+                        </div>
+                        <div className="tag">{r.tag}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -603,7 +757,22 @@ export default function LandingPage() {
               <h2 className="h-sec">Lo que dicen quienes<br />ya vivieron el CNMP.</h2>
             </div>
             <div className="tst-grid">
-              {(testimonials.length > 0 ? testimonials : [
+              {testimonialsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="tst">
+                      <span className="sk-line" style={{ width: '100%', height: 14 }} />
+                      <span className="sk-line" style={{ width: '92%', height: 14, marginTop: 8 }} />
+                      <span className="sk-line" style={{ width: '70%', height: 14, marginTop: 8 }} />
+                      <div className="who" style={{ marginTop: 18 }}>
+                        <div className="av" />
+                        <div>
+                          <div className="nm"><span className="sk-line" style={{ width: 90, height: 13 }} /></div>
+                          <div className="rl"><span className="sk-line" style={{ width: 130, height: 11, marginTop: 6 }} /></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (testimonials.length > 0 ? testimonials : [
                 { id: -1, firstName: 'Asistente', lastName: 'verificado', position: 'Consultor político · Edición anterior', content: 'El nivel de los ponentes y la calidad del networking no se compara con ningún otro evento político de la región.', image: null, active: true, createdAt: '', updatedAt: '' },
                 { id: -2, firstName: 'Asistente', lastName: 'verificado', position: 'Jefe de campaña · Edición anterior', content: 'Salí con una estrategia completa para mi campaña. Cada panel fue directo al grano, sin relleno.', image: null, active: true, createdAt: '', updatedAt: '' },
                 { id: -3, firstName: 'Asistente', lastName: 'verificado', position: 'Estratega digital · Edición anterior', content: 'Conocí a las personas correctas. El CNMP es donde se construyen las alianzas que deciden elecciones.', image: null, active: true, createdAt: '', updatedAt: '' },
@@ -655,7 +824,7 @@ export default function LandingPage() {
               <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
               <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad, boletería independiente.</p>
               <div className="btns">
-                <a className="btn btn-neon" href={`/boleteria?ed=${activeSlug}`}>Inscríbete ahora <span className="arr">→</span></a>
+                {renderBuyCTA('Inscríbete ahora')}
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">Portafolio de patrocinio</a>
               </div>
             </div>
@@ -672,8 +841,11 @@ export default function LandingPage() {
               </div>
               <div className="foot-col">
                 <h4>La Gira</h4>
-                {cityViews.map(c => (
-                  <a key={c.slug} href={`/boleteria?ed=${c.slug}`}>{c.city} {c.year}</a>
+                {editions.map(e => (
+                  <a key={e.slug} href={`/boleteria?ed=${e.slug}`}>
+                    {e.city || e.country} {e.year}
+                    {!e.salesOpen && <span className="soon-pill">Pronto</span>}
+                  </a>
                 ))}
               </div>
               <div className="foot-col">
@@ -697,6 +869,21 @@ export default function LandingPage() {
           </div>
         </footer>
       </main>
+
+      {/* Aviso amigable: boletería próximamente */}
+      <div className={`soon-toast${soon ? ' show' : ''}`} role="status" aria-live="polite">
+        <span className="soon-toast-ic">🎟️</span>
+        <div className="soon-toast-tx">
+          <strong>¡Muy pronto!</strong>
+          <span>
+            La boletería de {city.city || 'esta ciudad'} abre en poco. Te
+            avisamos apenas esté lista.
+          </span>
+        </div>
+        <a className="soon-toast-cta" href="mailto:cnmpcolombia@gmail.com">
+          Avísenme
+        </a>
+      </div>
 
       {/* WhatsApp float */}
       <a className="wa" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
