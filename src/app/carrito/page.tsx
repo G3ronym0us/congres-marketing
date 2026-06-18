@@ -16,13 +16,17 @@ import {
   faTags,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '@/context/CartContext';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import AttendeeForm from '@/components/tickets/AttendeeForm';
 import { AttendeeData, TicketType } from '@/types/tickets';
-import { discountCodeService, discountUtils } from '@/services/discountCode';
+import { discountUtils } from '@/services/discountCode';
 import { AppliedDiscount } from '@/types/discountCode';
+import { Edition } from '@/types/edition';
+import { getEditionBySlug } from '@/services/editions';
 import DiscountCodeInput from '@/components/tickets/DiscountCodeInput';
+import EditionBanner from '@/components/tickets/EditionBanner';
+import ConfirmPurchaseModal from '@/components/tickets/ConfirmPurchaseModal';
 import Script from 'next/script';
 import axios from 'axios';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
@@ -36,8 +40,8 @@ interface DescuentoEtapa {
   etiqueta: string;
 }
 
-// Definir las etapas de descuento según la imagen
-const etapasDescuento: DescuentoEtapa[] = [
+// Etapas de descuento por defecto (legado) si la edición no define las suyas
+const etapasDescuentoDefault: DescuentoEtapa[] = [
   {
     fechaInicio: new Date('2025-04-27'),
     fechaFin: new Date('2025-05-04'),
@@ -76,18 +80,24 @@ export default function Carrito() {
     state,
     removeItem,
     removeTicket,
-    toggleMemorias,
+    toggleAddOn,
     updateAttendee,
     clearCart,
     applyDiscount,
     removeDiscount,
   } = useCart();
-  const { localidades } = useLocalidades();
+  const { localidades } = useLocalidades(state.editionId ?? undefined);
+  const [edition, setEditionData] = useState<Edition | null>(null);
   const [total, setTotal] = useState(0);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
   const [isAllDataComplete, setIsAllDataComplete] = useState(false);
+  // Modal de confirmación de edición antes de iniciar el pago
+  const [showConfirm, setShowConfirm] = useState(false);
+  // Nombre de la edición comprada (para la pantalla de éxito, donde el carrito
+  // ya se limpió y el objeto `edition` queda en null)
+  const [purchasedEditionName, setPurchasedEditionName] = useState<string | null>(null);
 
   // Estados adicionales para Wompi
   const [wompiReady, setWompiReady] = useState(false);
@@ -103,6 +113,27 @@ export default function Carrito() {
   const [totalConDescuento, setTotalConDescuento] = useState(0);
   const [montoDescuento, setMontoDescuento] = useState(0);
 
+  // Etapas de descuento por fecha: las de la edición si existen, si no las de legado
+  const etapasDescuento: DescuentoEtapa[] =
+    edition?.discountStages && edition.discountStages.length > 0
+      ? edition.discountStages.map((e) => ({
+          fechaInicio: new Date(e.fechaInicio),
+          fechaFin: new Date(e.fechaFin),
+          porcentaje: e.porcentaje,
+          etiqueta: e.etiqueta,
+        }))
+      : etapasDescuentoDefault;
+
+  // Cargar la edición del carrito (para etapas de descuento y validaciones)
+  useEffect(() => {
+    if (!state.editionSlug) { setEditionData(null); return; }
+    let cancelled = false;
+    getEditionBySlug(state.editionSlug).then((ed) => {
+      if (!cancelled) setEditionData(ed);
+    });
+    return () => { cancelled = true; };
+  }, [state.editionSlug]);
+
   // Determinar el descuento aplicable según la fecha actual
   useEffect(() => {
     const hoy = new Date();
@@ -110,7 +141,8 @@ export default function Carrito() {
       (etapa) => hoy >= etapa.fechaInicio && hoy <= etapa.fechaFin,
     );
     setDescuentoActual(descuentoEncontrado || null);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edition]);
 
   // Calcular total con descuentos cuando cambia el total o los descuentos
   useEffect(() => {
@@ -188,6 +220,7 @@ export default function Carrito() {
     const statusUpper = status.toUpperCase();
     switch (statusUpper) {
       case 'APPROVED':
+        setPurchasedEditionName(edition?.name ?? null);
         clearCart();
         setEnviado(true);
         setErrorMessage(undefined);
@@ -264,8 +297,12 @@ export default function Carrito() {
     removeTicket(ticketId);
   };
 
-  const handleToggleMemorias = (ticketId: string, incluirMemorias: boolean) => {
-    toggleMemorias(ticketId, !incluirMemorias);
+  const handleToggleAddOn = (
+    ticketId: string,
+    addOn: { id: number; slug: string; name: string; price: number },
+    on: boolean,
+  ) => {
+    toggleAddOn(ticketId, addOn, on);
   };
 
   const handleToggleSection = (localidad: string) => {
@@ -304,6 +341,7 @@ export default function Carrito() {
         icon: '🎫',
         withMemories: false,
         noPermiteMemorias: false,
+        addOns: [],
       }
     );
   };
@@ -314,15 +352,32 @@ export default function Carrito() {
     state.items.forEach((item) => {
       item.tickets.forEach((ticket) => {
         subtotal +=
-          ticket.price + (ticket.withMemories && ticket.type !== TicketType.DIAMOND ? ticket.priceMemories : 0);
+          ticket.price + ticket.addOns.reduce((s, a) => s + a.price, 0);
       });
     });
     return subtotal;
   };
 
+  // Abre el modal de confirmación de edición antes de iniciar el pago
+  const handleSolicitarPago = () => {
+    if (!isAllDataComplete || loading) return;
+    setShowConfirm(true);
+  };
+
+  // Confirmada la edición, se procede con el pago real
+  const handleConfirmarPago = () => {
+    setShowConfirm(false);
+    handleProcederPago();
+  };
+
   // Nueva función para iniciar el proceso de pago con Wompi
   const handleProcederPago = async () => {
     if (!isAllDataComplete) return;
+
+    if (!state.editionId) {
+      alert('No se pudo determinar la edición del carrito. Vuelve a la boletería.');
+      return;
+    }
 
     setLoading(true);
 
@@ -334,33 +389,22 @@ export default function Carrito() {
         throw new Error('No hay tickets en el carrito');
       }
 
-      const ticketsData = [];
-
-      state.items.forEach((item) => {
-        item.tickets.forEach((ticket) => {
-          ticketsData.push({
-            type: ticket.type,
-            withMemories: ticket.withMemories,
-            price: ticket.price,
-            priceMemories: ticket.priceMemories,
-            attendee: ticket.attendee,
-          });
-        });
-      });
-
       // 1. Crear tickets en el backend y obtener la firma de integridad
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}payments`,
         {
           reference: reference,
+          editionId: state.editionId,
           amountInCents: amountInCents,
           discountCode: state.appliedDiscount?.code || null,
           tickets: state.items.flatMap((item) => {
             return item.tickets.map((ticket) => ({
               type: ticket.type,
-              withMemories: ticket.withMemories,
+              withMemories: false,
               price: ticket.price,
-              priceMemories: ticket.priceMemories,
+              priceMemories: 0,
+              // Solo los add-ons opcionales (precio > 0); los incluidos los aplica el backend
+              addOns: ticket.addOns.filter((a) => a.price > 0).map((a) => a.id),
               attendee: ticket.attendee,
             }));
           }),
@@ -396,6 +440,7 @@ export default function Carrito() {
               result.transaction.status === 'APPROVED'
             ) {
               // Limpiar el carrito y mostrar confirmación
+              setPurchasedEditionName(edition?.name ?? null);
               clearCart();
               setEnviado(true);
               setErrorMessage(undefined); // Limpiar cualquier mensaje de error previo
@@ -473,6 +518,7 @@ export default function Carrito() {
       // Manejar diferentes estados
       switch (transaction.status) {
         case 'APPROVED':
+          setPurchasedEditionName(transaction.editionName ?? edition?.name ?? null);
           clearCart();
           setEnviado(true);
           setErrorMessage(undefined);
@@ -522,6 +568,11 @@ export default function Carrito() {
         strategy="afterInteractive"
       />
 
+      {/* Recordatorio persistente de la edición que se está comprando */}
+      {!enviado && state.items.length > 0 && (
+        <EditionBanner edition={edition} onChange={handleVolver} />
+      )}
+
       <div className="min-h-screen bg-gradient-to-r from-[#0f1424] to-[#1a0a12] py-12 px-4">
         <div className="container mx-auto max-w-4xl">
           <button
@@ -550,6 +601,15 @@ export default function Carrito() {
                 Hemos enviado un correo con los detalles de tu compra y las
                 instrucciones para acceder al evento.
               </p>
+
+              {purchasedEditionName && (
+                <p className="text-gray-300 mb-3">
+                  Edición:{' '}
+                  <span className="text-white font-medium">
+                    {purchasedEditionName}
+                  </span>
+                </p>
+              )}
 
               <p className="text-gray-300 mb-6">
                 Número de referencia:{' '}
@@ -643,10 +703,10 @@ export default function Carrito() {
                                     return (
                                       total +
                                       ticket.price +
-                                      (ticket.withMemories &&
-                                      ticket.type !== TicketType.DIAMOND
-                                        ? ticket.priceMemories
-                                        : 0)
+                                      ticket.addOns.reduce(
+                                        (s, a) => s + a.price,
+                                        0,
+                                      )
                                     );
                                   }, 0),
                                 )}
@@ -710,45 +770,55 @@ export default function Carrito() {
 
                                   {/* Opciones del ticket individual */}
                                   <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                                    {!localidadDetails.withMemories &&
-                                      !localidadDetails.noPermiteMemorias && (
-                                        <div className="flex items-center">
-                                          <input
-                                            type="checkbox"
-                                            id={`memorias-${ticket.id}`}
-                                            checked={ticket.withMemories}
-                                            onChange={() =>
-                                              handleToggleMemorias(
-                                                ticket.id,
-                                                ticket.withMemories,
-                                              )
-                                            }
-                                            className="mr-2"
-                                          />
-                                          <label
-                                            htmlFor={`memorias-${ticket.id}`}
-                                            className="text-gray-300 text-sm cursor-pointer"
-                                          >
-                                            Incluir memorias (+
-                                            {formatoPrecio(PRECIO_MEMORIAS)})
-                                          </label>
-                                        </div>
-                                      )}
-
-                                    {localidadDetails.withMemories && (
-                                      <div className="text-green-400 text-sm">
-                                        Memorias incluidas
-                                      </div>
-                                    )}
+                                    <div className="flex flex-col gap-2">
+                                      {(localidadDetails.addOns ?? [])
+                                        .filter((a) => !a.included)
+                                        .map((a) => {
+                                          const on = ticket.addOns.some(
+                                            (x) => x.id === a.id,
+                                          );
+                                          return (
+                                            <div key={a.id} className="flex items-center">
+                                              <input
+                                                type="checkbox"
+                                                id={`addon-${a.id}-${ticket.id}`}
+                                                checked={on}
+                                                onChange={() =>
+                                                  handleToggleAddOn(
+                                                    ticket.id,
+                                                    { id: a.id, slug: a.slug, name: a.name, price: a.price },
+                                                    !on,
+                                                  )
+                                                }
+                                                className="mr-2"
+                                              />
+                                              <label
+                                                htmlFor={`addon-${a.id}-${ticket.id}`}
+                                                className="text-gray-300 text-sm cursor-pointer"
+                                              >
+                                                {a.icon ?? '➕'} {a.name} (+
+                                                {formatoPrecio(a.price)})
+                                              </label>
+                                            </div>
+                                          );
+                                        })}
+                                      {(localidadDetails.addOns ?? [])
+                                        .filter((a) => a.included)
+                                        .map((a) => (
+                                          <div key={a.id} className="text-green-400 text-sm">
+                                            ✓ {a.name} incluido
+                                          </div>
+                                        ))}
+                                    </div>
 
                                     <div className="flex items-center">
                                       <span className="text-white mr-4">
                                         {formatoPrecio(
                                           ticket.price +
-                                            (ticket.withMemories &&
-                                            ticket.type !== TicketType.DIAMOND
-                                              ? ticket.priceMemories
-                                              : 0),
+                                            ticket.addOns.reduce(
+                                              (s, a) => s + a.price,
+                                              0,
+                                            ),
                                         )}
                                       </span>
 
@@ -787,52 +857,32 @@ export default function Carrito() {
                           item.localidad,
                         );
 
-                        // Calcular precios con y sin memorias
-                        const ticketsConMemorias = item.tickets.filter(
-                          (t) => t.withMemories,
-                        );
-                        const ticketsSinMemorias = item.tickets.filter(
-                          (t) => !t.withMemories,
+                        // Total de add-ons (de pago) de este grupo de tickets
+                        const addOnsTotal = item.tickets.reduce(
+                          (sum, t) =>
+                            sum + t.addOns.reduce((s, a) => s + a.price, 0),
+                          0,
                         );
 
                         return (
                           <div key={`summary-${item.localidad}`}>
-                            {ticketsSinMemorias.length > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-300">
-                                  {ticketsSinMemorias.length} x{' '}
-                                  {localidadDetails.name}
-                                </span>
-                                <span className="text-white">
-                                  {formatoPrecio(
-                                    ticketsSinMemorias.reduce(
-                                      (sum, t) => sum + t.price,
-                                      0,
-                                    ),
-                                  )}
-                                </span>
-                              </div>
-                            )}
-
-                            {ticketsConMemorias.length > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-300">
-                                  {`${ticketsConMemorias.length} x ${localidadDetails.name} ${localidadDetails.withMemories ? '(Incluye memorias)' : '+ Memorias'}`}
-                                </span>
-                                <span className="text-white">
-                                  {formatoPrecio(
-                                    ticketsConMemorias.reduce(
-                                      (sum, t) =>
-                                        sum +
-                                        t.price +
-                                        (t.withMemories &&
-                                        t.type !== TicketType.DIAMOND
-                                          ? t.priceMemories
-                                          : 0),
-                                      0,
-                                    ),
-                                  )}
-                                </span>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-300">
+                                {item.tickets.length} x {localidadDetails.name}
+                              </span>
+                              <span className="text-white">
+                                {formatoPrecio(
+                                  item.tickets.reduce(
+                                    (sum, t) => sum + t.price,
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                            {addOnsTotal > 0 && (
+                              <div className="flex justify-between text-xs text-gray-400 pl-2">
+                                <span>+ Add-ons</span>
+                                <span>{formatoPrecio(addOnsTotal)}</span>
                               </div>
                             )}
                           </div>
@@ -891,6 +941,7 @@ export default function Carrito() {
                       onDiscountRemoved={handleDiscountRemoved}
                       appliedDiscount={state.appliedDiscount}
                       disabled={loading}
+                      editionId={state.editionId ?? undefined}
                     />
                   </div>
 
@@ -1017,7 +1068,7 @@ export default function Carrito() {
                     </button>
 
                     <button
-                      onClick={handleProcederPago}
+                      onClick={handleSolicitarPago}
                       disabled={!isAllDataComplete || loading}
                       className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg transition-opacity ${!isAllDataComplete || loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
                     >
@@ -1042,6 +1093,20 @@ export default function Carrito() {
           )}
         </div>
       </div>
+
+      <ConfirmPurchaseModal
+        open={showConfirm}
+        edition={edition}
+        items={state.items.map((item) => ({
+          name: getLocalidadDetails(item.localidad).name,
+          qty: item.tickets.length,
+        }))}
+        totalLabel={formatoPrecio(totalConDescuento)}
+        loading={loading}
+        onConfirm={handleConfirmarPago}
+        onClose={() => setShowConfirm(false)}
+        onChangeEdition={handleVolver}
+      />
     </>
   );
 }

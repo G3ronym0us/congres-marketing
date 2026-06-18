@@ -11,10 +11,12 @@ interface Props {
   onClose: () => void;
   onSave: (ticket: AdminEditTicketInput) => void;
   ticket: Ticket;
+  editionId?: number;
 }
 
-const EditTicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, ticket }) => {
-  const { localidades } = useLocalidades();
+const EditTicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, ticket, editionId }) => {
+  const { localidades } = useLocalidades(editionId);
+  const localidadSlugs = Object.keys(localidades).filter(s => s !== 'memorias');
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<AdminEditTicketInput>({
     defaultValues: {
       uuid: ticket.uuid || '',
@@ -88,7 +90,8 @@ const EditTicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, ticket }) =
           <Controller name="type" control={control}
             render={({ field }) => (
               <DarkSelect {...field}>
-                {Object.values(TicketType).map(t => (
+                {/* Incluye el tipo actual aunque ya no exista como localidad */}
+                {Array.from(new Set([ticket.type, ...localidadSlugs].filter(Boolean))).map(t => (
                   <option key={t} value={t}>
                     {localidades[t]?.name || t} — ${(localidades[t]?.price || 0).toLocaleString('es-CO')}
                   </option>

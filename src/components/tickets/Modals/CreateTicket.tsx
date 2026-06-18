@@ -11,18 +11,28 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (ticket: AdminCreateTicketInput) => void;
+  editionId?: number;
 }
 
-const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
-  const { localidades } = useLocalidades();
+const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, editionId }) => {
+  const { localidades } = useLocalidades(editionId);
+  const localidadSlugs = Object.keys(localidades).filter(s => s !== 'memorias');
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<AdminCreateTicketInput>({
-    defaultValues: { reference: '', name: '', lastname: '', email: '', document: '', phone: '', type: 'General' as TicketType, withMemories: false },
+    defaultValues: { reference: '', name: '', lastname: '', email: '', document: '', phone: '', type: '' as TicketType, withMemories: false },
     mode: 'onChange',
   });
 
   const selectedType = watch('type');
 
   useEffect(() => { setValue('reference', generateReference()); }, []);
+
+  // Selecciona por defecto la primera localidad disponible de la edición
+  useEffect(() => {
+    if ((!selectedType || !localidades[selectedType]) && localidadSlugs.length) {
+      setValue('type', localidadSlugs[0] as TicketType);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localidades]);
 
   useEffect(() => {
     if (selectedType && localidades[selectedType]) {
@@ -81,7 +91,7 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           <Controller name="type" control={control}
             render={({ field }) => (
               <DarkSelect {...field}>
-                {Object.values(TicketType).map(t => (
+                {localidadSlugs.map(t => (
                   <option key={t} value={t}>
                     {localidades[t]?.name || t} — ${(localidades[t]?.price || 0).toLocaleString('es-CO')}
                   </option>

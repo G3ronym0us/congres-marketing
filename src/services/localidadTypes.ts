@@ -5,9 +5,13 @@ import {
   UpdateLocalidadTypeInput,
 } from '@/types/localidadTypes';
 
-export async function getLocalidadTypes(): Promise<LocalidadType[]> {
+export async function getLocalidadTypes(
+  edition?: number,
+): Promise<LocalidadType[]> {
   try {
-    const res = await apiClient.get('/localidad-types');
+    const res = await apiClient.get('/localidad-types', {
+      params: edition ? { edition } : undefined,
+    });
     return res.data;
   } catch (error) {
     return handleError(error);

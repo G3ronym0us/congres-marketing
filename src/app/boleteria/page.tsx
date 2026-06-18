@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import { useCart } from '@/context/CartContext';
 import { TicketType } from '@/types/tickets';
+import { Edition } from '@/types/edition';
+import { getPublicEditions, getEditionBySlug } from '@/services/editions';
 import '../landing.css';
 
-const FEATURED = TicketType.DIAMOND;
 const MAX_CANTIDAD = 10;
 
 const NOTES = [
@@ -27,16 +28,27 @@ const precio = (n: number) =>
 export default function BoleteriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addItem } = useCart();
+  const { addItem, setEdition } = useCart();
   const [scrolled, setScrolled] = useState(false);
-  const { localidades, loading } = useLocalidades();
+  const [edition, setEditionData] = useState<Edition | null>(null);
+  const [allEditions, setAllEditions] = useState<Edition[]>([]);
+  const [editionLoading, setEditionLoading] = useState(true);
+  const { localidades, loading: localidadesLoading } = useLocalidades(edition?.id);
+  const loading = editionLoading || localidadesLoading;
 
-  const [localidad, setLocalidad] = useState<string>(FEATURED);
+  const [localidad, setLocalidad] = useState<string>('');
   const [cantidad, setCantidad] = useState(1);
-  const [incluirMemorias, setIncluirMemorias] = useState(false);
+  // Ids de los add-ons opcionales seleccionados para esta localidad
+  const [selectedOptional, setSelectedOptional] = useState<number[]>([]);
+
+  // Localidad destacada: la de mayor precio entre las comprables (dinámico)
+  const featuredSlug = Object.entries(localidades)
+    .filter(([key, t]) => key !== 'memorias' && t.pushable)
+    .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
 
   const detalles = localidades[localidad];
-  const precioMemorias = localidades['memorias']?.price ?? PRECIO_MEMORIAS;
+  const includedAddOns = (detalles?.addOns ?? []).filter(a => a.included);
+  const optionalAddOns = (detalles?.addOns ?? []).filter(a => !a.included);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -45,37 +57,77 @@ export default function BoleteriaPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Lista de ediciones visibles (para el footer "La Gira", sin datos quemados)
+  useEffect(() => {
+    getPublicEditions().then(setAllEditions).catch(() => setAllEditions([]));
+  }, []);
+
+  // Resolver la edición: por slug en la URL (?ed=...) o la primera abierta a ventas
+  useEffect(() => {
+    let cancelled = false;
+    const resolveEdition = async () => {
+      setEditionLoading(true);
+      const slug = searchParams?.get('ed');
+      let ed: Edition | null = null;
+      if (slug) {
+        ed = await getEditionBySlug(slug);
+      }
+      if (!ed) {
+        const list = await getPublicEditions();
+        ed = list.find(e => e.salesOpen) ?? list[0] ?? null;
+      }
+      if (cancelled) return;
+      setEditionData(ed);
+      if (ed) setEdition(ed.id, ed.slug);
+      setEditionLoading(false);
+    };
+    resolveEdition();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // Preselección por URL (?localidad=slug)
   useEffect(() => {
     const param = searchParams ? searchParams.get('localidad') : null;
     if (param) setLocalidad(param);
   }, [searchParams]);
 
-  // Si la localidad no existe en la API (slug viejo), usar la primera disponible
+  // Si la localidad no existe en la API (slug viejo o sin seleccionar), usar la destacada
   useEffect(() => {
     if (loading || localidades[localidad]) return;
-    const first = Object.entries(localidades).find(([, t]) => t.pushable)?.[0];
-    if (first) setLocalidad(first);
+    if (featuredSlug) setLocalidad(featuredSlug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, localidades, localidad]);
+  }, [loading, localidades, localidad, featuredSlug]);
 
-  // Sincronizar memorias al cambiar de localidad (marcadas solo si vienen incluidas)
+  // Al cambiar de localidad se reinicia la selección de add-ons opcionales
   useEffect(() => {
-    if (detalles) setIncluirMemorias(!!detalles.withMemories);
-  }, [localidad, detalles?.withMemories]); // eslint-disable-line react-hooks/exhaustive-deps
+    setSelectedOptional([]);
+  }, [localidad]);
 
-  const memoriasExtra = incluirMemorias && !detalles?.withMemories && !detalles?.noPermiteMemorias;
-  const total = detalles ? (detalles.price + (memoriasExtra ? precioMemorias : 0)) * cantidad : 0;
+  const optionalTotal = optionalAddOns
+    .filter(a => selectedOptional.includes(a.id))
+    .reduce((s, a) => s + a.price, 0);
+  const total = detalles ? (detalles.price + optionalTotal) * cantidad : 0;
+
+  const toggleOptional = (id: number) =>
+    setSelectedOptional(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
+    );
 
   const handleAgregar = () => {
-    if (!detalles) return;
-    addItem(
-      localidad as TicketType,
-      cantidad,
-      incluirMemorias,
-      detalles.price,
-      precioMemorias,
-    );
+    if (!detalles || !edition) return;
+    if (!edition.salesOpen) {
+      alert('Esta edición aún no está abierta para compras.');
+      return;
+    }
+    setEdition(edition.id, edition.slug);
+    const addOns = [
+      ...includedAddOns.map(a => ({ id: a.id, slug: a.slug, name: a.name, price: 0 })),
+      ...optionalAddOns
+        .filter(a => selectedOptional.includes(a.id))
+        .map(a => ({ id: a.id, slug: a.slug, name: a.name, price: a.price })),
+    ];
+    addItem(localidad as TicketType, cantidad, detalles.price, addOns);
     router.push('/carrito');
   };
 
@@ -86,6 +138,20 @@ export default function BoleteriaPage() {
       {/* NAVBAR */}
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/"><img className="logo" src="/logo-principal.png" alt="CNMP 2026" /></a>
+        {edition && (
+          <span
+            title={`Estás comprando para ${edition.name}`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 100,
+              border: '1px solid var(--line)', background: 'rgba(255,255,255,.05)',
+              fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap',
+              maxWidth: '50vw', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}
+          >
+            🎟 <span style={{ color: 'var(--neon)' }}>{edition.city ?? edition.country}</span> {edition.year}
+          </span>
+        )}
         <div className="nav-links">
           <a href="/#tour">La Gira</a>
           <a href="/#speakers">Speakers</a>
@@ -101,13 +167,18 @@ export default function BoleteriaPage() {
         {/* ── HEADER ── */}
         <section className="wrap" style={{ paddingBottom: 0 }}>
           <div style={{ maxWidth: 880, marginBottom: 28 }}>
-            <span className="eyebrow">Boletería · Colombia · 28–29 Ago 2026</span>
+            <span className="eyebrow">
+              Boletería · {edition ? `${edition.city ?? edition.country}${edition.display?.dateShort ? ` · ${edition.display.dateShort}` : ''}` : '…'}
+            </span>
             <h1 className="h-sec" style={{ marginTop: 12, fontSize: 'clamp(30px,4vw,48px)' }}>
               Elige tu lugar <span style={{ color: 'var(--neon)' }}>en el congreso.</span>
             </h1>
             <p className="lead" style={{ marginTop: 10, fontSize: 15 }}>
               Cupos limitados por localidad. Boletería independiente por ciudad — esta
-              página corresponde a <strong style={{ color: '#fff' }}>Colombia 2026</strong>.
+              página corresponde a <strong style={{ color: '#fff' }}>{edition?.name ?? 'esta edición'}</strong>.
+              {edition && !edition.salesOpen && (
+                <span style={{ color: 'var(--neon)' }}> · Ventas próximamente.</span>
+              )}
             </p>
           </div>
         </section>
@@ -161,7 +232,7 @@ export default function BoleteriaPage() {
                               <div className="bsel-info">
                                 <div className="nm">
                                   {t.name}
-                                  {type === FEATURED && <span className="tag">Más completo</span>}
+                                  {type === featuredSlug && <span className="tag">Más completo</span>}
                                 </div>
                                 {t.withMemories && <div className="sub">Incluye memorias del evento</div>}
                                 {type === TicketType.STREAMING && <div className="sub">Acceso virtual</div>}
@@ -199,31 +270,36 @@ export default function BoleteriaPage() {
                       <p className="qs-hint">Hasta {MAX_CANTIDAD} por compra.</p>
                     </div>
 
-                    {detalles && !detalles.withMemories && !detalles.noPermiteMemorias && (
-                      <div style={{ flex: 1, minWidth: 260 }}>
-                        <span className="qs-label">Add-on opcional</span>
-                        <div
-                          className={`qs-check${incluirMemorias ? ' on' : ''}`}
-                          onClick={() => setIncluirMemorias(v => !v)}
-                          role="checkbox"
-                          aria-checked={incluirMemorias}
-                        >
-                          <span className="box">{incluirMemorias ? '✓' : ''}</span>
-                          <span>
-                            <span className="tt">📀 Memorias del evento</span>
-                            <span className="dd" style={{ display: 'block' }}>
-                              Grabación completa de las conferencias y material exclusivo.
-                              Acceso digital permanente, por entrada.
-                            </span>
-                          </span>
-                          <span className="pp">COP {precio(precioMemorias)}</span>
-                        </div>
+                    {(optionalAddOns.length > 0 || includedAddOns.length > 0) && (
+                      <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {optionalAddOns.length > 0 && <span className="qs-label">Add-ons opcionales</span>}
+                        {optionalAddOns.map(a => {
+                          const on = selectedOptional.includes(a.id);
+                          return (
+                            <div
+                              key={a.id}
+                              className={`qs-check${on ? ' on' : ''}`}
+                              onClick={() => toggleOptional(a.id)}
+                              role="checkbox"
+                              aria-checked={on}
+                            >
+                              <span className="box">{on ? '✓' : ''}</span>
+                              <span>
+                                <span className="tt">{a.icon ?? '➕'} {a.name}</span>
+                                {a.description && (
+                                  <span className="dd" style={{ display: 'block' }}>{a.description}</span>
+                                )}
+                              </span>
+                              <span className="pp">COP {precio(a.price)}</span>
+                            </div>
+                          );
+                        })}
+                        {includedAddOns.map(a => (
+                          <p key={a.id} className="qs-included">
+                            ✓ Incluye: {a.name}
+                          </p>
+                        ))}
                       </div>
-                    )}
-                    {detalles?.withMemories && (
-                      <p className="qs-included" style={{ marginTop: 26 }}>
-                        ✓ Esta localidad incluye las memorias del evento
-                      </p>
                     )}
                   </div>
                 </div>
@@ -236,12 +312,14 @@ export default function BoleteriaPage() {
                       <span>{detalles?.name ?? 'Entrada'}</span>
                       <span className="v">COP {precio(detalles?.price ?? 0)}</span>
                     </div>
-                    {memoriasExtra && (
-                      <div className="row">
-                        <span>Memorias del evento</span>
-                        <span className="v">COP {precio(precioMemorias)}</span>
-                      </div>
-                    )}
+                    {optionalAddOns
+                      .filter(a => selectedOptional.includes(a.id))
+                      .map(a => (
+                        <div className="row" key={a.id}>
+                          <span>{a.name}</span>
+                          <span className="v">COP {precio(a.price)}</span>
+                        </div>
+                      ))}
                     <div className="row">
                       <span>Cantidad</span>
                       <span className="v">×{cantidad}</span>
@@ -289,9 +367,9 @@ export default function BoleteriaPage() {
               </div>
               <div className="foot-col">
                 <h4>La Gira</h4>
-                <a href="/#tour">Colombia 2026</a>
-                <a href="/#tour">Santo Domingo 2026</a>
-                <a href="/#tour">Cd. de México 2027</a>
+                {allEditions.map(e => (
+                  <a key={e.id} href={`/boleteria?ed=${e.slug}`}>{e.city ?? e.country} {e.year}</a>
+                ))}
               </div>
               <div className="foot-col">
                 <h4>Evento</h4>
@@ -307,7 +385,7 @@ export default function BoleteriaPage() {
             </div>
             <div className="foot-bottom">
               <span>© {new Date().getFullYear()} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">3 CIUDADES · 3 PAÍSES · 1 COMUNIDAD</span>
+              <span className="mono">{allEditions.length} {allEditions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(allEditions.map(e => e.country)).size} {new Set(allEditions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
             </div>
           </div>
         </footer>

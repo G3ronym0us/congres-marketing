@@ -4,6 +4,7 @@ import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
 import { useState } from 'react';
 import { CreateEmailBroadcastRequest, EmailBroadcastType } from '../../../types/emailBroadcast';
+import { Edition } from '../../../types/edition';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
 import FileUploader from './FileUploader';
 import Swal from 'sweetalert2';
@@ -54,9 +55,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editions?: Edition[];
 }
 
-export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Props) {
+export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editions = [] }: Props) {
   const [loading, setLoading]         = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -200,11 +202,8 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                       style={{ ...iS, width: 'auto', cursor: 'pointer' }}
                     >
                       <option value="">Todas las ediciones</option>
-                      {Array.from(
-                        { length: new Date().getFullYear() - 2025 + 2 },
-                        (_, i) => 2025 + i,
-                      ).map(year => (
-                        <option key={year} value={year}>Asistentes {year}</option>
+                      {editions.map(ed => (
+                        <option key={ed.id} value={ed.id}>{ed.name}</option>
                       ))}
                     </select>
                   </div>
@@ -291,7 +290,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess }: Pro
                 De: <span style={{ color: '#fff' }}>{formData.sender_name}</span>
               </div>
               <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (edición ${formData.target_edition})` : ' (todas las ediciones)'}` : formData.specific_email}</span>
+                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (${editions.find(e => e.id === formData.target_edition)?.name ?? `edición ${formData.target_edition}`})` : ' (todas las ediciones)'}` : formData.specific_email}</span>
               </div>
               <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
                 {formData.title}

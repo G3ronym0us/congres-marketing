@@ -1,7 +1,12 @@
 // @/types/tickets.ts
 
+import { SelectedAddOn } from '@/types/addOn';
+
 export enum TicketType {
   DIAMOND = 'diamond',
+  GOLD = 'gold',
+  SILVER = 'silver',
+  // Slugs legados (ediciones antiguas); se conservan por compatibilidad
   VIP = 'vip',
   GENERAL = 'general',
   STREAMING = 'streaming',
@@ -65,8 +70,10 @@ export interface SeatRows {
 
 export const ticketTypeColors = {
   [TicketType.DIAMOND]: '#0000FF', // Azul fuerte para Diamante
-  [TicketType.VIP]: '#FF1493', // Rosa fuerte para VIP
-  [TicketType.GENERAL]: '#FFA500', // Naranja-rojo para General
+  [TicketType.GOLD]: '#E0A526', // Dorado para Oro
+  [TicketType.SILVER]: '#9CA3AF', // Plateado para Plata
+  [TicketType.VIP]: '#FF1493', // Rosa fuerte para VIP (legado)
+  [TicketType.GENERAL]: '#FFA500', // Naranja para General (legado)
 };
 
 export interface SeatUsed {
@@ -120,6 +127,8 @@ export interface AdminEditTicketInput {
 
 export const traductions = {
   [TicketType.DIAMOND]: 'DIAMANTE',
+  [TicketType.GOLD]: 'ORO',
+  [TicketType.SILVER]: 'PLATA',
   [TicketType.VIP]: 'VIP',
   [TicketType.GENERAL]: 'GENERAL',
   [TicketType.STREAMING]: 'STREAMING',
@@ -149,9 +158,8 @@ export interface AttendeeData {
 export interface CartTicket {
   id: string; // ID único por ticket
   type: TicketType; // El tipo de localidad
-  withMemories: boolean;
-  price: number;
-  priceMemories: number;
+  price: number; // precio de la localidad
+  addOns: SelectedAddOn[]; // complementos seleccionados para este ticket
   attendee: AttendeeData; // Cada ticket tiene UN asistente
 }
 export interface Ticket {
@@ -168,6 +176,16 @@ export interface Ticket {
   certificateUrl?: string; // URL del certificado (solo si está habilitado)
 }
 
+export interface LocalidadAddOnOption {
+  id: number;
+  slug: string;
+  name: string;
+  price: number;
+  icon?: string;
+  description?: string | null;
+  included: boolean;
+}
+
 export interface LocalidadDetalle {
   name: string;
   price: number;
@@ -178,6 +196,7 @@ export interface LocalidadDetalle {
   withMemories: boolean;
   pushable: boolean;
   noPermiteMemorias?: boolean;
+  addOns?: LocalidadAddOnOption[];
 }
 
 export interface CartItem {
@@ -189,4 +208,7 @@ export interface CartState {
   items: CartItem[];
   total: number;
   appliedDiscount?: { code: string; percentage: number } | null;
+  // Edición a la que pertenece el carrito (no se mezclan localidades de ediciones distintas)
+  editionId?: number | null;
+  editionSlug?: string | null;
 }

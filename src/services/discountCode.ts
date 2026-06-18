@@ -36,10 +36,12 @@ export const adminDiscountCodeService = {
     }
   },
 
-  // Listar todos los códigos
-  async getAllCodes(): Promise<DiscountCode[]> {
+  // Listar todos los códigos (opcionalmente filtrados por edición)
+  async getAllCodes(edition?: number): Promise<DiscountCode[]> {
     try {
-      const response = await apiClient.get('/admin/discount-codes');
+      const response = await apiClient.get('/admin/discount-codes', {
+        params: edition ? { edition } : undefined,
+      });
       return response.data;
     } catch (error) {
       handleError(error);

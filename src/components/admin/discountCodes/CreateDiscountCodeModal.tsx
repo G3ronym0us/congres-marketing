@@ -32,15 +32,16 @@ const Field = ({ label, hint, children }: { label: string; hint?: string; childr
 );
 
 interface Props {
+  editionId: number;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function CreateDiscountCodeModal({ onClose, onSuccess }: Props) {
+export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess }: Props) {
   const today = new Date().toISOString().slice(0, 16);
 
   const [formData, setFormData] = useState<CreateDiscountCodeInput>({
-    code: '', discountPercentage: 0, maxUses: 1, isActive: true, expiresAt: '',
+    edition: editionId, code: '', discountPercentage: 0, maxUses: 1, isActive: true, expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');

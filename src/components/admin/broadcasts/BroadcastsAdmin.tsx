@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { EmailBroadcast } from '../../../types/emailBroadcast';
+import { Edition } from '../../../types/edition';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
 import CreateBroadcastModal from './CreateBroadcastModal';
 import BroadcastDetailModal from './BroadcastDetailModal';
@@ -43,7 +44,7 @@ const formatDate = (d: string) =>
 
 import React from 'react';
 
-const BroadcastsAdmin = () => {
+const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
   const [broadcasts, setBroadcasts]             = useState<EmailBroadcast[]>([]);
   const [filtered, setFiltered]                 = useState<EmailBroadcast[]>([]);
   const [loading, setLoading]                   = useState(true);
@@ -208,7 +209,7 @@ const BroadcastsAdmin = () => {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* ── Modales ── */}
-      <CreateBroadcastModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSuccess={() => { setIsCreateOpen(false); load(); }} />
+      <CreateBroadcastModal isOpen={isCreateOpen} editions={editions} onClose={() => setIsCreateOpen(false)} onSuccess={() => { setIsCreateOpen(false); load(); }} />
       {selected && (
         <BroadcastDetailModal
           isOpen={isDetailOpen}

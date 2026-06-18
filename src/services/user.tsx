@@ -49,10 +49,14 @@ export async function loginUser(user: LoginUserInput) {
   }
 }
 
-export async function getInternationalWithTitle(): Promise<Lecturer[]> {
+export async function getInternationalWithTitle(
+  edition?: number,
+): Promise<Lecturer[]> {
   try {
     const response = await apiClient
-      .get('/lecturers/internationals')
+      .get('/lecturers/internationals', {
+        params: edition ? { edition } : undefined,
+      })
       .then((res) => res.data)
       .catch((err) => {
         console.error('Error fetching international lecturers:', err);
@@ -64,10 +68,14 @@ export async function getInternationalWithTitle(): Promise<Lecturer[]> {
   }
 }
 
-export async function getNationalWithTitle(): Promise<Lecturer[]> {
+export async function getNationalWithTitle(
+  edition?: number,
+): Promise<Lecturer[]> {
   try {
     const response = await apiClient
-      .get('/lecturers/nationals')
+      .get('/lecturers/nationals', {
+        params: edition ? { edition } : undefined,
+      })
       .then((res) => res.data)
       .catch((err) => {
         console.error('Error fetching national lecturers:', err);
@@ -104,6 +112,16 @@ export async function update(id: number, lecturer: UpdateLecturerData): Promise<
     console.error('Error updating lecturer:', err);
     return [];
   });
+  return response;
+}
+
+export async function copyLecturer(
+  id: number,
+  editionId: number,
+): Promise<Lecturer> {
+  const response = await apiClient
+    .post(`/lecturers/${id}/copy`, { editionId })
+    .then((res) => res.data);
   return response;
 }
 

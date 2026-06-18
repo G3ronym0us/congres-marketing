@@ -4,7 +4,7 @@ import { LocalidadDetalle, TicketType } from '@/types/tickets';
 export const localidadesData: Record<string, LocalidadDetalle> = {
   [TicketType.DIAMOND]: {
     name: 'Localidad Diamante',
-    price: 700000,
+    price: 800000,
     color: 'bg-gradient-to-br from-[#1C2C67]/70 to-[#4B0012]/70',
     border: 'border-blue-300',
     icon: '💎',
@@ -18,14 +18,14 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     withMemories: true,
     pushable: true,
   },
-  [TicketType.VIP]: {
-    name: 'Localidad V.I.P.',
+  [TicketType.GOLD]: {
+    name: 'Localidad Oro',
     price: 600000,
-    color: 'bg-gradient-to-br from-[#1C2C67]/50 to-[#4B0012]/50',
-    border: 'border-purple-500',
-    icon: '🟣',
+    color: 'bg-gradient-to-br from-[#9a7110]/50 to-[#4a3608]/50',
+    border: 'border-yellow-400',
+    icon: '🥇',
     features: [
-      'Ingreso a todas las conferencias del evento en localidad V.I.P.',
+      'Ingreso a todas las conferencias del evento en localidad Oro',
       'Derecho a 4 coffee break en el evento',
       'Ingreso al cóctel oficial del evento',
       'Certificación de participación digital'
@@ -33,14 +33,14 @@ export const localidadesData: Record<string, LocalidadDetalle> = {
     withMemories: false,
     pushable: true
   },
-  [TicketType.GENERAL]: {
-    name: 'Localidad General',
+  [TicketType.SILVER]: {
+    name: 'Localidad Plata',
     price: 400000,
-    color: 'bg-white/10',
-    border: 'border-white/20',
-    icon: '🔵',
+    color: 'bg-gradient-to-br from-[#6b7280]/40 to-[#374151]/40',
+    border: 'border-gray-300',
+    icon: '🥈',
     features: [
-      'Ingreso a todas las conferencias del evento en localidad General',
+      'Ingreso a todas las conferencias del evento en localidad Plata',
       'Derecho a 4 coffee break en el evento',
       'Certificación de participación digital'
     ],

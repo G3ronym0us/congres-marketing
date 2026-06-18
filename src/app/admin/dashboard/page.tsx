@@ -16,12 +16,16 @@ import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
 import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAdmin';
 import CertificatesAdmin from '@/components/admin/certificates/CertificatesAdmin';
 import LocalidadesAdmin from '@/components/admin/LocalidadesAdmin';
+import AddOnsAdmin from '@/components/admin/addOns/AddOnsAdmin';
+import EditionsAdmin from '@/components/admin/editions/EditionsAdmin';
+import { adminEditionService } from '@/services/editions';
+import { getLocalidadTypes } from '@/services/localidadTypes';
+import { Edition } from '@/types/edition';
 import '../admin.css';
-
-const EVENT_DATE = new Date('2026-08-28T09:00:00');
 
 const MENU_ITEMS = [
   { id: 'dashboard',      label: 'Dashboard',           icon: null },
+  { id: 'editions',       label: 'Ediciones',           icon: null },
   { id: 'table',          label: 'Tickets',             icon: null },
   { id: 'lecturers',      label: 'Conferencistas',      icon: null },
   { id: 'testimonials',   label: 'Testimonios',         icon: null },
@@ -29,10 +33,12 @@ const MENU_ITEMS = [
   { id: 'discount-codes', label: 'Códigos de Descuento',icon: null },
   { id: 'certificates',   label: 'Certificados',        icon: null },
   { id: 'localidades',    label: 'Localidades',         icon: null },
+  { id: 'addons',         label: 'Add-ons',             icon: null },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard:      'Dashboard',
+  editions:       'Ediciones',
   table:          'Gestión de Tickets',
   lecturers:      'Conferencistas',
   testimonials:   'Testimonios',
@@ -40,11 +46,27 @@ const PAGE_TITLES: Record<string, string> = {
   'discount-codes': 'Códigos de Descuento',
   certificates:   'Certificados',
   localidades:    'Localidades',
+  addons:         'Add-ons',
 };
 
 const TYPE_ICONS: Record<string, string> = {
-  diamond: '💎', vip: '🟣', general: '🔵',
+  diamond: '💎', gold: '🥇', silver: '🥈', vip: '🟣', general: '🔵',
   streaming: '🌐', allied: '🤝', staff: '👥', journalist: '🎤',
+};
+
+// Fecha de referencia de una edición (para ordenar por más reciente)
+const editionDate = (e: Edition): number => {
+  if (e.display?.iso) return new Date(e.display.iso).getTime();
+  if (e.eventStartDate) return new Date(e.eventStartDate).getTime();
+  return new Date(e.year, 0, 1).getTime();
+};
+
+// Edición seleccionada por defecto: la activa (en venta) con la fecha más reciente;
+// si ninguna está en venta, la más reciente de todas.
+const pickDefaultEditionId = (list: Edition[]): number | undefined => {
+  const active = list.filter(e => e.salesOpen);
+  const pool = active.length ? active : list;
+  return [...pool].sort((a, b) => editionDate(b) - editionDate(a))[0]?.id;
 };
 
 export default function Dashboard() {
@@ -52,15 +74,26 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
-  const [activeEdition, setActiveEdition] = useState<number | null>(null);
+  const [editions, setEditions] = useState<Edition[]>([]);
+  const [defaultEdition, setDefaultEdition] = useState<number | null>(null);
   const [viewEdition, setViewEdition] = useState<number | undefined>(undefined);
   const [isSwitchingEdition, setIsSwitchingEdition] = useState(false);
+  // Icono/nombre por slug de localidad de la edición vista (gráfico dinámico)
+  const [localidadMeta, setLocalidadMeta] = useState<Record<string, { icon: string; name: string }>>({});
 
   const auth = useContext(AuthContext);
   const router = useRouter();
   const { metrics, loading: metricsLoading, refetch } = useMetrics(viewEdition);
 
-  const daysLeft = Math.max(0, Math.ceil((EVENT_DATE.getTime() - Date.now()) / 86400000));
+  const selectedEdition = editions.find(e => e.id === viewEdition);
+  const eventDate = selectedEdition?.display?.iso
+    ? new Date(selectedEdition.display.iso)
+    : selectedEdition?.eventStartDate
+      ? new Date(selectedEdition.eventStartDate)
+      : null;
+  const daysLeft = eventDate
+    ? Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86400000))
+    : 0;
 
   useEffect(() => {
     const t = setTimeout(() => setIsAuthLoading(false), 800);
@@ -96,30 +129,58 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const loadEditions = async () => {
+    try {
+      const [list, current] = await Promise.all([
+        adminEditionService.getAll(),
+        getCurrentEdition().catch(() => ({ currentEdition: null as number | null })),
+      ]);
+      setEditions(list);
+      setDefaultEdition(current.currentEdition);
+      // Por defecto se muestra la edición activa (en venta) con la fecha más reciente
+      setViewEdition(prev =>
+        prev ?? pickDefaultEditionId(list) ?? current.currentEdition ?? list[0]?.id ?? undefined,
+      );
+    } catch {
+      setEditions([]);
+    }
+  };
+
   useEffect(() => {
     if (isAuthLoading || !auth?.user) return;
-    getCurrentEdition()
-      .then(({ currentEdition }) => {
-        setActiveEdition(currentEdition);
-        setViewEdition(currentEdition);
-      })
-      .catch(() => setActiveEdition(null));
+    loadEditions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthLoading, auth?.user]);
+
+  // Localidades de la edición vista (para íconos/nombres dinámicos del gráfico)
+  useEffect(() => {
+    if (!viewEdition) { setLocalidadMeta({}); return; }
+    getLocalidadTypes(viewEdition)
+      .then(types => {
+        const map: Record<string, { icon: string; name: string }> = {};
+        (Array.isArray(types) ? types : []).forEach(t => {
+          map[t.slug] = { icon: t.icon || '🎫', name: t.name };
+        });
+        setLocalidadMeta(map);
+      })
+      .catch(() => setLocalidadMeta({}));
+  }, [viewEdition]);
 
   const handleLogout = () => { auth?.logout(); router.push('/admin/auth'); };
 
   const activateEdition = async () => {
-    if (!viewEdition || viewEdition === activeEdition) return;
+    if (!viewEdition || viewEdition === defaultEdition) return;
+    const target = editions.find(e => e.id === viewEdition);
     const ok = window.confirm(
-      `¿Activar la edición ${viewEdition} del congreso? Los nuevos tickets, transacciones y conferencistas se crearán en esa edición.`,
+      `¿Marcar "${target?.name ?? viewEdition}" como edición por defecto? Se usará como respaldo cuando no se especifique una edición.`,
     );
     if (!ok) return;
     try {
       setIsSwitchingEdition(true);
       const res = await setCurrentEdition(viewEdition);
-      setActiveEdition(res.currentEdition);
+      setDefaultEdition(res.currentEdition);
     } catch {
-      alert('Error al cambiar la edición activa.');
+      alert('Error al cambiar la edición por defecto.');
     } finally {
       setIsSwitchingEdition(false);
     }
@@ -197,27 +258,24 @@ export default function Dashboard() {
             <>
               {/* Actions */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
-                {activeEdition !== null && (
+                {editions.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 'auto' }}>
                     <span style={{ color: 'rgba(255,255,255,.5)', fontSize: 13 }}>Edición:</span>
                     <select
                       className="adm-btn"
-                      value={viewEdition ?? activeEdition}
+                      value={viewEdition ?? ''}
                       onChange={e => setViewEdition(parseInt(e.target.value, 10))}
                       style={{ cursor: 'pointer' }}
                     >
-                      {Array.from(
-                        { length: Math.max(activeEdition, new Date().getFullYear()) - 2025 + 2 },
-                        (_, i) => 2025 + i,
-                      ).map(year => (
-                        <option key={year} value={year} style={{ color: '#000' }}>
-                          {year}{year === activeEdition ? ' (activa)' : ''}
+                      {editions.map(e => (
+                        <option key={e.id} value={e.id} style={{ color: '#000' }}>
+                          {e.name}{e.id === defaultEdition ? ' (por defecto)' : ''}
                         </option>
                       ))}
                     </select>
-                    {viewEdition !== undefined && viewEdition !== activeEdition && (
+                    {viewEdition !== undefined && viewEdition !== defaultEdition && (
                       <button className="adm-btn neon" onClick={activateEdition} disabled={isSwitchingEdition}>
-                        {isSwitchingEdition ? 'Activando…' : `Activar edición ${viewEdition}`}
+                        {isSwitchingEdition ? 'Guardando…' : 'Marcar por defecto'}
                       </button>
                     )}
                   </div>
@@ -258,7 +316,7 @@ export default function Dashboard() {
                 <div className="adm-stat">
                   <div className="adm-stat-label">Días para el evento</div>
                   <div className={`adm-stat-value${daysLeft <= 30 ? ' neon' : ''}`}>{daysLeft}</div>
-                  <div className="adm-stat-sub">28–29 Ago 2026</div>
+                  <div className="adm-stat-sub">{selectedEdition?.display?.dateShort ?? selectedEdition?.name ?? '—'}</div>
                 </div>
               </div>
 
@@ -278,7 +336,7 @@ export default function Dashboard() {
                           <div key={t.type} className="adm-bar-item">
                             <div className="adm-bar-meta">
                               <span className="adm-bar-name">
-                                {TYPE_ICONS[t.type] ?? '🎫'} {t.type}
+                                {localidadMeta[t.type]?.icon ?? TYPE_ICONS[t.type] ?? '🎫'} {localidadMeta[t.type]?.name ?? t.type}
                               </span>
                               <span className="adm-bar-nums">
                                 {t.paid} pag · {t.reserved} res · {t.total} total
@@ -326,13 +384,15 @@ export default function Dashboard() {
             </>
           )}
 
-          {activeTab === 'table'          && <TicketsTable />}
-          {activeTab === 'lecturers'      && <Lecturers />}
+          {activeTab === 'editions'       && <EditionsAdmin onChanged={loadEditions} />}
+          {activeTab === 'table'          && <TicketsTable editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
+          {activeTab === 'lecturers'      && <Lecturers editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
           {activeTab === 'testimonials'   && <TestimonialsAdmin />}
-          {activeTab === 'broadcasts'     && <BroadcastsAdmin />}
-          {activeTab === 'discount-codes' && <DiscountCodesAdmin />}
+          {activeTab === 'broadcasts'     && <BroadcastsAdmin editions={editions} />}
+          {activeTab === 'discount-codes' && <DiscountCodesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
           {activeTab === 'certificates'   && <CertificatesAdmin />}
-          {activeTab === 'localidades'    && <LocalidadesAdmin />}
+          {activeTab === 'localidades'    && <LocalidadesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
+          {activeTab === 'addons'         && <AddOnsAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
 
         </main>
       </div>

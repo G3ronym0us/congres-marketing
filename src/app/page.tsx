@@ -4,116 +4,52 @@ import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getInternationalWithTitle, getNationalWithTitle } from '@/services/user';
 import { getActiveTestimonials } from '@/services/testimonials';
+import { getPublicEditions } from '@/services/editions';
+import { Edition } from '@/types/edition';
 import { Lecturer } from '@/types/lecturer';
 import { Testimonial } from '@/types/testimonials';
-import { formatoPrecio, PRECIO_MEMORIAS } from '@/data/ticketsData';
+import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
-import { TicketType } from '@/types/tickets';
 import './landing.css';
 
-type CityId = 'col' | 'rd' | 'mx';
-
-interface Speaker { confirmed: boolean; role: string; }
-interface ScheduleRow { t: string; title: string; d: string; tag: string; }
-interface ScheduleDay { label: string; rows: ScheduleRow[]; }
-interface CityData {
-  id: CityId; leg: string; city: string; country: string; flag: string;
+interface CityView {
+  slug: string; leg: string; city: string; country: string; flag: string;
   venue: string; dateShort: string; dateLong: string; year: string;
   iso: string; status: string; statusType: string;
   stat: { a: string; b: string; c: string; d: string };
-  speakers: Speaker[]; days: ScheduleDay[];
+  speakers: { confirmed: boolean; role: string }[];
+  days: { label: string; rows: { t: string; title: string; d: string; tag: string }[] }[];
 }
 
-const CITIES: Record<CityId, CityData> = {
-  col: {
-    id: 'col', leg: 'Parada 01', city: 'Colombia', country: 'Colombia', flag: 'CO',
-    venue: 'Sede por confirmar', dateShort: '28–29 Ago 2026', dateLong: '28 y 29 de Agosto, 2026',
-    year: '2026', iso: '2026-08-28T09:00:00', status: 'Próxima parada', statusType: 'next',
-    stat: { a: '500', b: '12', c: '2', d: '7' },
-    speakers: [
-      { confirmed: true,  role: 'Estratega de campaña' },
-      { confirmed: true,  role: 'Consultor político internacional' },
-      { confirmed: true,  role: 'Directora de comunicación' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: true,  role: 'Analista de data electoral' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Día 01 · 28 Ago',
-        rows: [
-          { t: '08:00', title: 'Registro & acreditación', d: 'Apertura de puertas y networking de bienvenida', tag: 'Networking' },
-          { t: '09:30', title: 'Keynote de apertura', d: 'El nuevo mapa del poder en Latinoamérica', tag: 'Keynote' },
-          { t: '11:00', title: 'Narrativa que gana elecciones', d: 'Construcción de relato y posicionamiento de candidato', tag: 'Masterclass' },
-          { t: '13:00', title: 'Almuerzo & alianzas', d: 'Espacio de conexión con consultores y marcas', tag: 'Break' },
-          { t: '14:30', title: 'Data, IA y micro-segmentación', d: 'Cómo leer al votante en tiempo real', tag: 'Panel' },
-          { t: '16:30', title: 'Panel precandidatos', d: 'Conversación abierta con figuras de la contienda', tag: 'Panel' },
-        ],
-      },
-      {
-        label: 'Día 02 · 29 Ago',
-        rows: [
-          { t: '09:00', title: 'Guerra digital y redes', d: 'Estrategias de contenido y manejo de crisis', tag: 'Masterclass' },
-          { t: '11:00', title: 'Oratoria y debate', d: 'Entrenamiento de mensaje frente a cámara', tag: 'Taller' },
-          { t: '13:00', title: 'Almuerzo', d: '', tag: 'Break' },
-          { t: '14:30', title: 'Financiamiento y movilización', d: 'Del territorio a la urna', tag: 'Panel' },
-          { t: '16:30', title: 'Cierre & premiación', d: 'Reconocimientos y networking final', tag: 'Cierre' },
-        ],
-      },
-    ],
-  },
-
-  rd: {
-    id: 'rd', leg: 'Parada 02', city: 'Santo Domingo', country: 'República Dominicana', flag: 'RD',
-    venue: 'Sede por confirmar', dateShort: 'Nov 2026', dateLong: 'Noviembre, 2026',
-    year: '2026', iso: '2026-11-13T09:00:00', status: 'Próximamente', statusType: 'soon',
-    stat: { a: '400', b: '10', c: '2', d: '6' },
-    speakers: [
-      { confirmed: true,  role: 'Consultor regional Caribe' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Agenda por confirmar',
-        rows: [{ t: '—', title: 'Programación en construcción', d: 'La agenda de Santo Domingo se anunciará pronto', tag: 'Pronto' }],
-      },
-    ],
-  },
-
-  mx: {
-    id: 'mx', leg: 'Parada 03', city: 'Ciudad de México', country: 'México', flag: 'MX',
-    venue: 'Sede por confirmar', dateShort: 'Feb 2027', dateLong: 'Febrero, 2027',
-    year: '2027', iso: '2027-02-12T09:00:00', status: 'Próximamente', statusType: 'soon',
-    stat: { a: '600', b: '14', c: '2', d: '8' },
-    speakers: [
-      { confirmed: true,  role: 'Estratega electoral LATAM' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-      { confirmed: false, role: 'Por anunciar' },
-    ],
-    days: [
-      {
-        label: 'Agenda por confirmar',
-        rows: [{ t: '—', title: 'Programación en construcción', d: 'La agenda de Ciudad de México se anunciará pronto', tag: 'Pronto' }],
-      },
-    ],
-  },
+// Construye la vista de la landing a partir de una edición del backend (todo dinámico,
+// sin datos quemados: los campos de presentación viven en edition.display).
+const toCityView = (e: Edition): CityView => {
+  const d = e.display ?? {};
+  return {
+    slug: e.slug,
+    leg: d.leg ?? '',
+    city: e.city || e.country,
+    country: e.country,
+    flag: d.flag ?? '',
+    venue: e.venue ?? '',
+    dateShort: d.dateShort ?? '',
+    dateLong: d.dateLong ?? '',
+    year: String(e.year),
+    iso: d.iso ?? e.eventStartDate ?? '',
+    status: d.status ?? '',
+    statusType: d.statusType ?? 'soon',
+    stat: d.stat ?? { a: '', b: '', c: '', d: '' },
+    speakers: d.speakers ?? [],
+    days: d.days ?? [],
+  };
 };
 
-const ORDER: CityId[] = ['col', 'rd', 'mx'];
+const EMPTY_VIEW: CityView = {
+  slug: '', leg: '', city: '', country: '', flag: '', venue: '',
+  dateShort: '', dateLong: '', year: '', iso: '', status: '', statusType: 'soon',
+  stat: { a: '', b: '', c: '', d: '' }, speakers: [], days: [],
+};
 
 const AUDIENCE = [
   { ix: '01', text: 'Eres candidato a una elección y necesitas una narrativa ganadora.' },
@@ -127,7 +63,7 @@ const AUDIENCE = [
 export default function LandingPage() {
   const router = useRouter();
 
-  const [activeCity, setActiveCity] = useState<CityId>('col');
+  const [activeSlug, setActiveSlug] = useState<string>('');
   const [activeDay, setActiveDay] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -135,14 +71,46 @@ export default function LandingPage() {
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const { localidades, loading: localidadesLoading } = useLocalidades();
+  // Ediciones visibles (ordenadas) — fuente única de la landing
+  const [editions, setEditions] = useState<Edition[]>([]);
+  // Estados de carga para mostrar skeletons mientras llegan los datos
+  const [editionsLoading, setEditionsLoading] = useState(true);
+  const [lecturersLoading, setLecturersLoading] = useState(true);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+
+  const activeEdition =
+    editions.find(e => e.slug === activeSlug) ?? editions[0] ?? null;
+  const { localidades, loading: localidadesLoading } = useLocalidades(activeEdition?.id);
 
   const cdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ioRef = useRef<IntersectionObserver | null>(null);
 
-  const city = CITIES[activeCity];
+  // Vistas derivadas de las ediciones (nada hardcodeado)
+  const cityViews = editions.map(toCityView);
+  const city = activeEdition ? toCityView(activeEdition) : EMPTY_VIEW;
+  const ventasAbiertas = !!activeEdition?.salesOpen;
+  // Localidad destacada: la de mayor precio entre las comprables (dinámico)
+  const featuredSlug = Object.entries(localidades)
+    .filter(([key, t]) => key !== 'memorias' && t.pushable)
+    .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
+  // Add-ons opcionales de la edición (distintos), derivados de las localidades
+  const optionalAddOns = Array.from(
+    new Map(
+      Object.values(localidades)
+        .flatMap(l => l.addOns ?? [])
+        .filter(a => !a.included)
+        .map(a => [a.id, a]),
+    ).values(),
+  );
   const sw = swapOut ? 'swap out' : 'swap';
   const year = new Date().getFullYear();
+  // Rango de años de la gira, derivado de las ediciones (sin hardcodear)
+  const giraYears = editions.map(e => e.year);
+  const yearRange = giraYears.length
+    ? Math.min(...giraYears) === Math.max(...giraYears)
+      ? `${Math.min(...giraYears)}`
+      : `${Math.min(...giraYears)} — ${Math.max(...giraYears)}`
+    : '';
 
   const startCountdown = useCallback((iso: string) => {
     if (cdRef.current) clearInterval(cdRef.current);
@@ -170,11 +138,11 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Countdown
+  // Countdown (usa la fecha real de la edición activa)
   useEffect(() => {
-    startCountdown(city.iso);
+    if (city.iso) startCountdown(city.iso);
     return () => { if (cdRef.current) clearInterval(cdRef.current); };
-  }, [activeCity, city.iso, startCountdown]);
+  }, [activeSlug, city.iso, startCountdown]);
 
   // Menu body overflow
   useEffect(() => {
@@ -182,17 +150,39 @@ export default function LandingPage() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  // Fetch lecturers and testimonials from API
+  // Cargar ediciones públicas (fuente única de la landing)
   useEffect(() => {
-    Promise.all([
-      getInternationalWithTitle(),
-      getNationalWithTitle(),
-      getActiveTestimonials(),
-    ]).then(([intl, natl, tsts]) => {
-      setLecturers([...intl, ...natl].filter(l => l.show));
-      setTestimonials(tsts);
-    }).catch(console.error);
+    getPublicEditions()
+      .then(list => {
+        setEditions(list);
+        setActiveSlug(prev =>
+          prev || (list.find(e => e.salesOpen) ?? list[0])?.slug || '',
+        );
+      })
+      .catch(console.error)
+      .finally(() => setEditionsLoading(false));
   }, []);
+
+  // Testimonios (globales)
+  useEffect(() => {
+    getActiveTestimonials()
+      .then(setTestimonials)
+      .catch(console.error)
+      .finally(() => setTestimonialsLoading(false));
+  }, []);
+
+  // Conferencistas de la edición activa (se recargan al cambiar de ciudad)
+  useEffect(() => {
+    const editionId = activeEdition?.id;
+    setLecturersLoading(true);
+    Promise.all([
+      getInternationalWithTitle(editionId),
+      getNationalWithTitle(editionId),
+    ]).then(([intl, natl]) => {
+      setLecturers([...intl, ...natl].filter(l => l.show));
+    }).catch(console.error)
+      .finally(() => setLecturersLoading(false));
+  }, [activeEdition?.id]);
 
   // Reveal observer — runs after every render to pick up newly mounted elements
   useEffect(() => {
@@ -222,17 +212,59 @@ export default function LandingPage() {
     return () => ob.disconnect();
   }, []);
 
-  const switchCity = (id: CityId) => {
-    if (id === activeCity) return;
+  const switchCity = (slug: string) => {
+    if (slug === activeSlug) return;
     setSwapOut(true);
     setTimeout(() => {
-      setActiveCity(id);
+      setActiveSlug(slug);
       setActiveDay(0);
       setSwapOut(false);
     }, 320);
   };
 
   const closeMenu = () => setMenuOpen(false);
+
+  // Aviso amigable cuando se intenta comprar en una edición sin ventas activas
+  const [soon, setSoon] = useState(false);
+  const soonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerSoon = (el?: HTMLElement | null) => {
+    setSoon(true);
+    // Re-dispara la animación de "shake" en el botón pulsado
+    if (el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+    if (soonTimerRef.current) clearTimeout(soonTimerRef.current);
+    soonTimerRef.current = setTimeout(() => setSoon(false), 4200);
+  };
+
+  useEffect(() => () => {
+    if (soonTimerRef.current) clearTimeout(soonTimerRef.current);
+  }, []);
+
+  // Todos los CTA de compra van directo a la boletería; si la edición activa
+  // aún no tiene ventas abiertas, se evita navegar y se muestra el aviso.
+  const handleBuyClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (ventasAbiertas) return;
+    e.preventDefault();
+    triggerSoon(e.currentTarget);
+  };
+
+  const renderBuyCTA = (label: string, onClickExtra?: () => void) => (
+    <a
+      className={`btn btn-neon${ventasAbiertas ? '' : ' btn-soon'}`}
+      href={`/boleteria?ed=${activeSlug}`}
+      onClick={(e) => {
+        handleBuyClick(e);
+        onClickExtra?.();
+      }}
+    >
+      {ventasAbiertas ? label : 'Próximamente'}{' '}
+      <span className="arr">{ventasAbiertas ? '→' : '✦'}</span>
+    </a>
+  );
 
   const delayClass = (i: number) => ['', ' d1', ' d2', ' d3'][i % 4];
 
@@ -249,7 +281,7 @@ export default function LandingPage() {
           <a href="#agenda">Agenda</a>
           <a href="#entradas">Entradas</a>
           <a href="#contacto">Contacto</a>
-          <a className="btn btn-neon" href="#entradas">Inscríbete <span className="arr">→</span></a>
+          {renderBuyCTA('Inscríbete')}
         </div>
         <button className="nav-burger" onClick={() => setMenuOpen(v => !v)} aria-label="Menú" aria-expanded={menuOpen}>
           <span /><span /><span />
@@ -263,7 +295,7 @@ export default function LandingPage() {
         <a href="#agenda" onClick={closeMenu}>Agenda</a>
         <a href="#entradas" onClick={closeMenu}>Entradas</a>
         <a href="#contacto" onClick={closeMenu}>Contacto</a>
-        <a className="btn btn-neon" href="#entradas" onClick={closeMenu}>Inscríbete <span className="arr">→</span></a>
+        {renderBuyCTA('Inscríbete', closeMenu)}
       </div>
       <div className={`mmenu-scrim${menuOpen ? ' open' : ''}`} onClick={closeMenu} />
 
@@ -275,7 +307,9 @@ export default function LandingPage() {
             <div className="hero-left">
               <span className="hero-status">
                 <span className="pulse" />
-                <span className={sw}>{city.status}</span>
+                {editionsLoading
+                  ? <span className="sk-line" style={{ width: 150, height: 12 }} />
+                  : <span className={sw}>{city.status}</span>}
               </span>
 
               <h1>
@@ -284,40 +318,62 @@ export default function LandingPage() {
                 <span className="ln outline">que ganan.</span>
               </h1>
 
-              <p className={`hero-sub ${sw}`}>
-                El Congreso Nacional de Marketing Político aterriza en {city.city}. {city.dateLong}. Estrategia, narrativa e inteligencia para quienes hacen política en serio.
-              </p>
+              {editionsLoading ? (
+                <div className="hero-sub" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span className="sk-line" style={{ width: '95%', height: 15 }} />
+                  <span className="sk-line" style={{ width: '78%', height: 15 }} />
+                </div>
+              ) : (
+                <p className={`hero-sub ${sw}`}>
+                  El Congreso Nacional de Marketing Político aterriza en {city.city}. {city.dateLong}. Estrategia, narrativa e inteligencia para quienes hacen política en serio.
+                </p>
+              )}
 
               {/* CITY SELECTOR */}
               <div className="city-tabs" role="tablist" aria-label="Selecciona ciudad">
-                {ORDER.map((id, i) => (
-                  <button key={id} className={`city-tab${activeCity === id ? ' active' : ''}`}
-                    data-city={id} role="tab" onClick={() => switchCity(id)}>
+                {editionsLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="city-tab" aria-hidden="true" style={{ pointerEvents: 'none' }}>
+                        <span className="ct-dot" />
+                        <div className="ct-idx"><span className="sk-line" style={{ width: 46, height: 11 }} /></div>
+                        <div className="ct-name"><span className="sk-line" style={{ width: 82, height: 16, marginTop: 6 }} /></div>
+                        <div className="ct-date"><span className="sk-line" style={{ width: 60, height: 11, marginTop: 6 }} /></div>
+                      </div>
+                    ))
+                  : cityViews.map((c, i) => (
+                  <button key={c.slug} className={`city-tab${activeSlug === c.slug ? ' active' : ''}`}
+                    data-city={c.slug} role="tab" onClick={() => switchCity(c.slug)}>
                     <span className="ct-dot" />
-                    <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {CITIES[id].flag}</div>
-                    <div className="ct-name">{CITIES[id].city}</div>
-                    <div className="ct-date">{CITIES[id].dateShort}</div>
+                    <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {c.flag}</div>
+                    <div className="ct-name">{c.city}</div>
+                    <div className="ct-date">{c.dateShort}</div>
                   </button>
                 ))}
               </div>
 
               <div className="hero-cta">
-                <a className="btn btn-neon" href="#entradas">Comprar entrada <span className="arr">→</span></a>
+                {renderBuyCTA('Comprar entrada')}
                 <a className="btn btn-ghost" href="#tour">Ver la gira</a>
               </div>
 
               <div className="hero-meta">
                 <div className="item">
                   <span className="k">Sede actual</span>
-                  <span className={`v ${sw}`}>{city.city}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 70, height: 14 }} /> : city.city}
+                  </span>
                 </div>
                 <div className="item">
                   <span className="k">Fecha</span>
-                  <span className={`v ${sw}`}>{city.dateLong}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 110, height: 14 }} /> : city.dateLong}
+                  </span>
                 </div>
                 <div className="item">
                   <span className="k">País</span>
-                  <span className={`v ${sw}`}>{city.country}</span>
+                  <span className={`v ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 64, height: 14 }} /> : city.country}
+                  </span>
                 </div>
               </div>
             </div>
@@ -326,18 +382,30 @@ export default function LandingPage() {
             <aside className="hero-right">
               <div className="cd-card">
                 <div className="cd-top">
-                  <span className={`cd-city ${sw}`}>{city.city}</span>
-                  <span className={`cd-code ${sw}`}>{city.flag}</span>
+                  <span className={`cd-city ${sw}`}>
+                    {editionsLoading ? <span className="sk-line" style={{ width: 84, height: 16 }} /> : city.city}
+                  </span>
+                  <span className={`cd-code ${sw}`}>{editionsLoading ? '' : city.flag}</span>
                 </div>
                 <div className="cd-label">Faltan</div>
                 <div className="cd-grid">
-                  <div className="cd-cell"><div className="num">{cd.d}</div><div className="unit">Días</div></div>
-                  <div className="cd-cell"><div className="num">{cd.h}</div><div className="unit">Horas</div></div>
-                  <div className="cd-cell"><div className="num">{cd.m}</div><div className="unit">Min</div></div>
-                  <div className="cd-cell"><div className="num">{cd.s}</div><div className="unit">Seg</div></div>
+                  {['Días', 'Horas', 'Min', 'Seg'].map((unit, i) => (
+                    <div key={unit} className="cd-cell">
+                      <div className="num">
+                        {editionsLoading
+                          ? <span className="sk-line" style={{ width: 34, height: 30, margin: '0 auto' }} />
+                          : [cd.d, cd.h, cd.m, cd.s][i]}
+                      </div>
+                      <div className="unit">{unit}</div>
+                    </div>
+                  ))}
                 </div>
                 <div className="cd-foot">
-                  <span className={`venue ${sw}`}>{city.dateShort} · <strong>{city.country}</strong></span>
+                  <span className={`venue ${sw}`}>
+                    {editionsLoading
+                      ? <span className="sk-line" style={{ width: 120, height: 12 }} />
+                      : <>{city.dateShort} · <strong>{city.country}</strong></>}
+                  </span>
                   <span className="cd-live mono">EN VIVO PRONTO</span>
                 </div>
               </div>
@@ -351,8 +419,8 @@ export default function LandingPage() {
             {/* lista duplicada: el loop infinito del CSS necesita dos copias */}
             {[0, 1].map(copy => (
               <Fragment key={copy}>
-                {ORDER.map(id => (
-                  <span key={id} className="it"><span className="star">✦</span> {CITIES[id].city} · {CITIES[id].dateShort}</span>
+                {cityViews.map(c => (
+                  <span key={c.slug} className="it"><span className="star">✦</span> {c.city} · {c.dateShort}</span>
                 ))}
                 <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
               </Fragment>
@@ -364,7 +432,7 @@ export default function LandingPage() {
         <section className="tour band" id="tour">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">La Gira 2026 — 2027</span>
+              <span className="eyebrow">La Gira {yearRange}</span>
               <h2 className="h-sec">Un mismo congreso,<br />tres capitales del poder.</h2>
               <p className="lead">Por primera vez, el CNMP se convierte en una gira internacional. Tres paradas, tres países, una sola comunidad que está redefiniendo cómo se hace política en la región.</p>
             </div>
@@ -372,10 +440,23 @@ export default function LandingPage() {
             <div className="route">
               <div className="route-line"><div className="fill" id="route-fill" /></div>
               <div className="route-stops">
-                {ORDER.map((id, i) => {
-                  const c = CITIES[id];
+                {editionsLoading
+                  ? Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="stop">
+                        <div className="node" />
+                        <div className="stop-card">
+                          <div className="leg"><span className="sk-line" style={{ width: 64, height: 11 }} /></div>
+                          <div className="code"><span className="sk-line" style={{ width: 42, height: 22, marginTop: 6 }} /></div>
+                          <div className="city"><span className="sk-line" style={{ width: 96, height: 18, marginTop: 8 }} /></div>
+                          <div className="country"><span className="sk-line" style={{ width: 72, height: 12, marginTop: 6 }} /></div>
+                          <div className="when"><span className="sk-line" style={{ width: 120, height: 12, marginTop: 8 }} /></div>
+                          <span className="sk-line" style={{ width: 76, height: 20, marginTop: 12, borderRadius: 100 }} />
+                        </div>
+                      </div>
+                    ))
+                  : cityViews.map((c, i) => {
                   return (
-                    <div key={id} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
+                    <div key={c.slug} className={`stop${c.statusType === 'next' ? ' is-next' : ''} reveal${delayClass(i)}`}>
                       <div className="node" />
                       <div className="stop-card">
                         <div className="leg">{c.leg}</div>
@@ -394,19 +475,35 @@ export default function LandingPage() {
             {/* Stats */}
             <div className="stats" style={{ marginTop: 64 }}>
               <div className="stat reveal">
-                <div className="n"><span className={sw}>{city.stat.a}</span><span className="suf">+</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 72, height: 38 }} />
+                    : <><span className={sw}>{city.stat.a}</span><span className="suf">+</span></>}
+                </div>
                 <div className="l">Asistentes esperados</div>
               </div>
               <div className="stat reveal d1">
-                <div className="n"><span className={sw}>{city.stat.b}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.b}</span>}
+                </div>
                 <div className="l">Conferencistas</div>
               </div>
               <div className="stat reveal d2">
-                <div className="n"><span className={sw}>{city.stat.c}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.c}</span>}
+                </div>
                 <div className="l">Días de contenido</div>
               </div>
               <div className="stat reveal d3">
-                <div className="n"><span className={sw}>{city.stat.d}</span></div>
+                <div className="n">
+                  {editionsLoading
+                    ? <span className="sk-line" style={{ width: 56, height: 38 }} />
+                    : <span className={sw}>{city.stat.d}</span>}
+                </div>
                 <div className="l">Países representados</div>
               </div>
             </div>
@@ -422,7 +519,19 @@ export default function LandingPage() {
               <p className="lead">Estrategas, consultores y analistas de toda la región. Algunos ya confirmados, otros que revelaremos en las próximas semanas.</p>
             </div>
             <div className="spk-grid">
-              {lecturers.length === 0
+              {lecturersLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <article key={`sk-${i}`} className="spk">
+                      <div className="spk-photo">
+                        <span className="sk-line" style={{ position: 'absolute', inset: 0, borderRadius: 0 }} />
+                      </div>
+                      <div className="spk-body">
+                        <div className="nm"><span className="sk-line" style={{ width: '70%', height: 16 }} /></div>
+                        <div className="rl"><span className="sk-line" style={{ width: '45%', height: 12, marginTop: 8 }} /></div>
+                      </div>
+                    </article>
+                  ))
+                : lecturers.length === 0
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <article key={i} className="spk reveal">
                       <div className="spk-photo">
@@ -495,24 +604,48 @@ export default function LandingPage() {
               <h2 className="h-sec">Dos días, agenda<br />de alto rendimiento.</h2>
             </div>
             <div className={sw}>
-              <div className="sch-days">
-                {city.days.map((d, i) => (
-                  <button key={i} className={`day-btn${activeDay === i ? ' active' : ''}`}
-                    onClick={() => setActiveDay(i)}>{d.label}</button>
-                ))}
-              </div>
-              <div className="sch-list">
-                {city.days[activeDay]?.rows.map((r, i) => (
-                  <div key={i} className="sch-row">
-                    <div className="time">{r.t}</div>
-                    <div>
-                      <div className="ttl">{r.title}</div>
-                      {r.d && <div className="dsc">{r.d}</div>}
-                    </div>
-                    <div className="tag">{r.tag}</div>
+              {editionsLoading ? (
+                <>
+                  <div className="sch-days">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <span key={i} className="sk-line" style={{ width: 130, height: 40, borderRadius: 100 }} />
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div className="sch-list">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="sch-row">
+                        <div className="time"><span className="sk-line" style={{ width: 58, height: 13 }} /></div>
+                        <div>
+                          <div className="ttl"><span className="sk-line" style={{ width: '55%', height: 15 }} /></div>
+                          <div className="dsc"><span className="sk-line" style={{ width: '35%', height: 12, marginTop: 6 }} /></div>
+                        </div>
+                        <div className="tag"><span className="sk-line" style={{ width: 52, height: 18 }} /></div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="sch-days">
+                    {city.days.map((d, i) => (
+                      <button key={i} className={`day-btn${activeDay === i ? ' active' : ''}`}
+                        onClick={() => setActiveDay(i)}>{d.label}</button>
+                    ))}
+                  </div>
+                  <div className="sch-list">
+                    {city.days[activeDay]?.rows.map((r, i) => (
+                      <div key={i} className="sch-row">
+                        <div className="time">{r.t}</div>
+                        <div>
+                          <div className="ttl">{r.title}</div>
+                          {r.d && <div className="dsc">{r.d}</div>}
+                        </div>
+                        <div className="tag">{r.tag}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -545,11 +678,11 @@ export default function LandingPage() {
               <p className={`tk-note ${sw}`}>
                 <span className="chip">Entradas independientes</span>
                 Precios para <strong style={{ color: '#fff', fontWeight: 600 }}>{city.city}</strong>
-                {city.id === 'col' ? ', en pesos colombianos (COP)' : ''}. Cada ciudad tiene su propia boletería.
+                , en pesos colombianos (COP). Cada ciudad tiene su propia boletería.
               </p>
             </div>
 
-            {city.id === 'col' ? (
+            {ventasAbiertas ? (
               <div className={`tk-grid ${sw}`}>
                 {localidadesLoading
                   ? Array.from({ length: 3 }).map((_, i) => (
@@ -567,7 +700,7 @@ export default function LandingPage() {
                   : Object.entries(localidades)
                   .filter(([, t]) => t.pushable)
                   .map(([type, t]) => {
-                  const isFeat = type === TicketType.DIAMOND;
+                  const isFeat = type === featuredSlug;
                   return (
                     <article key={type} className={`tk${isFeat ? ' feat' : ''} reveal`}>
                       {isFeat && <span className="tk-feat-tag">Más vendido</span>}
@@ -580,7 +713,7 @@ export default function LandingPage() {
                         {t.features.map((f, j) => <li key={j}>{f}</li>)}
                         {t.withMemories && <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>}
                       </ul>
-                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?localidad=${type}`}>
+                      <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?ed=${activeSlug}&localidad=${type}`}>
                         Comprar <span className="arr">→</span>
                       </a>
                     </article>
@@ -600,9 +733,17 @@ export default function LandingPage() {
               </div>
             )}
 
-            {city.id === 'col' && (
+            {ventasAbiertas && optionalAddOns.length > 0 && (
               <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 16, textAlign: 'center' }}>
-                Add-on opcional: <strong style={{ color: '#fff' }}>Memorias del evento</strong> — COP {formatoPrecio(localidades['memorias']?.price ?? PRECIO_MEMORIAS).replace('COP', '').replace('$', '').trim()} · disponible al momento de la compra.
+                Add-ons opcionales:{' '}
+                {optionalAddOns.map((a, i) => (
+                  <Fragment key={a.id}>
+                    {i > 0 && ' · '}
+                    <strong style={{ color: '#fff' }}>{a.name}</strong>{' '}
+                    (COP {formatoPrecio(a.price).replace('COP', '').replace('$', '').trim()})
+                  </Fragment>
+                ))}
+                {' '}· disponibles al momento de la compra.
               </p>
             )}
           </div>
@@ -616,7 +757,22 @@ export default function LandingPage() {
               <h2 className="h-sec">Lo que dicen quienes<br />ya vivieron el CNMP.</h2>
             </div>
             <div className="tst-grid">
-              {(testimonials.length > 0 ? testimonials : [
+              {testimonialsLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="tst">
+                      <span className="sk-line" style={{ width: '100%', height: 14 }} />
+                      <span className="sk-line" style={{ width: '92%', height: 14, marginTop: 8 }} />
+                      <span className="sk-line" style={{ width: '70%', height: 14, marginTop: 8 }} />
+                      <div className="who" style={{ marginTop: 18 }}>
+                        <div className="av" />
+                        <div>
+                          <div className="nm"><span className="sk-line" style={{ width: 90, height: 13 }} /></div>
+                          <div className="rl"><span className="sk-line" style={{ width: 130, height: 11, marginTop: 6 }} /></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (testimonials.length > 0 ? testimonials : [
                 { id: -1, firstName: 'Asistente', lastName: 'verificado', position: 'Consultor político · Edición anterior', content: 'El nivel de los ponentes y la calidad del networking no se compara con ningún otro evento político de la región.', image: null, active: true, createdAt: '', updatedAt: '' },
                 { id: -2, firstName: 'Asistente', lastName: 'verificado', position: 'Jefe de campaña · Edición anterior', content: 'Salí con una estrategia completa para mi campaña. Cada panel fue directo al grano, sin relleno.', image: null, active: true, createdAt: '', updatedAt: '' },
                 { id: -3, firstName: 'Asistente', lastName: 'verificado', position: 'Estratega digital · Edición anterior', content: 'Conocí a las personas correctas. El CNMP es donde se construyen las alianzas que deciden elecciones.', image: null, active: true, createdAt: '', updatedAt: '' },
@@ -668,7 +824,7 @@ export default function LandingPage() {
               <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
               <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad, boletería independiente.</p>
               <div className="btns">
-                <a className="btn btn-neon" href="/boleteria">Inscríbete ahora <span className="arr">→</span></a>
+                {renderBuyCTA('Inscríbete ahora')}
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">Portafolio de patrocinio</a>
               </div>
             </div>
@@ -685,9 +841,12 @@ export default function LandingPage() {
               </div>
               <div className="foot-col">
                 <h4>La Gira</h4>
-                <a href="#tour">Colombia 2026</a>
-                <a href="#tour">Santo Domingo 2026</a>
-                <a href="#tour">Cd. de México 2027</a>
+                {editions.map(e => (
+                  <a key={e.slug} href={`/boleteria?ed=${e.slug}`}>
+                    {e.city || e.country} {e.year}
+                    {!e.salesOpen && <span className="soon-pill">Pronto</span>}
+                  </a>
+                ))}
               </div>
               <div className="foot-col">
                 <h4>Evento</h4>
@@ -705,11 +864,26 @@ export default function LandingPage() {
             </div>
             <div className="foot-bottom">
               <span>© {year} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">3 CIUDADES · 3 PAÍSES · 1 COMUNIDAD</span>
+              <span className="mono">{editions.length} {editions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(editions.map(e => e.country)).size} {new Set(editions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
             </div>
           </div>
         </footer>
       </main>
+
+      {/* Aviso amigable: boletería próximamente */}
+      <div className={`soon-toast${soon ? ' show' : ''}`} role="status" aria-live="polite">
+        <span className="soon-toast-ic">🎟️</span>
+        <div className="soon-toast-tx">
+          <strong>¡Muy pronto!</strong>
+          <span>
+            La boletería de {city.city || 'esta ciudad'} abre en poco. Te
+            avisamos apenas esté lista.
+          </span>
+        </div>
+        <a className="soon-toast-cta" href="mailto:cnmpcolombia@gmail.com">
+          Avísenme
+        </a>
+      </div>
 
       {/* WhatsApp float */}
       <a className="wa" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">

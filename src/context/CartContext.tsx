@@ -15,6 +15,7 @@ import {
   TicketType,
 } from '@/types/tickets';
 import { AppliedDiscount } from '@/types/discountCode';
+import { SelectedAddOn } from '@/types/addOn';
 import { discountUtils } from '@/services/discountCode';
 import { v4 as uuidv4 } from 'uuid'; // Necesitarás instalar esta dependencia: npm install uuid @types/uuid
 
@@ -25,16 +26,15 @@ type CartAction =
       payload: {
         localidad: TicketType;
         cantidad: number;
-        withMemories: boolean;
         precio: number;
-        precioMemorias: number;
+        addOns: SelectedAddOn[];
       };
     }
   | { type: 'REMOVE_ITEM'; payload: { localidad: TicketType } }
   | { type: 'REMOVE_TICKET'; payload: { ticketId: string } }
   | {
-      type: 'TOGGLE_MEMORIAS';
-      payload: { ticketId: string; withMemories: boolean };
+      type: 'TOGGLE_ADDON';
+      payload: { ticketId: string; addOn: SelectedAddOn; on: boolean };
     }
   | {
       type: 'UPDATE_ATTENDEE';
@@ -42,6 +42,7 @@ type CartAction =
     }
   | { type: 'APPLY_DISCOUNT'; payload: { discount: AppliedDiscount } }
   | { type: 'REMOVE_DISCOUNT' }
+  | { type: 'SET_EDITION'; payload: { editionId: number; editionSlug: string } }
   | { type: 'RESTORE_CART'; payload: CartState }
   | { type: 'CLEAR_CART' };
 
@@ -50,6 +51,8 @@ const initialState: CartState = {
   items: [],
   total: 0,
   appliedDiscount: null,
+  editionId: null,
+  editionSlug: null,
 };
 
 // Clave para almacenar el carrito en localStorage
@@ -58,15 +61,13 @@ const CART_STORAGE_KEY = 'event-cart-data';
 // Crear un ticket vacío
 const createEmptyTicket = (
   type: TicketType,
-  withMemories: boolean,
   price: number,
-  priceMemories: number,
+  addOns: SelectedAddOn[],
 ): Ticket => ({
   id: uuidv4(), // Generar un ID único
   type,
-  withMemories,
   price,
-  priceMemories,
+  addOns: [...addOns],
   attendee: {
     name: '',
     lastname: '',
@@ -82,12 +83,8 @@ const calcularTotal = (items: CartItem[], appliedDiscount?: { code: string; perc
     return (
       total +
       item.tickets.reduce((subtotal, ticket) => {
-        const price = ticket.price;
-        const priceMemories =
-          ticket.withMemories && ticket.type !== TicketType.DIAMOND
-            ? ticket.priceMemories
-            : 0;
-        return subtotal + price + priceMemories;
+        const addOnsTotal = ticket.addOns.reduce((s, a) => s + a.price, 0);
+        return subtotal + ticket.price + addOnsTotal;
       }, 0)
     );
   }, 0);
@@ -104,8 +101,7 @@ const calcularTotal = (items: CartItem[], appliedDiscount?: { code: string; perc
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const { localidad, cantidad, withMemories, precio, precioMemorias } =
-        action.payload;
+      const { localidad, cantidad, precio, addOns } = action.payload;
       // Verificar si ya existe un item para esta localidad
       const existingItemIndex = state.items.findIndex(
         (item) => item.localidad === localidad,
@@ -118,9 +114,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         const newTickets: Ticket[] = [];
 
         for (let i = 0; i < cantidad; i++) {
-          newTickets.push(
-            createEmptyTicket(localidad, withMemories, precio, precioMemorias),
-          );
+          newTickets.push(createEmptyTicket(localidad, precio, addOns));
         }
 
         newItems = [...state.items];
@@ -133,9 +127,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         const newTickets: Ticket[] = [];
 
         for (let i = 0; i < cantidad; i++) {
-          newTickets.push(
-            createEmptyTicket(localidad, withMemories, precio, precioMemorias),
-          );
+          newTickets.push(createEmptyTicket(localidad, precio, addOns));
         }
 
         const newItem: CartItem = {
@@ -197,16 +189,16 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return newState;
     }
 
-    case 'TOGGLE_MEMORIAS': {
-      const { ticketId, withMemories } = action.payload;
+    case 'TOGGLE_ADDON': {
+      const { ticketId, addOn, on } = action.payload;
 
       const newItems = state.items.map((item) => ({
         ...item,
-        tickets: item.tickets.map((ticket) =>
-          ticket.id === ticketId
-            ? { ...ticket, withMemories: withMemories }
-            : ticket,
-        ),
+        tickets: item.tickets.map((ticket) => {
+          if (ticket.id !== ticketId) return ticket;
+          const without = ticket.addOns.filter((a) => a.id !== addOn.id);
+          return { ...ticket, addOns: on ? [...without, addOn] : without };
+        }),
       }));
 
       const newState = {
@@ -268,6 +260,17 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return newState;
     }
 
+    case 'SET_EDITION': {
+      const { editionId, editionSlug } = action.payload;
+      // Si el carrito pertenece a otra edición, se vacía para no mezclar localidades.
+      const sameEdition = state.editionId === editionId;
+      const newState: CartState = sameEdition
+        ? { ...state, editionId, editionSlug }
+        : { ...initialState, editionId, editionSlug };
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
     case 'RESTORE_CART': {
       return action.payload;
     }
@@ -288,16 +291,16 @@ interface CartContextType {
   addItem: (
     localidad: TicketType,
     cantidad: number,
-    withMemories: boolean,
     price: number,
-    priceMemories: number,
+    addOns: SelectedAddOn[],
   ) => void;
   removeItem: (localidad: TicketType) => void;
   removeTicket: (ticketId: string) => void;
-  toggleMemorias: (ticketId: string, withMemories: boolean) => void;
+  toggleAddOn: (ticketId: string, addOn: SelectedAddOn, on: boolean) => void;
   updateAttendee: (ticketId: string, attendee: AttendeeData) => void;
   applyDiscount: (discount: AppliedDiscount) => void;
   removeDiscount: () => void;
+  setEdition: (editionId: number, editionSlug: string) => void;
   clearCart: () => void;
 }
 
@@ -325,13 +328,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const addItem = (
     localidad: TicketType,
     cantidad: number,
-    withMemories: boolean,
     precio: number,
-    precioMemorias: number,
+    addOns: SelectedAddOn[],
   ) => {
     dispatch({
       type: 'ADD_ITEM',
-      payload: { localidad, cantidad, withMemories, precio, precioMemorias },
+      payload: { localidad, cantidad, precio, addOns },
     });
   };
 
@@ -343,8 +345,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     dispatch({ type: 'REMOVE_TICKET', payload: { ticketId } });
   };
 
-  const toggleMemorias = (ticketId: string, withMemories: boolean) => {
-    dispatch({ type: 'TOGGLE_MEMORIAS', payload: { ticketId, withMemories } });
+  const toggleAddOn = (ticketId: string, addOn: SelectedAddOn, on: boolean) => {
+    dispatch({ type: 'TOGGLE_ADDON', payload: { ticketId, addOn, on } });
   };
 
   const updateAttendee = (ticketId: string, attendee: AttendeeData) => {
@@ -362,6 +364,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     dispatch({ type: 'REMOVE_DISCOUNT' });
   };
 
+  const setEdition = (editionId: number, editionSlug: string) => {
+    dispatch({ type: 'SET_EDITION', payload: { editionId, editionSlug } });
+  };
+
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
   };
@@ -373,10 +379,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         addItem,
         removeItem,
         removeTicket,
-        toggleMemorias,
+        toggleAddOn,
         updateAttendee,
         applyDiscount,
         removeDiscount,
+        setEdition,
         clearCart,
       }}
     >
