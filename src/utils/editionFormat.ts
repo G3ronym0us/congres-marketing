@@ -1,13 +1,21 @@
 import { Edition } from '@/types/edition';
 
-const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
-const MESES_ABBR = [
-  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
-];
+export type Lang = 'es' | 'en';
+
+const MONTHS: Record<Lang, string[]> = {
+  es: [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  ],
+  en: [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ],
+};
+const MONTHS_ABBR: Record<Lang, string[]> = {
+  es: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
 
 interface DateParts { y: number; m: number; d: number; hh: number; mm: number }
 
@@ -33,32 +41,43 @@ function endParts(edition: Edition | null | undefined): DateParts | null {
   return parseParts(edition.eventEndDate);
 }
 
-function formatTime(hh: number, mm: number): string {
-  const period = hh < 12 ? 'a. m.' : 'p. m.';
+function formatTime(hh: number, mm: number, lang: Lang): string {
   const h12 = hh % 12 === 0 ? 12 : hh % 12;
-  return `${h12}:${String(mm).padStart(2, '0')} ${period}`;
+  const time = `${h12}:${String(mm).padStart(2, '0')}`;
+  if (lang === 'en') {
+    return `${time} ${hh < 12 ? 'AM' : 'PM'}`;
+  }
+  return `${time} ${hh < 12 ? 'a. m.' : 'p. m.'}`;
 }
 
 /**
- * Texto largo del rango de fechas (derivado de inicio/fin):
- *   1 día   → "28 de Agosto, 2026"
- *   2 días  → "28 y 29 de Agosto, 2026" (cruza mes/año si aplica)
- *   +2 días → "del 28 al 31 de Agosto, 2026" (cruza mes/año si aplica)
+ * Texto largo del rango de fechas (derivado de inicio/fin). Ejemplos:
+ *   ES: "28 de Agosto, 2026" · "28 y 29 de Agosto, 2026" · "del 28 al 31 de Agosto, 2026"
+ *   EN: "August 28, 2026" · "August 28 & 29, 2026" · "August 28–31, 2026"
  */
-function rangeLong(start: DateParts | null, end: DateParts | null): string {
+function rangeLong(start: DateParts | null, end: DateParts | null, lang: Lang): string {
   if (!start) return '';
-  const sMonth = MESES[start.m - 1];
+  const months = MONTHS[lang];
+  const sMonth = months[start.m - 1];
+  const en = lang === 'en';
 
   // Un solo día (sin fin, o fin igual/anterior al inicio)
   if (!end || dayIndex(end) <= dayIndex(start)) {
-    return `${start.d} de ${sMonth}, ${start.y}`;
+    return en
+      ? `${sMonth} ${start.d}, ${start.y}`
+      : `${start.d} de ${sMonth}, ${start.y}`;
   }
 
   const count = dayIndex(end) - dayIndex(start) + 1;
-  const eMonth = MESES[end.m - 1];
+  const eMonth = months[end.m - 1];
 
   // Mismo mes y año
   if (start.m === end.m && start.y === end.y) {
+    if (en) {
+      return count === 2
+        ? `${sMonth} ${start.d} & ${end.d}, ${start.y}`
+        : `${sMonth} ${start.d}–${end.d}, ${start.y}`;
+    }
     return count === 2
       ? `${start.d} y ${end.d} de ${sMonth}, ${start.y}`
       : `del ${start.d} al ${end.d} de ${sMonth}, ${start.y}`;
@@ -66,29 +85,44 @@ function rangeLong(start: DateParts | null, end: DateParts | null): string {
 
   // Cruza mes (mismo año): el año va una sola vez al final
   if (start.y === end.y) {
+    if (en) {
+      const a = `${sMonth} ${start.d}`;
+      const b = `${eMonth} ${end.d}, ${start.y}`;
+      return count === 2 ? `${a} & ${b}` : `${a} – ${b}`;
+    }
     const a = `${start.d} de ${sMonth}`;
     const b = `${end.d} de ${eMonth}, ${start.y}`;
     return count === 2 ? `${a} y ${b}` : `del ${a} al ${b}`;
   }
 
   // Cruza año: el año va en cada extremo
+  if (en) {
+    const a = `${sMonth} ${start.d}, ${start.y}`;
+    const b = `${eMonth} ${end.d}, ${end.y}`;
+    return count === 2 ? `${a} & ${b}` : `${a} – ${b}`;
+  }
   const a = `${start.d} de ${sMonth} de ${start.y}`;
   const b = `${end.d} de ${eMonth} de ${end.y}`;
   return count === 2 ? `${a} y ${b}` : `del ${a} al ${b}`;
 }
 
 /** Texto corto del rango (para pestañas/ticker): "28 Ago", "28–29 Ago", "28 Ago–2 Sep". */
-function rangeShort(start: DateParts | null, end: DateParts | null): string {
+function rangeShort(start: DateParts | null, end: DateParts | null, lang: Lang): string {
   if (!start) return '';
-  const sMonth = MESES_ABBR[start.m - 1];
+  const abbr = MONTHS_ABBR[lang];
+  const sMonth = abbr[start.m - 1];
+  const en = lang === 'en';
 
   if (!end || dayIndex(end) <= dayIndex(start)) {
-    return `${start.d} ${sMonth}`;
+    return en ? `${sMonth} ${start.d}` : `${start.d} ${sMonth}`;
   }
   if (start.m === end.m && start.y === end.y) {
-    return `${start.d}–${end.d} ${sMonth}`;
+    return en ? `${sMonth} ${start.d}–${end.d}` : `${start.d}–${end.d} ${sMonth}`;
   }
-  return `${start.d} ${sMonth}–${end.d} ${MESES_ABBR[end.m - 1]}`;
+  const eMonth = abbr[end.m - 1];
+  return en
+    ? `${sMonth} ${start.d} – ${eMonth} ${end.d}`
+    : `${start.d} ${sMonth}–${end.d} ${eMonth}`;
 }
 
 /** Lugar legible: "Bogotá, Colombia" (o solo el país si no hay ciudad). */
@@ -98,31 +132,43 @@ export function formatEditionWhere(edition: Edition | null | undefined): string 
 }
 
 /** Texto largo del rango de fechas del evento. */
-export function formatEditionDateLong(edition: Edition | null | undefined): string {
-  return rangeLong(startParts(edition), endParts(edition));
+export function formatEditionDateLong(
+  edition: Edition | null | undefined,
+  lang: Lang = 'es',
+): string {
+  return rangeLong(startParts(edition), endParts(edition), lang);
 }
 
 /** Texto corto del rango de fechas del evento. */
-export function formatEditionDateShort(edition: Edition | null | undefined): string {
-  return rangeShort(startParts(edition), endParts(edition));
+export function formatEditionDateShort(
+  edition: Edition | null | undefined,
+  lang: Lang = 'es',
+): string {
+  return rangeShort(startParts(edition), endParts(edition), lang);
 }
 
 /**
  * Fecha (rango) + hora de inicio, para los flujos de compra.
- * Ej: "28 y 29 de Agosto, 2026 · 9:00 a. m."
+ * Ej: "28 y 29 de Agosto, 2026 · 9:00 a. m." / "August 28 & 29, 2026 · 9:00 AM"
  */
-export function formatEditionWhen(edition: Edition | null | undefined): string {
+export function formatEditionWhen(
+  edition: Edition | null | undefined,
+  lang: Lang = 'es',
+): string {
   const s = startParts(edition);
   if (!s) return edition?.display?.dateLong ?? '';
-  const base = rangeLong(s, endParts(edition));
+  const base = rangeLong(s, endParts(edition), lang);
   const tieneHora = s.hh !== 0 || s.mm !== 0;
-  return tieneHora ? `${base} · ${formatTime(s.hh, s.mm)}` : base;
+  return tieneHora ? `${base} · ${formatTime(s.hh, s.mm, lang)}` : base;
 }
 
 /** Resumen "edición · lugar · fecha" para encabezados y banners. */
-export function formatEditionSummary(edition: Edition | null | undefined): string {
+export function formatEditionSummary(
+  edition: Edition | null | undefined,
+  lang: Lang = 'es',
+): string {
   if (!edition) return '';
-  return [edition.name, formatEditionWhere(edition), formatEditionWhen(edition)]
+  return [edition.name, formatEditionWhere(edition), formatEditionWhen(edition, lang)]
     .filter(Boolean)
     .join(' · ');
 }

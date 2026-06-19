@@ -1,7 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <>
       <footer className="relative bg-black text-white pt-8 pb-6">
@@ -9,9 +13,7 @@ export default function Footer() {
           <div className="flex flex-wrap">
             <div className="w-full lg:w-6/12 px-4">
               <h4 className="text-2xl font-semibold italic">
-                "Una estrategia correcta puede sobrevivir a una campaña
-                mediocre, pero incluso una campaña brillante puede fallar si la
-                estrategia es errónea"
+                {t('footer2.quote')}
               </h4>
               <h5 className="text-lg mt-2 mb-4 text-gray-400">
                 - Joseph Napolitan
@@ -70,7 +72,7 @@ export default function Footer() {
                     className="block uppercase text-red-600 text-lg font-semibold mb-2"
                     id="contacts"
                   >
-                    Contactos
+                    {t('footer2.contacts')}
                   </span>
                   <ul className="list-unstyled">
                     <li className="pb-2">
@@ -94,8 +96,7 @@ export default function Footer() {
           <div className="flex flex-wrap items-center md:justify-between justify-center">
             <div className="w-full md:w-4/12 px-4 mx-auto text-center">
               <div className="text-sm text-gray-500 font-semibold py-1">
-                Copyright © {new Date().getFullYear()} Congreso Nacional de
-                Marketing Político Colombia
+                {t('footer2.copyright', { year: new Date().getFullYear() })}
               </div>
             </div>
           </div>

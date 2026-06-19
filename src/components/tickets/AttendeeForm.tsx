@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AttendeeData } from '@/types/tickets';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AttendeeFormProps {
   ticketId: string;
@@ -18,6 +19,7 @@ export default function AttendeeForm({
   localidadNombre,
   onChange,
 }: AttendeeFormProps) {
+  const { t } = useLanguage();
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
@@ -44,7 +46,7 @@ export default function AttendeeForm({
   return (
     <div className="bg-white/5 p-5 rounded-lg mb-4">
       <h4 className="text-white font-semibold mb-4 pb-2 border-b border-gray-700">
-        {localidadNombre} - Boleto #{ticketIndex + 1}
+        {localidadNombre} - {t('forms.attendee.ticketLabel', { n: ticketIndex + 1 })}
       </h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -53,7 +55,7 @@ export default function AttendeeForm({
             htmlFor={`nombre-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Nombre * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
+            {t('forms.attendee.name')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -75,7 +77,7 @@ export default function AttendeeForm({
             htmlFor={`apellido-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Apellido * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
+            {t('forms.attendee.lastname')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -97,7 +99,7 @@ export default function AttendeeForm({
             htmlFor={`identificacion-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Documento de Identidad * <span className="text-xs text-gray-400">(máx. 10 caracteres)</span>
+            {t('forms.attendee.document')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -119,7 +121,7 @@ export default function AttendeeForm({
             htmlFor={`telefono-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Teléfono * <span className="text-xs text-gray-400">(solo números, máx. 15 dígitos)</span>
+            {t('forms.attendee.phone')} * <span className="text-xs text-gray-400">{t('forms.attendee.phoneHint')}</span>
           </label>
           <input
             type="tel"
@@ -142,7 +144,7 @@ export default function AttendeeForm({
             htmlFor={`email-${ticketId}`}
             className="block text-white text-sm mb-1"
           >
-            Correo Electrónico *
+            {t('forms.attendee.email')} *
           </label>
           <input
             type="email"

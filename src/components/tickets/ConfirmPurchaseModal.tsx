@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Edition } from '@/types/edition';
 import { formatEditionWhere, formatEditionWhen } from '@/utils/editionFormat';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ConfirmPurchaseModalProps {
   open: boolean;
@@ -38,10 +39,11 @@ export default function ConfirmPurchaseModal({
   onClose,
   onChangeEdition,
 }: ConfirmPurchaseModalProps) {
+  const { t, lang } = useLanguage();
   if (!open) return null;
 
   const where = formatEditionWhere(edition);
-  const when = formatEditionWhen(edition);
+  const when = formatEditionWhen(edition, lang);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -55,14 +57,14 @@ export default function ConfirmPurchaseModal({
           onClick={onClose}
           disabled={loading}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors disabled:opacity-40"
-          aria-label="Cerrar"
+          aria-label={t('forms.confirm.close')}
         >
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <h3 className="text-xl font-bold text-white mb-1">Confirma tu compra</h3>
+        <h3 className="text-xl font-bold text-white mb-1">{t('forms.confirm.title')}</h3>
         <p className="text-sm text-gray-400 mb-5">
-          Revisa que estás comprando para la edición correcta antes de continuar.
+          {t('forms.confirm.subtitle')}
         </p>
 
         {/* Edición */}
@@ -70,7 +72,7 @@ export default function ConfirmPurchaseModal({
           <div className="flex items-center gap-2 mb-2">
             <FontAwesomeIcon icon={faTicket} className="text-blue-300" />
             <span className="text-white font-semibold">
-              {edition?.name ?? 'Edición'}
+              {edition?.name ?? t('forms.confirm.editionFallback')}
             </span>
           </div>
           <div className="text-sm text-gray-300 space-y-1">
@@ -92,7 +94,7 @@ export default function ConfirmPurchaseModal({
         {/* Resumen de entradas */}
         <div className="mb-4">
           <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-            Entradas
+            {t('forms.confirm.tickets')}
           </p>
           <ul className="space-y-1">
             {items.map((it, i) => (
@@ -104,7 +106,7 @@ export default function ConfirmPurchaseModal({
             ))}
           </ul>
           <div className="flex justify-between border-t border-white/10 mt-3 pt-3">
-            <span className="text-white font-semibold">Total</span>
+            <span className="text-white font-semibold">{t('forms.confirm.total')}</span>
             <span className="text-blue-300 font-bold">{totalLabel}</span>
           </div>
         </div>
@@ -119,11 +121,11 @@ export default function ConfirmPurchaseModal({
             }`}
           >
             {loading ? (
-              'Procesando...'
+              t('forms.confirm.processing')
             ) : (
               <>
                 <FontAwesomeIcon icon={faCreditCard} className="mr-2" />
-                Sí, comprar para esta edición
+                {t('forms.confirm.confirm')}
               </>
             )}
           </button>
@@ -132,7 +134,7 @@ export default function ConfirmPurchaseModal({
             disabled={loading}
             className="w-full text-sm text-gray-300 hover:text-white py-2 transition-colors disabled:opacity-40"
           >
-            Cambiar edición
+            {t('forms.confirm.changeEdition')}
           </button>
         </div>
       </div>

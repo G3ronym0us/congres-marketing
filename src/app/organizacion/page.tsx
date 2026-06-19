@@ -3,6 +3,7 @@
 import Navbar from "../../components/navbar";
 import Footer from "../../components/Footer";
 import React from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBook,
@@ -15,6 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function Profile() {
+  const { t } = useLanguage();
   return (
     <>
       <Navbar transparent />
@@ -72,7 +74,7 @@ export default function Profile() {
                       </h3>
                       <div className="text-sm leading-normal mt-0 mb-2 text-gray-500 font-bold uppercase">
                         <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-500"></i>{" "}
-                        ‘Colombiano’
+                        {t("organizacion.nationality")}
                       </div>
                     </div>
                   </div>
@@ -83,41 +85,30 @@ export default function Profile() {
                     <div className="w-full lg:w-9/12 px-4 mb-6 text-justify text-gray-500">
                       <div className="mb-2 text-gray-700 text-center">
                         <FontAwesomeIcon icon={faUniversity} className="mr-2" />
-                        PERFIL{" "}
+                        {t("organizacion.profileLabel")}{" "}
                       </div>
                       <p className="mb-4">
-                        Manager, estratega y consultor político con más de 10
-                        años de experiencia en dirección de campañas
-                        electorales, formación y preparación de candidatos,
-                        creación de estrategia política y asesor de Gobiernos en
-                        comunicación pública.
+                        {t("organizacion.bio1")}
                       </p>
                       <p className="mb-4">
-                        Su tasa de éxito lo ubica como uno de los estrategas más
-                        efectivos de la comunicación disruptiva en medios
-                        convencionales y digitales.
+                        {t("organizacion.bio2")}
                       </p>
                       <ul>
                         <li>
                           <FontAwesomeIcon icon={faLifeRing} className="mr-2" />
-                          Creador y organizador del Congreso Nacional de
-                          Marketing Político (Colombia).
+                          {t("organizacion.achievement1")}
                         </li>
                         <li>
                           <FontAwesomeIcon icon={faLifeRing} className="mr-2" />
-                          Fundador de la Asociación Nacional de Consultores
-                          Políticos ASOCOPOL
+                          {t("organizacion.achievement2")}
                         </li>
                         <li>
                           <FontAwesomeIcon icon={faLifeRing} className="mr-2" />
-                          Condecorado con la medalla María Manuela Beltrán,
-                          otorgada a la excelencia, por parte de la
-                          municipalidad de El Socorro, Santander.
+                          {t("organizacion.achievement3")}
                         </li>
                         <li>
                           <FontAwesomeIcon icon={faLifeRing} className="mr-2" />
-                          Reconocido como el concejal más jóven de Colombia
-                          (2016).
+                          {t("organizacion.achievement4")}
                         </li>
                       </ul>
                     </div>

@@ -29,8 +29,10 @@ import EditionBanner from '@/components/tickets/EditionBanner';
 import ConfirmPurchaseModal from '@/components/tickets/ConfirmPurchaseModal';
 import Script from 'next/script';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { generateReference } from '@/utils/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Estructura para las etapas de descuento
 interface DescuentoEtapa {
@@ -76,6 +78,7 @@ const etapasDescuentoDefault: DescuentoEtapa[] = [
 
 export default function Carrito() {
   const router = useRouter();
+  const { t, lang } = useLanguage();
   const {
     state,
     removeItem,
@@ -227,22 +230,22 @@ export default function Carrito() {
         break;
       case 'DECLINED':
         setErrorMessage(
-          'El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.',
+          t('carrito.status.declined'),
         );
         break;
       case 'VOIDED':
         setErrorMessage(
-          'La transacción fue anulada. Por favor, intenta nuevamente.',
+          t('carrito.status.voided'),
         );
         break;
       case 'ERROR':
         setErrorMessage(
-          'Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.',
+          t('carrito.status.error'),
         );
         break;
       case 'PENDING':
         setErrorMessage(
-          'El pago está en proceso de verificación. Te notificaremos cuando se complete.',
+          t('carrito.status.pending'),
         );
         break;
       default:
@@ -375,7 +378,7 @@ export default function Carrito() {
     if (!isAllDataComplete) return;
 
     if (!state.editionId) {
-      alert('No se pudo determinar la edición del carrito. Vuelve a la boletería.');
+      alert(t('carrito.alert.noEdition'));
       return;
     }
 
@@ -397,6 +400,9 @@ export default function Carrito() {
           editionId: state.editionId,
           amountInCents: amountInCents,
           discountCode: state.appliedDiscount?.code || null,
+          // Idioma del comprador: el backend lo persiste en el ticket para
+          // generar el correo/PDF del boleto en el idioma correcto.
+          language: Cookies.get('lang') || 'es',
           tickets: state.items.flatMap((item) => {
             return item.tickets.map((ticket) => ({
               type: ticket.type,
@@ -412,6 +418,7 @@ export default function Carrito() {
         {
           headers: {
             'Content-Type': 'application/json',
+            'Accept-Language': Cookies.get('lang') || 'es',
           },
         },
       );
@@ -449,27 +456,27 @@ export default function Carrito() {
               switch (result.transaction.status) {
                 case 'DECLINED':
                   setErrorMessage(
-                    'El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.',
+                    t('carrito.status.declined'),
                   );
                   break;
                 case 'VOIDED':
                   setErrorMessage(
-                    'La transacción fue anulada. Por favor, intenta nuevamente.',
+                    t('carrito.status.voided'),
                   );
                   break;
                 case 'ERROR':
                   setErrorMessage(
-                    'Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.',
+                    t('carrito.status.error'),
                   );
                   break;
                 case 'PENDING':
                   setErrorMessage(
-                    'El pago está en proceso de verificación. Te notificaremos cuando se complete.',
+                    t('carrito.status.pending'),
                   );
                   break;
                 default:
                   setErrorMessage(
-                    'El estado de la transacción es: ' +
+                    t('carrito.status.unknownPrefix') +
                       result.transaction.status +
                       '. Por favor, intenta nuevamente.',
                   );
@@ -480,12 +487,12 @@ export default function Carrito() {
             } else if (result.error) {
               // Manejar error del widget
               setErrorMessage(
-                'Error al procesar el pago: ' + result.error.message,
+                t('carrito.status.payErrorPrefix') + result.error.message,
               );
             } else {
               // Caso donde el usuario cierra el widget sin completar la transacción
               setErrorMessage(
-                'El proceso de pago fue cancelado. Puedes intentarlo nuevamente cuando estés listo.',
+                t('carrito.status.cancelled'),
               );
             }
 
@@ -493,15 +500,15 @@ export default function Carrito() {
           });
         } catch (error) {
           setLoading(false);
-          alert('Error al inicializar el pago. Por favor, intenta de nuevo.');
+          alert(t('carrito.alert.initError'));
         }
       } else {
         setLoading(false);
-        alert('Error al procesar la transacción. Por favor, intenta de nuevo.');
+        alert(t('carrito.alert.processError'));
       }
     } catch (error) {
       setLoading(false);
-      alert('Error al procesar la transacción. Por favor, intenta de nuevo.');
+      alert(t('carrito.alert.processError'));
     }
   };
 
@@ -525,22 +532,22 @@ export default function Carrito() {
           break;
         case 'DECLINED':
           setErrorMessage(
-            'El pago fue rechazado por la entidad financiera. Por favor, intenta con otro método de pago.',
+            t('carrito.status.declined'),
           );
           break;
         case 'VOIDED':
           setErrorMessage(
-            'La transacción fue anulada. Por favor, intenta nuevamente.',
+            t('carrito.status.voided'),
           );
           break;
         case 'ERROR':
           setErrorMessage(
-            'Ocurrió un error durante el procesamiento del pago. Por favor, intenta nuevamente.',
+            t('carrito.status.error'),
           );
           break;
         case 'PENDING':
           setErrorMessage(
-            'El pago está en proceso de verificación. Te notificaremos cuando se complete.',
+            t('carrito.status.pending'),
           );
           break;
         default:
@@ -580,7 +587,7 @@ export default function Carrito() {
             className="flex items-center text-blue-300 hover:text-blue-400 transition mb-8"
           >
             <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-            Volver a entradas
+            {t('carrito.backToTickets')}
           </button>
 
           {enviado ? (
@@ -594,17 +601,16 @@ export default function Carrito() {
               </div>
 
               <h2 className="text-3xl font-bold text-white mb-4">
-                ¡Compra realizada con éxito!
+                {t('carrito.successTitle')}
               </h2>
 
               <p className="text-gray-300 text-lg mb-8">
-                Hemos enviado un correo con los detalles de tu compra y las
-                instrucciones para acceder al evento.
+                {t('carrito.successText')}
               </p>
 
               {purchasedEditionName && (
                 <p className="text-gray-300 mb-3">
-                  Edición:{' '}
+                  {t('carrito.edition')}{' '}
                   <span className="text-white font-medium">
                     {purchasedEditionName}
                   </span>
@@ -612,7 +618,7 @@ export default function Carrito() {
               )}
 
               <p className="text-gray-300 mb-6">
-                Número de referencia:{' '}
+                {t('carrito.referenceNumber')}{' '}
                 <span className="text-white font-medium">{reference}</span>
               </p>
 
@@ -620,7 +626,7 @@ export default function Carrito() {
                 onClick={() => router.push('/')}
                 className="bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
               >
-                Volver al inicio
+                {t('carrito.backHome')}
               </button>
             </div>
           ) : (
@@ -630,7 +636,7 @@ export default function Carrito() {
                   icon={faShoppingCart}
                   className="mr-3 text-blue-300"
                 />
-                Tu carrito de compra
+                {t('carrito.title')}
               </h2>
 
               {/* Banner de descuento si hay un descuento actual */}
@@ -649,13 +655,13 @@ export default function Carrito() {
               {state.items.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-300 text-xl mb-6">
-                    Tu carrito está vacío
+                    {t('carrito.empty')}
                   </p>
                   <button
                     onClick={handleContinuarComprando}
                     className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
-                    Ver entradas disponibles
+                    {t('carrito.seeTickets')}
                   </button>
                 </div>
               ) : (
@@ -688,8 +694,8 @@ export default function Carrito() {
                                 <p className="text-gray-400 text-sm">
                                   {item.tickets.length}{' '}
                                   {item.tickets.length === 1
-                                    ? 'entrada'
-                                    : 'entradas'}
+                                    ? t('carrito.ticketSingular')
+                                    : t('carrito.ticketPlural')}
                                 </p>
                               </div>
                             </div>
@@ -718,7 +724,7 @@ export default function Carrito() {
                                   handleEliminarItem(item.localidad)
                                 }
                                 className="text-red-400 hover:text-red-300 transition-colors"
-                                title="Eliminar todas las entradas de este tipo"
+                                title={t('carrito.removeAllTitle')}
                               >
                                 <FontAwesomeIcon icon={faTrash} />
                               </button>
@@ -732,7 +738,7 @@ export default function Carrito() {
                           >
                             <span className="flex items-center text-white">
                               <FontAwesomeIcon icon={faUser} className="mr-2" />
-                              Datos de Asistentes
+                              {t('carrito.attendeeData')}
                               {!item.tickets.every(
                                 (t) =>
                                   t.attendee.name &&
@@ -741,7 +747,7 @@ export default function Carrito() {
                                   t.attendee.email,
                               ) && (
                                 <span className="ml-2 text-xs bg-yellow-600 text-white px-2 py-1 rounded-full">
-                                  Requiere atención
+                                  {t('carrito.needsAttention')}
                                 </span>
                               )}
                             </span>
@@ -755,7 +761,7 @@ export default function Carrito() {
                           {isExpanded && (
                             <div className="mt-2">
                               <p className="text-gray-300 mb-4">
-                                Por favor, completa los datos de cada asistente:
+                                {t('carrito.completeEach')}
                               </p>
 
                               {item.tickets.map((ticket, index) => (
@@ -806,7 +812,7 @@ export default function Carrito() {
                                         .filter((a) => a.included)
                                         .map((a) => (
                                           <div key={a.id} className="text-green-400 text-sm">
-                                            ✓ {a.name} incluido
+                                            {t('carrito.addonIncluded', { name: a.name })}
                                           </div>
                                         ))}
                                     </div>
@@ -829,7 +835,7 @@ export default function Carrito() {
                                             handleEliminarTicket(ticket.id)
                                           }
                                           className="text-red-400 hover:text-red-300 transition-colors p-1"
-                                          title="Eliminar este boleto"
+                                          title={t('carrito.removeTicketTitle')}
                                         >
                                           <FontAwesomeIcon icon={faTrash} />
                                         </button>
@@ -848,7 +854,7 @@ export default function Carrito() {
                   {/* Resumen */}
                   <div className="bg-white/5 p-6 rounded-xl mb-8">
                     <h4 className="text-white font-semibold mb-4">
-                      Resumen de compra
+                      {t('carrito.summaryTitle')}
                     </h4>
 
                     <div className="space-y-2 mb-4">
@@ -881,7 +887,7 @@ export default function Carrito() {
                             </div>
                             {addOnsTotal > 0 && (
                               <div className="flex justify-between text-xs text-gray-400 pl-2">
-                                <span>+ Add-ons</span>
+                                <span>{t('carrito.addOns')}</span>
                                 <span>{formatoPrecio(addOnsTotal)}</span>
                               </div>
                             )}
@@ -893,7 +899,7 @@ export default function Carrito() {
                     <div className="border-t border-white/20 my-4"></div>
 
                     <div className="flex justify-between">
-                      <span className="text-gray-300">Subtotal:</span>
+                      <span className="text-gray-300">{t('carrito.subtotal')}</span>
                       <span className="text-white">{formatoPrecio(state.appliedDiscount ? getSubtotalSinDescuentoCodigo() : total)}</span>
                     </div>
 
@@ -905,7 +911,7 @@ export default function Carrito() {
                             icon={faPercentage}
                             className="mr-1"
                           />
-                          Descuento ({state.appliedDiscount.code} - {state.appliedDiscount.percentage}%):
+                          {t('carrito.discountCode', { code: state.appliedDiscount.code, percentage: state.appliedDiscount.percentage })}
                         </span>
                         <span>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.appliedDiscount.percentage))}</span>
                       </div>
@@ -919,7 +925,7 @@ export default function Carrito() {
                             icon={faPercentage}
                             className="mr-1"
                           />
-                          Descuento temporal ({descuentoActual.porcentaje}%):
+                          {t('carrito.discountTemporal', { percentage: descuentoActual.porcentaje })}
                         </span>
                         <span>-{formatoPrecio(montoDescuento)}</span>
                       </div>
@@ -927,7 +933,7 @@ export default function Carrito() {
 
                     {/* Total con descuentos */}
                     <div className="flex justify-between text-xl font-bold mt-2">
-                      <span className="text-white">Total:</span>
+                      <span className="text-white">{t('carrito.total')}</span>
                       <span className="text-blue-300">
                         {formatoPrecio(totalConDescuento)}
                       </span>
@@ -951,9 +957,7 @@ export default function Carrito() {
                       <p className="flex items-start">
                         <FontAwesomeIcon icon={faUser} className="mr-2 mt-1" />
                         <span>
-                          <strong>Datos incompletos:</strong> Por favor,
-                          completa los datos de todos los asistentes antes de
-                          continuar con el pago.
+                          <strong>{t('carrito.incompleteTitle')}</strong> {t('carrito.incompleteText')}
                         </span>
                       </p>
                     </div>
@@ -965,13 +969,10 @@ export default function Carrito() {
                       <p className="flex items-start">
                         <FontAwesomeIcon icon={faTags} className="mr-2 mt-1" />
                         <span>
-                          <strong>¡Promoción activa!</strong> Estás aprovechando
-                          un descuento del {descuentoActual.porcentaje}% en tu
-                          compra.
+                          <strong>{t('carrito.promoActiveTitle')}</strong> {t('carrito.promoActiveText', { percentage: descuentoActual.porcentaje })}
                           {descuentoActual.porcentaje < 35 && (
                             <span className="block mt-1 text-sm">
-                              Los precios aumentarán pronto. ¡No pierdas esta
-                              oportunidad!
+                              {t('carrito.promoHurry')}
                             </span>
                           )}
                         </span>
@@ -988,7 +989,7 @@ export default function Carrito() {
                           className="mr-2 mt-1"
                         />
                         <span>
-                          <strong>Error en el pago:</strong> {errorMessage}
+                          <strong>{t('carrito.errorTitle')}</strong> {errorMessage}
                         </span>
                       </p>
                       <div className="mt-3 text-center">
@@ -996,7 +997,7 @@ export default function Carrito() {
                           onClick={() => handleProcederPago()}
                           className="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                         >
-                          Reintentar pago
+                          {t('carrito.retry')}
                         </button>
                       </div>
                     </div>
@@ -1006,7 +1007,7 @@ export default function Carrito() {
                   <div className="bg-black/30 border border-gray-700 rounded-lg p-4 mb-6">
                     <h4 className="text-white font-semibold mb-3 flex items-center">
                       <FontAwesomeIcon icon={faTags} className="mr-2" />
-                      Etapas de descuento
+                      {t('carrito.stagesTitle')}
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
@@ -1018,13 +1019,14 @@ export default function Carrito() {
                           fechaHoy <= etapa.fechaFin;
 
                         // Formato de fechas
+                        const dateLocale = lang === 'en' ? 'en-US' : 'es-ES';
                         const fechaInicio =
-                          etapa.fechaInicio.toLocaleDateString('es-ES', {
+                          etapa.fechaInicio.toLocaleDateString(dateLocale, {
                             day: 'numeric',
                             month: 'short',
                           });
                         const fechaFin = etapa.fechaFin.toLocaleDateString(
-                          'es-ES',
+                          dateLocale,
                           { day: 'numeric', month: 'short' },
                         );
 
@@ -1045,11 +1047,11 @@ export default function Carrito() {
                             >
                               {etapa.porcentaje > 0
                                 ? `${etapa.porcentaje}% OFF`
-                                : 'Precio full'}
+                                : t('carrito.priceFull')}
                             </div>
                             {esEtapaActual && (
                               <div className="text-xs text-amber-200 mt-1">
-                                Activo ahora
+                                {t('carrito.activeNow')}
                               </div>
                             )}
                           </div>
@@ -1064,7 +1066,7 @@ export default function Carrito() {
                       onClick={handleContinuarComprando}
                       className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                     >
-                      Continuar comprando
+                      {t('carrito.continueShopping')}
                     </button>
 
                     <button
@@ -1073,7 +1075,7 @@ export default function Carrito() {
                       className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg transition-opacity ${!isAllDataComplete || loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
                     >
                       {loading ? (
-                        <span>Procesando...</span>
+                        <span>{t('carrito.processing')}</span>
                       ) : (
                         <span className="flex items-center justify-center">
                           <FontAwesomeIcon
@@ -1081,8 +1083,8 @@ export default function Carrito() {
                             className="mr-2"
                           />
                           {descuentoActual && descuentoActual.porcentaje > 0
-                            ? `Pagar con ${descuentoActual.porcentaje}% OFF`
-                            : 'Pagar Ahora'}
+                            ? t('carrito.payWithDiscount', { percentage: descuentoActual.porcentaje })
+                            : t('carrito.payNow')}
                         </span>
                       )}
                     </button>

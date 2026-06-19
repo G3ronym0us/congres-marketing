@@ -6,9 +6,11 @@ import { faCheckCircle, faEnvelope } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function PurchaseSuccess() {
   const params = useParams();
+  const { t } = useLanguage();
   const [reference, setReference] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,30 +35,28 @@ export default function PurchaseSuccess() {
               className="text-green-500 text-6xl mb-4"
             />
             <h1 className="text-3xl font-bold text-gray-800 mb-4">
-              ¡Compra Realizada con Éxito!
+              {t('purchaseSuccess.title')}
             </h1>
             <p className="text-xl text-gray-600 mb-6">
-              Gracias por tu compra. Tu número de referencia es:{' '}
+              {t('purchaseSuccess.thanks')}{' '}
               <span className="font-bold">{reference}</span>
             </p>
             <div
               className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6"
               role="alert"
             >
-              <p className="font-bold">Información Importante</p>
+              <p className="font-bold">{t('purchaseSuccess.importantInfo')}</p>
               <p>
                 <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
-                Recibirás un correo electrónico con tu(s) boleto(s) adjunto(s)
-                en breve.
+                {t('purchaseSuccess.emailNotice')}
               </p>
             </div>
             <p className="text-gray-600 mb-6">
-              Si no recibes el correo en los próximos 15 minutos, por favor
-              revisa tu carpeta de spam o contáctanos.
+              {t('purchaseSuccess.spamNotice')}
             </p>
             <Link href={process.env.NEXT_PUBLIC_URL + 'tickets/buy'}>
               <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Volver al Inicio
+                {t('purchaseSuccess.backHome')}
               </button>
             </Link>
           </div>

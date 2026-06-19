@@ -2,6 +2,7 @@
 
 import { numberToString } from 'pdf-lib';
 import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Position {
   x: number;
@@ -17,6 +18,7 @@ interface SeatProps {
 }
 
 const Seat: React.FC<SeatProps> = ({ rowName, seatNumber, cx, cy, scale }) => {
+  const { t } = useLanguage();
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0 });
 
   const handleInteractionStart = (
@@ -67,7 +69,7 @@ const Seat: React.FC<SeatProps> = ({ rowName, seatNumber, cx, cy, scale }) => {
               width: `${120 / scale}px`,
             }}
           >
-            Fila {rowName}, Asiento {seatNumber}
+            {t('seatmap.rowSeat', { row: rowName, seat: seatNumber })}
           </div>
         </foreignObject>
       )}
@@ -91,6 +93,7 @@ interface SeatRows {
 }
 
 const MapTickets: React.FC = () => {
+  const { t } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const [scale, setScale] = useState<number>(1);
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
@@ -869,8 +872,8 @@ const MapTickets: React.FC = () => {
       <div className="w-full bg-[#737373]">
         <p className="text-center text-lg">
           {localitySelected
-            ? `Localidad seleccionada: ${localitySelected}`
-            : 'Haz clic en una localidad para ver los asientos'}
+            ? t('seatmap.localitySelected', { locality: localitySelected })
+            : t('seatmap.clickLocality')}
         </p>
       </div>
     </div>

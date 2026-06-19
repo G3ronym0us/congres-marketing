@@ -20,6 +20,9 @@ apiClient.interceptors.request.use(
     if (authHeaders.Authorization) {
       config.headers.Authorization = authHeaders.Authorization;
     }
+    // Idioma actual: el backend lo usa para devolver errores/validaciones
+    // traducidos (resuelve por Accept-Language). Por defecto 'es'.
+    config.headers['Accept-Language'] = Cookies.get('lang') || 'es';
     return config;
   },
   (error) => {

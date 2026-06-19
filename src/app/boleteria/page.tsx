@@ -9,18 +9,15 @@ import { useCart } from '@/context/CartContext';
 import { TicketType } from '@/types/tickets';
 import { Edition } from '@/types/edition';
 import { getPublicEditions, getEditionBySlug } from '@/services/editions';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import '../landing.css';
 
 const MAX_CANTIDAD = 10;
 
-const NOTES = [
-  'Ninguna de las localidades incluye hospedaje, desayunos, almuerzos ni transportes.',
-  'Los refrigerios están incluidos en todas las localidades presenciales (uno por jornada).',
-  'Las memorias están incluidas en la Localidad Diamante. El resto de asistentes puede adquirirlas por separado.',
-  'No se pueden adquirir entradas por jornadas independientes. Las entradas aplican para el evento completo.',
-  'El streaming no incluye memorias del evento.',
-  'Cupos limitados por localidad. Precios sujetos a cambio según disponibilidad.',
-];
+// Las notas se traducen por índice (boleteria.notes.1..6); este arreglo solo
+// define cuántas se muestran.
+const NOTE_KEYS = ['1', '2', '3', '4', '5', '6'];
 
 const precio = (n: number) =>
   formatoPrecio(n).replace('COP', '').replace('$', '').trim();
@@ -28,6 +25,7 @@ const precio = (n: number) =>
 export default function BoleteriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const { addItem, setEdition } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [edition, setEditionData] = useState<Edition | null>(null);
@@ -43,7 +41,7 @@ export default function BoleteriaPage() {
 
   // Localidad destacada: la de mayor precio entre las comprables (dinámico)
   const featuredSlug = Object.entries(localidades)
-    .filter(([key, t]) => key !== 'memorias' && t.pushable)
+    .filter(([key, loc]) => key !== 'memorias' && loc.pushable)
     .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
 
   const detalles = localidades[localidad];
@@ -117,7 +115,7 @@ export default function BoleteriaPage() {
   const handleAgregar = () => {
     if (!detalles || !edition) return;
     if (!edition.salesOpen) {
-      alert('Esta edición aún no está abierta para compras.');
+      alert(t('boleteria.notOpenAlert'));
       return;
     }
     setEdition(edition.id, edition.slug);
@@ -140,7 +138,7 @@ export default function BoleteriaPage() {
         <a href="/"><img className="logo" src="/logo-principal.png" alt="CNMP 2026" /></a>
         {edition && (
           <span
-            title={`Estás comprando para ${edition.name}`}
+            title={t('boleteria.buyingFor', { name: edition.name })}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 12px', borderRadius: 100,
@@ -153,12 +151,13 @@ export default function BoleteriaPage() {
           </span>
         )}
         <div className="nav-links">
-          <a href="/#tour">La Gira</a>
-          <a href="/#speakers">Speakers</a>
-          <a href="/#agenda">Agenda</a>
-          <a href="/#entradas">Entradas</a>
-          <a href="/#contacto">Contacto</a>
-          <a className="btn btn-neon" href="#entradas-grid">Inscríbete <span className="arr">→</span></a>
+          <a href="/#tour">{t('landing.nav.tour')}</a>
+          <a href="/#speakers">{t('landing.nav.speakers')}</a>
+          <a href="/#agenda">{t('landing.nav.agenda')}</a>
+          <a href="/#entradas">{t('landing.nav.tickets')}</a>
+          <a href="/#contacto">{t('landing.nav.contact')}</a>
+          <a className="btn btn-neon" href="#entradas-grid">{t('boleteria.register')} <span className="arr">→</span></a>
+          <LanguageSwitcher className="ml-1" />
         </div>
       </nav>
 
@@ -168,16 +167,15 @@ export default function BoleteriaPage() {
         <section className="wrap" style={{ paddingBottom: 0 }}>
           <div style={{ maxWidth: 880, marginBottom: 28 }}>
             <span className="eyebrow">
-              Boletería · {edition ? `${edition.city ?? edition.country}${edition.display?.dateShort ? ` · ${edition.display.dateShort}` : ''}` : '…'}
+              {t('boleteria.eyebrow')} · {edition ? `${edition.city ?? edition.country}${edition.display?.dateShort ? ` · ${edition.display.dateShort}` : ''}` : '…'}
             </span>
             <h1 className="h-sec" style={{ marginTop: 12, fontSize: 'clamp(30px,4vw,48px)' }}>
-              Elige tu lugar <span style={{ color: 'var(--neon)' }}>en el congreso.</span>
+              {t('boleteria.titleMain')} <span style={{ color: 'var(--neon)' }}>{t('boleteria.titleAccent')}</span>
             </h1>
             <p className="lead" style={{ marginTop: 10, fontSize: 15 }}>
-              Cupos limitados por localidad. Boletería independiente por ciudad — esta
-              página corresponde a <strong style={{ color: '#fff' }}>{edition?.name ?? 'esta edición'}</strong>.
+              {t('boleteria.lead')} <strong style={{ color: '#fff' }}>{edition?.name ?? t('boleteria.thisEdition')}</strong>.
               {edition && !edition.salesOpen && (
-                <span style={{ color: 'var(--neon)' }}> · Ventas próximamente.</span>
+                <span style={{ color: 'var(--neon)' }}> {t('boleteria.salesSoon')}</span>
               )}
             </p>
           </div>
@@ -216,8 +214,8 @@ export default function BoleteriaPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   <div className="bsel-list">
                     {Object.entries(localidades)
-                      .filter(([key, t]) => key !== 'memorias' && t.pushable)
-                      .map(([type, t]) => {
+                      .filter(([key, loc]) => key !== 'memorias' && loc.pushable)
+                      .map(([type, loc]) => {
                         const isSelected = type === localidad;
                         return (
                           <article
@@ -228,21 +226,21 @@ export default function BoleteriaPage() {
                             aria-checked={isSelected}
                           >
                             <div className="bsel-head">
-                              <span className="bsel-icon">{t.icon}</span>
+                              <span className="bsel-icon">{loc.icon}</span>
                               <div className="bsel-info">
                                 <div className="nm">
-                                  {t.name}
-                                  {type === featuredSlug && <span className="tag">Más completo</span>}
+                                  {loc.name}
+                                  {type === featuredSlug && <span className="tag">{t('boleteria.mostComplete')}</span>}
                                 </div>
-                                {t.withMemories && <div className="sub">Incluye memorias del evento</div>}
-                                {type === TicketType.STREAMING && <div className="sub">Acceso virtual</div>}
+                                {loc.withMemories && <div className="sub">{t('boleteria.includesMemories')}</div>}
+                                {type === TicketType.STREAMING && <div className="sub">{t('boleteria.virtualAccess')}</div>}
                               </div>
-                              <div className="bsel-price"><span className="cur">COP</span>{precio(t.price)}</div>
+                              <div className="bsel-price"><span className="cur">COP</span>{precio(loc.price)}</div>
                               <span className="bsel-radio" />
                             </div>
                             {isSelected && (
                               <ul className="bsel-feats">
-                                {t.features.map((f, i) => <li key={i}>{f}</li>)}
+                                {loc.features.map((f, i) => <li key={i}>{f}</li>)}
                               </ul>
                             )}
                           </article>
@@ -253,26 +251,26 @@ export default function BoleteriaPage() {
                   {/* Cantidad + memorias */}
                   <div className="qs-panel" style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' }}>
                     <div>
-                      <span className="qs-label">Cantidad</span>
+                      <span className="qs-label">{t('boleteria.quantity')}</span>
                       <div className="qs-stepper">
                         <button
                           onClick={() => setCantidad(c => Math.max(1, c - 1))}
                           disabled={cantidad <= 1}
-                          aria-label="Menos entradas"
+                          aria-label={t('boleteria.lessTickets')}
                         >−</button>
                         <span className="num">{cantidad}</span>
                         <button
                           onClick={() => setCantidad(c => Math.min(MAX_CANTIDAD, c + 1))}
                           disabled={cantidad >= MAX_CANTIDAD}
-                          aria-label="Más entradas"
+                          aria-label={t('boleteria.moreTickets')}
                         >+</button>
                       </div>
-                      <p className="qs-hint">Hasta {MAX_CANTIDAD} por compra.</p>
+                      <p className="qs-hint">{t('boleteria.maxPerPurchase', { max: MAX_CANTIDAD })}</p>
                     </div>
 
                     {(optionalAddOns.length > 0 || includedAddOns.length > 0) && (
                       <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {optionalAddOns.length > 0 && <span className="qs-label">Add-ons opcionales</span>}
+                        {optionalAddOns.length > 0 && <span className="qs-label">{t('boleteria.optionalAddOns')}</span>}
                         {optionalAddOns.map(a => {
                           const on = selectedOptional.includes(a.id);
                           return (
@@ -296,7 +294,7 @@ export default function BoleteriaPage() {
                         })}
                         {includedAddOns.map(a => (
                           <p key={a.id} className="qs-included">
-                            ✓ Incluye: {a.name}
+                            {t('boleteria.includesAddon', { name: a.name })}
                           </p>
                         ))}
                       </div>
@@ -307,9 +305,9 @@ export default function BoleteriaPage() {
                 {/* Resumen sticky */}
                 <div className="qs-sticky">
                   <div className="qs-panel qs-summary">
-                    <span className="qs-label">Resumen</span>
+                    <span className="qs-label">{t('boleteria.summary')}</span>
                     <div className="row">
-                      <span>{detalles?.name ?? 'Entrada'}</span>
+                      <span>{detalles?.name ?? t('boleteria.ticket')}</span>
                       <span className="v">COP {precio(detalles?.price ?? 0)}</span>
                     </div>
                     {optionalAddOns
@@ -321,11 +319,11 @@ export default function BoleteriaPage() {
                         </div>
                       ))}
                     <div className="row">
-                      <span>Cantidad</span>
+                      <span>{t('boleteria.quantity')}</span>
                       <span className="v">×{cantidad}</span>
                     </div>
                     <div className="total">
-                      <span>Total</span>
+                      <span>{t('boleteria.total')}</span>
                       <span className="v">COP {precio(total)}</span>
                     </div>
                     <button
@@ -334,10 +332,10 @@ export default function BoleteriaPage() {
                       onClick={handleAgregar}
                       disabled={!detalles}
                     >
-                      Agregar al carrito <span className="arr">→</span>
+                      {t('boleteria.addToCart')} <span className="arr">→</span>
                     </button>
                     <p className="qs-hint" style={{ textAlign: 'center', marginTop: 12 }}>
-                      Los datos de los asistentes y el pago se completan en el carrito.
+                      {t('boleteria.cartHint')}
                     </p>
                   </div>
                 </div>
@@ -346,10 +344,10 @@ export default function BoleteriaPage() {
 
             {/* ── NOTAS (colapsables) ── */}
             <details className="bol-notes" style={{ marginTop: 24 }}>
-              <summary><span className="eyebrow">Notas importantes</span></summary>
+              <summary><span className="eyebrow">{t('boleteria.notesTitle')}</span></summary>
               <ul className="lp-list">
-                {NOTES.map((n, i) => (
-                  <li key={i}><span className="lp-list-dot">→</span>{n}</li>
+                {NOTE_KEYS.map((k) => (
+                  <li key={k}><span className="lp-list-dot">→</span>{t(`boleteria.notes.${k}`)}</li>
                 ))}
               </ul>
             </details>
@@ -363,29 +361,29 @@ export default function BoleteriaPage() {
             <div className="foot-grid">
               <div>
                 <img className="logo" src="/logo-principal.png" alt="CNMP 2026" />
-                <p className="desc">Congreso Nacional de Marketing Político. La gira que redefine cómo se hace política en Latinoamérica.</p>
+                <p className="desc">{t('landing.footer.desc')}</p>
               </div>
               <div className="foot-col">
-                <h4>La Gira</h4>
+                <h4>{t('landing.footer.tour')}</h4>
                 {allEditions.map(e => (
                   <a key={e.id} href={`/boleteria?ed=${e.slug}`}>{e.city ?? e.country} {e.year}</a>
                 ))}
               </div>
               <div className="foot-col">
-                <h4>Evento</h4>
-                <a href="/#speakers">Conferencistas</a>
-                <a href="/#agenda">Agenda</a>
-                <a href="#entradas-grid">Entradas</a>
+                <h4>{t('landing.footer.event')}</h4>
+                <a href="/#speakers">{t('landing.footer.speakers')}</a>
+                <a href="/#agenda">{t('landing.footer.agenda')}</a>
+                <a href="#entradas-grid">{t('landing.footer.tickets')}</a>
               </div>
               <div className="foot-col">
-                <h4>Contacto</h4>
+                <h4>{t('landing.footer.contact')}</h4>
                 <a href="mailto:cnmpcolombia@gmail.com">cnmpcolombia@gmail.com</a>
                 <a href="https://cnmpcolombia.com">cnmpcolombia.com</a>
               </div>
             </div>
             <div className="foot-bottom">
-              <span>© {new Date().getFullYear()} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">{allEditions.length} {allEditions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(allEditions.map(e => e.country)).size} {new Set(allEditions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
+              <span>{t('landing.footer.rights', { year: new Date().getFullYear() })}</span>
+              <span className="mono">{allEditions.length} {allEditions.length === 1 ? t('landing.footer.city') : t('landing.footer.cities')} · {new Set(allEditions.map(e => e.country)).size} {new Set(allEditions.map(e => e.country)).size === 1 ? t('landing.footer.countrySingular') : t('landing.footer.countryPlural')} · {t('landing.footer.community')}</span>
             </div>
           </div>
         </footer>

@@ -11,7 +11,9 @@ import { Testimonial } from '@/types/testimonials';
 import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
-import { formatEditionDateLong, formatEditionDateShort } from '@/utils/editionFormat';
+import { formatEditionDateLong, formatEditionDateShort, Lang } from '@/utils/editionFormat';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import './landing.css';
 
 interface CityView {
@@ -25,7 +27,7 @@ interface CityView {
 
 // Construye la vista de la landing a partir de una edición del backend (todo dinámico,
 // sin datos quemados: los campos de presentación viven en edition.display).
-const toCityView = (e: Edition): CityView => {
+const toCityView = (e: Edition, lang: Lang): CityView => {
   const d = e.display ?? {};
   return {
     slug: e.slug,
@@ -36,8 +38,8 @@ const toCityView = (e: Edition): CityView => {
     venue: e.venue ?? '',
     // Textos derivados de las fechas del evento (fuente única); si no hay fechas,
     // se cae al texto de presentación legacy (display.dateShort/dateLong).
-    dateShort: formatEditionDateShort(e) || d.dateShort || '',
-    dateLong: formatEditionDateLong(e) || d.dateLong || '',
+    dateShort: formatEditionDateShort(e, lang) || d.dateShort || '',
+    dateLong: formatEditionDateLong(e, lang) || d.dateLong || '',
     year: String(e.year),
     iso: d.iso ?? e.eventStartDate ?? '',
     status: d.status ?? '',
@@ -65,6 +67,7 @@ const AUDIENCE = [
 
 export default function LandingPage() {
   const router = useRouter();
+  const { t, lang } = useLanguage();
 
   const [activeSlug, setActiveSlug] = useState<string>('');
   const [activeDay, setActiveDay] = useState(0);
@@ -89,8 +92,8 @@ export default function LandingPage() {
   const ioRef = useRef<IntersectionObserver | null>(null);
 
   // Vistas derivadas de las ediciones (nada hardcodeado)
-  const cityViews = editions.map(toCityView);
-  const city = activeEdition ? toCityView(activeEdition) : EMPTY_VIEW;
+  const cityViews = editions.map((e) => toCityView(e, lang));
+  const city = activeEdition ? toCityView(activeEdition, lang) : EMPTY_VIEW;
   const ventasAbiertas = !!activeEdition?.salesOpen;
   // Localidad destacada: la de mayor precio entre las comprables (dinámico)
   const featuredSlug = Object.entries(localidades)
@@ -264,7 +267,7 @@ export default function LandingPage() {
         onClickExtra?.();
       }}
     >
-      {ventasAbiertas ? label : 'Próximamente'}{' '}
+      {ventasAbiertas ? label : t('landing.nav.comingSoon')}{' '}
       <span className="arr">{ventasAbiertas ? '→' : '✦'}</span>
     </a>
   );
@@ -279,26 +282,28 @@ export default function LandingPage() {
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
         <a href="#top"><img className="logo" src="/logo-principal.png" alt="CNMP 2026" /></a>
         <div className="nav-links">
-          <a href="#tour">La Gira</a>
-          <a href="#speakers">Speakers</a>
-          <a href="#agenda">Agenda</a>
-          <a href="#entradas">Entradas</a>
-          <a href="#contacto">Contacto</a>
-          {renderBuyCTA('Inscríbete')}
+          <a href="#tour">{t('landing.nav.tour')}</a>
+          <a href="#speakers">{t('landing.nav.speakers')}</a>
+          <a href="#agenda">{t('landing.nav.agenda')}</a>
+          <a href="#entradas">{t('landing.nav.tickets')}</a>
+          <a href="#contacto">{t('landing.nav.contact')}</a>
+          {renderBuyCTA(t('landing.nav.register'))}
+          <LanguageSwitcher className="ml-1" />
         </div>
-        <button className="nav-burger" onClick={() => setMenuOpen(v => !v)} aria-label="Menú" aria-expanded={menuOpen}>
+        <button className="nav-burger" onClick={() => setMenuOpen(v => !v)} aria-label={t('landing.nav.menu')} aria-expanded={menuOpen}>
           <span /><span /><span />
         </button>
       </nav>
 
       {/* MOBILE MENU */}
       <div className={`mmenu${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
-        <a href="#tour" onClick={closeMenu}>La Gira</a>
-        <a href="#speakers" onClick={closeMenu}>Speakers</a>
-        <a href="#agenda" onClick={closeMenu}>Agenda</a>
-        <a href="#entradas" onClick={closeMenu}>Entradas</a>
-        <a href="#contacto" onClick={closeMenu}>Contacto</a>
-        {renderBuyCTA('Inscríbete', closeMenu)}
+        <a href="#tour" onClick={closeMenu}>{t('landing.nav.tour')}</a>
+        <a href="#speakers" onClick={closeMenu}>{t('landing.nav.speakers')}</a>
+        <a href="#agenda" onClick={closeMenu}>{t('landing.nav.agenda')}</a>
+        <a href="#entradas" onClick={closeMenu}>{t('landing.nav.tickets')}</a>
+        <a href="#contacto" onClick={closeMenu}>{t('landing.nav.contact')}</a>
+        {renderBuyCTA(t('landing.nav.register'), closeMenu)}
+        <LanguageSwitcher className="self-center mt-2" />
       </div>
       <div className={`mmenu-scrim${menuOpen ? ' open' : ''}`} onClick={closeMenu} />
 
@@ -316,9 +321,9 @@ export default function LandingPage() {
               </span>
 
               <h1>
-                <span className="ln">Donde nacen</span>
-                <span className="ln accent">las campañas</span>
-                <span className="ln outline">que ganan.</span>
+                <span className="ln">{t('landing.hero.title1')}</span>
+                <span className="ln accent">{t('landing.hero.title2')}</span>
+                <span className="ln outline">{t('landing.hero.title3')}</span>
               </h1>
 
               {editionsLoading ? (
@@ -328,12 +333,12 @@ export default function LandingPage() {
                 </div>
               ) : (
                 <p className={`hero-sub ${sw}`}>
-                  El Congreso Nacional de Marketing Político aterriza en {city.city}. {city.dateLong}. Estrategia, narrativa e inteligencia para quienes hacen política en serio.
+                  {t('landing.hero.sub', { city: city.city, dateLong: city.dateLong })}
                 </p>
               )}
 
               {/* CITY SELECTOR */}
-              <div className="city-tabs" role="tablist" aria-label="Selecciona ciudad">
+              <div className="city-tabs" role="tablist" aria-label={t('landing.hero.selectCity')}>
                 {editionsLoading
                   ? Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="city-tab" aria-hidden="true" style={{ pointerEvents: 'none' }}>
@@ -355,25 +360,25 @@ export default function LandingPage() {
               </div>
 
               <div className="hero-cta">
-                {renderBuyCTA('Comprar entrada')}
-                <a className="btn btn-ghost" href="#tour">Ver la gira</a>
+                {renderBuyCTA(t('landing.hero.buyTicket'))}
+                <a className="btn btn-ghost" href="#tour">{t('landing.hero.seeTour')}</a>
               </div>
 
               <div className="hero-meta">
                 <div className="item">
-                  <span className="k">Sede actual</span>
+                  <span className="k">{t('landing.hero.currentVenue')}</span>
                   <span className={`v ${sw}`}>
                     {editionsLoading ? <span className="sk-line" style={{ width: 70, height: 14 }} /> : city.city}
                   </span>
                 </div>
                 <div className="item">
-                  <span className="k">Fecha</span>
+                  <span className="k">{t('landing.hero.date')}</span>
                   <span className={`v ${sw}`}>
                     {editionsLoading ? <span className="sk-line" style={{ width: 110, height: 14 }} /> : city.dateLong}
                   </span>
                 </div>
                 <div className="item">
-                  <span className="k">País</span>
+                  <span className="k">{t('landing.hero.country')}</span>
                   <span className={`v ${sw}`}>
                     {editionsLoading ? <span className="sk-line" style={{ width: 64, height: 14 }} /> : city.country}
                   </span>
@@ -390,9 +395,9 @@ export default function LandingPage() {
                   </span>
                   <span className={`cd-code ${sw}`}>{editionsLoading ? '' : city.flag}</span>
                 </div>
-                <div className="cd-label">Faltan</div>
+                <div className="cd-label">{t('landing.hero.countdownLabel')}</div>
                 <div className="cd-grid">
-                  {['Días', 'Horas', 'Min', 'Seg'].map((unit, i) => (
+                  {[t('landing.hero.units.days'), t('landing.hero.units.hours'), t('landing.hero.units.minutes'), t('landing.hero.units.seconds')].map((unit, i) => (
                     <div key={unit} className="cd-cell">
                       <div className="num">
                         {editionsLoading
@@ -409,7 +414,7 @@ export default function LandingPage() {
                       ? <span className="sk-line" style={{ width: 120, height: 12 }} />
                       : <>{city.dateShort} · <strong>{city.country}</strong></>}
                   </span>
-                  <span className="cd-live mono">EN VIVO PRONTO</span>
+                  <span className="cd-live mono">{t('landing.hero.liveSoon')}</span>
                 </div>
               </div>
             </aside>
@@ -425,7 +430,7 @@ export default function LandingPage() {
                 {cityViews.map(c => (
                   <span key={c.slug} className="it"><span className="star">✦</span> {c.city} · {c.dateShort}</span>
                 ))}
-                <span className="it"><span className="star">✦</span> 3 Ciudades · 3 Países · 1 Comunidad</span>
+                <span className="it"><span className="star">✦</span> {t('landing.ticker.community')}</span>
               </Fragment>
             ))}
           </div>
@@ -435,9 +440,9 @@ export default function LandingPage() {
         <section className="tour band" id="tour">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">La Gira {yearRange}</span>
-              <h2 className="h-sec">Un mismo congreso,<br />tres capitales del poder.</h2>
-              <p className="lead">Por primera vez, el CNMP se convierte en una gira internacional. Tres paradas, tres países, una sola comunidad que está redefiniendo cómo se hace política en la región.</p>
+              <span className="eyebrow">{t('landing.tour.eyebrow', { years: yearRange })}</span>
+              <h2 className="h-sec">{t('landing.tour.titleA')}<br />{t('landing.tour.titleB')}</h2>
+              <p className="lead">{t('landing.tour.lead')}</p>
             </div>
 
             <div className="route">
@@ -483,7 +488,7 @@ export default function LandingPage() {
                     ? <span className="sk-line" style={{ width: 72, height: 38 }} />
                     : <><span className={sw}>{city.stat.a}</span><span className="suf">+</span></>}
                 </div>
-                <div className="l">Asistentes esperados</div>
+                <div className="l">{t('landing.tour.statAttendees')}</div>
               </div>
               <div className="stat reveal d1">
                 <div className="n">
@@ -491,7 +496,7 @@ export default function LandingPage() {
                     ? <span className="sk-line" style={{ width: 56, height: 38 }} />
                     : <span className={sw}>{city.stat.b}</span>}
                 </div>
-                <div className="l">Conferencistas</div>
+                <div className="l">{t('landing.tour.statSpeakers')}</div>
               </div>
               <div className="stat reveal d2">
                 <div className="n">
@@ -499,7 +504,7 @@ export default function LandingPage() {
                     ? <span className="sk-line" style={{ width: 56, height: 38 }} />
                     : <span className={sw}>{city.stat.c}</span>}
                 </div>
-                <div className="l">Días de contenido</div>
+                <div className="l">{t('landing.tour.statDays')}</div>
               </div>
               <div className="stat reveal d3">
                 <div className="n">
@@ -507,7 +512,7 @@ export default function LandingPage() {
                     ? <span className="sk-line" style={{ width: 56, height: 38 }} />
                     : <span className={sw}>{city.stat.d}</span>}
                 </div>
-                <div className="l">Países representados</div>
+                <div className="l">{t('landing.tour.statCountries')}</div>
               </div>
             </div>
           </div>
@@ -517,9 +522,9 @@ export default function LandingPage() {
         <section className="band alt" id="speakers">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">Conferencistas</span>
-              <h2 className="h-sec">Las mentes detrás<br />de las campañas que importan.</h2>
-              <p className="lead">Estrategas, consultores y analistas de toda la región. Algunos ya confirmados, otros que revelaremos en las próximas semanas.</p>
+              <span className="eyebrow">{t('landing.speakers.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.speakers.titleA')}<br />{t('landing.speakers.titleB')}</h2>
+              <p className="lead">{t('landing.speakers.lead')}</p>
             </div>
             <div className="spk-grid">
               {lecturersLoading
@@ -538,12 +543,12 @@ export default function LandingPage() {
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <article key={i} className="spk reveal">
                       <div className="spk-photo">
-                        <span className="badge-st tba">Por anunciar</span>
-                        <span className="ph-tag">speaker</span>
+                        <span className="badge-st tba">{t('landing.speakers.tba')}</span>
+                        <span className="ph-tag">{t('landing.speakers.tag')}</span>
                       </div>
                       <div className="spk-body">
-                        <div className="nm">Por anunciar</div>
-                        <div className="rl">Próximamente</div>
+                        <div className="nm">{t('landing.speakers.tba')}</div>
+                        <div className="rl">{t('landing.speakers.soon')}</div>
                       </div>
                     </article>
                   ))
@@ -553,7 +558,7 @@ export default function LandingPage() {
                       onClick={() => router.push(`/lecturer/${l.alt}`)}>
                       <div className="spk-photo">
                         <span className={`badge-st ${l.type === 'INTERNATIONAL' ? 'ok' : 'tba'}`}>
-                          {l.type === 'INTERNATIONAL' ? 'Internacional' : 'Nacional'}
+                          {l.type === 'INTERNATIONAL' ? t('landing.speakers.international') : t('landing.speakers.national')}
                         </span>
                         {l.image
                           ? <img className="spk-photo-img" src={l.image} alt={`${l.firstName} ${l.lastName ?? ''}`} />
@@ -603,8 +608,8 @@ export default function LandingPage() {
         <section className="band" id="agenda">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">Cronograma</span>
-              <h2 className="h-sec">Dos días, agenda<br />de alto rendimiento.</h2>
+              <span className="eyebrow">{t('landing.agenda.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.agenda.titleA')}<br />{t('landing.agenda.titleB')}</h2>
             </div>
             <div className={sw}>
               {editionsLoading ? (
@@ -657,15 +662,15 @@ export default function LandingPage() {
         <section className="band alt" id="dirigido">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">¿Para quién es?</span>
-              <h2 className="h-sec">Solo para quienes<br />juegan para ganar.</h2>
-              <p className="lead">Este congreso no es para curiosos ni espectadores. Es para quienes saben que la política cambió — y quieren cambiar con ella.</p>
+              <span className="eyebrow">{t('landing.audience.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.audience.titleA')}<br />{t('landing.audience.titleB')}</h2>
+              <p className="lead">{t('landing.audience.lead')}</p>
             </div>
             <div className="aud-grid">
               {AUDIENCE.map((a, i) => (
                 <div key={i} className={`aud reveal${delayClass(i)}`}>
                   <span className="ix">{a.ix}</span>
-                  <p>{a.text}</p>
+                  <p>{t(`landing.audience.${i + 1}`)}</p>
                 </div>
               ))}
             </div>
@@ -676,12 +681,12 @@ export default function LandingPage() {
         <section className="band" id="entradas">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">Entradas</span>
-              <h2 className="h-sec">Elige tu lugar<br />en el congreso.</h2>
+              <span className="eyebrow">{t('landing.tickets.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.tickets.titleA')}<br />{t('landing.tickets.titleB')}</h2>
               <p className={`tk-note ${sw}`}>
-                <span className="chip">Entradas independientes</span>
-                Precios para <strong style={{ color: '#fff', fontWeight: 600 }}>{city.city}</strong>
-                , en pesos colombianos (COP). Cada ciudad tiene su propia boletería.
+                <span className="chip">{t('landing.tickets.noteChip')}</span>
+                {t('landing.tickets.notePrefix')} <strong style={{ color: '#fff', fontWeight: 600 }}>{city.city}</strong>
+                {t('landing.tickets.noteSuffix')}
               </p>
             </div>
 
@@ -701,23 +706,23 @@ export default function LandingPage() {
                       </article>
                     ))
                   : Object.entries(localidades)
-                  .filter(([, t]) => t.pushable)
-                  .map(([type, t]) => {
+                  .filter(([, loc]) => loc.pushable)
+                  .map(([type, loc]) => {
                   const isFeat = type === featuredSlug;
                   return (
                     <article key={type} className={`tk${isFeat ? ' feat' : ''} reveal`}>
-                      {isFeat && <span className="tk-feat-tag">Más vendido</span>}
-                      <div className="tk-tier">{t.name}</div>
+                      {isFeat && <span className="tk-feat-tag">{t('landing.tickets.bestSeller')}</span>}
+                      <div className="tk-tier">{loc.name}</div>
                       <div className="tk-price">
                         <span className="cur">COP </span>
-                        {formatoPrecio(t.price).replace('COP', '').replace('$', '').trim()}
+                        {formatoPrecio(loc.price).replace('COP', '').replace('$', '').trim()}
                       </div>
                       <ul className="tk-list">
-                        {t.features.map((f, j) => <li key={j}>{f}</li>)}
-                        {t.withMemories && <li style={{ color: 'var(--neon)' }}>Memorias del evento incluidas</li>}
+                        {loc.features.map((f, j) => <li key={j}>{f}</li>)}
+                        {loc.withMemories && <li style={{ color: 'var(--neon)' }}>{t('landing.tickets.memoriesIncluded')}</li>}
                       </ul>
                       <a className={`btn ${isFeat ? 'btn-neon' : 'btn-ghost'}`} href={`/boleteria?ed=${activeSlug}&localidad=${type}`}>
-                        Comprar <span className="arr">→</span>
+                        {t('landing.tickets.buy')} <span className="arr">→</span>
                       </a>
                     </article>
                   );
@@ -725,20 +730,19 @@ export default function LandingPage() {
               </div>
             ) : (
               <div className={`tk-soon ${sw}`}>
-                <span className="eyebrow">Boletería próximamente</span>
+                <span className="eyebrow">{t('landing.tickets.soonEyebrow')}</span>
                 <p style={{ color: 'var(--mute)', marginTop: 12, fontSize: 15 }}>
-                  Las entradas para <strong style={{ color: '#fff' }}>{city.city}</strong> estarán disponibles pronto.
-                  Puedes registrar tu interés escribiéndonos.
+                  {t('landing.tickets.soonText', { city: city.city })}
                 </p>
                 <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com" style={{ marginTop: 20, display: 'inline-flex' }}>
-                  Registrar interés <span className="arr">→</span>
+                  {t('landing.tickets.registerInterest')} <span className="arr">→</span>
                 </a>
               </div>
             )}
 
             {ventasAbiertas && optionalAddOns.length > 0 && (
               <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 16, textAlign: 'center' }}>
-                Add-ons opcionales:{' '}
+                {t('landing.tickets.addOnsPrefix')}{' '}
                 {optionalAddOns.map((a, i) => (
                   <Fragment key={a.id}>
                     {i > 0 && ' · '}
@@ -746,7 +750,7 @@ export default function LandingPage() {
                     (COP {formatoPrecio(a.price).replace('COP', '').replace('$', '').trim()})
                   </Fragment>
                 ))}
-                {' '}· disponibles al momento de la compra.
+                {' '}{t('landing.tickets.addOnsSuffix')}
               </p>
             )}
           </div>
@@ -756,8 +760,8 @@ export default function LandingPage() {
         <section className="band alt" id="testimonios">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">Testimonios</span>
-              <h2 className="h-sec">Lo que dicen quienes<br />ya vivieron el CNMP.</h2>
+              <span className="eyebrow">{t('landing.testimonials.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.testimonials.titleA')}<br />{t('landing.testimonials.titleB')}</h2>
             </div>
             <div className="tst-grid">
               {testimonialsLoading
@@ -776,20 +780,20 @@ export default function LandingPage() {
                     </div>
                   ))
                 : (testimonials.length > 0 ? testimonials : [
-                { id: -1, firstName: 'Asistente', lastName: 'verificado', position: 'Consultor político · Edición anterior', content: 'El nivel de los ponentes y la calidad del networking no se compara con ningún otro evento político de la región.', image: null, active: true, createdAt: '', updatedAt: '' },
-                { id: -2, firstName: 'Asistente', lastName: 'verificado', position: 'Jefe de campaña · Edición anterior', content: 'Salí con una estrategia completa para mi campaña. Cada panel fue directo al grano, sin relleno.', image: null, active: true, createdAt: '', updatedAt: '' },
-                { id: -3, firstName: 'Asistente', lastName: 'verificado', position: 'Estratega digital · Edición anterior', content: 'Conocí a las personas correctas. El CNMP es donde se construyen las alianzas que deciden elecciones.', image: null, active: true, createdAt: '', updatedAt: '' },
-              ] as Testimonial[]).map((t, i) => (
-                <div key={t.id} className={`tst reveal${delayClass(i)}`}>
-                  <p className="quote">{t.content}</p>
+                { id: -1, firstName: t('landing.testimonials.attendee'), lastName: t('landing.testimonials.verified'), position: t('landing.testimonials.role1'), content: t('landing.testimonials.quote1'), image: null, active: true, createdAt: '', updatedAt: '' },
+                { id: -2, firstName: t('landing.testimonials.attendee'), lastName: t('landing.testimonials.verified'), position: t('landing.testimonials.role2'), content: t('landing.testimonials.quote2'), image: null, active: true, createdAt: '', updatedAt: '' },
+                { id: -3, firstName: t('landing.testimonials.attendee'), lastName: t('landing.testimonials.verified'), position: t('landing.testimonials.role3'), content: t('landing.testimonials.quote3'), image: null, active: true, createdAt: '', updatedAt: '' },
+              ] as Testimonial[]).map((ts, i) => (
+                <div key={ts.id} className={`tst reveal${delayClass(i)}`}>
+                  <p className="quote">{ts.content}</p>
                   <div className="who">
-                    {t.image
-                      ? <img className="av" src={t.image} alt={`${t.firstName} ${t.lastName}`} style={{ objectFit: 'cover' }} />
+                    {ts.image
+                      ? <img className="av" src={ts.image} alt={`${ts.firstName} ${ts.lastName}`} style={{ objectFit: 'cover' }} />
                       : <div className="av" />
                     }
                     <div>
-                      <div className="nm">{t.firstName} {t.lastName}</div>
-                      <div className="rl">{t.position}</div>
+                      <div className="nm">{ts.firstName} {ts.lastName}</div>
+                      <div className="rl">{ts.position}</div>
                     </div>
                   </div>
                 </div>
@@ -802,9 +806,9 @@ export default function LandingPage() {
         <section className="band" id="aliados">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">Aliados estratégicos</span>
-              <h2 className="h-sec">Aliarse con el poder<br />transforma tu marca.</h2>
-              <p className="lead">Conecta con una comunidad de +500 líderes del mundo electoral, un ecosistema de decisión política en LATAM y visibilidad ante millones en redes.</p>
+              <span className="eyebrow">{t('landing.allies.eyebrow')}</span>
+              <h2 className="h-sec">{t('landing.allies.titleA')}<br />{t('landing.allies.titleB')}</h2>
+              <p className="lead">{t('landing.allies.lead')}</p>
             </div>
             <div className="ally-grid">
               <div className="ally reveal">
@@ -824,11 +828,11 @@ export default function LandingPage() {
         <section className="band" id="contacto" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <div className="cta-band reveal">
-              <h2>Si tú no estás,<br />tu competencia sí lo estará.</h2>
-              <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad, boletería independiente.</p>
+              <h2>{t('landing.cta.titleA')}<br />{t('landing.cta.titleB')}</h2>
+              <p>{t('landing.cta.text')}</p>
               <div className="btns">
-                {renderBuyCTA('Inscríbete ahora')}
-                <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">Portafolio de patrocinio</a>
+                {renderBuyCTA(t('landing.cta.register'))}
+                <a className="btn btn-ghost" href="mailto:cnmpcolombia@gmail.com">{t('landing.cta.sponsorship')}</a>
               </div>
             </div>
           </div>
@@ -840,34 +844,34 @@ export default function LandingPage() {
             <div className="foot-grid">
               <div>
                 <img className="logo" src="/logo-principal.png" alt="CNMP 2026" />
-                <p className="desc">Congreso Nacional de Marketing Político. La gira que redefine cómo se hace política en Latinoamérica.</p>
+                <p className="desc">{t('landing.footer.desc')}</p>
               </div>
               <div className="foot-col">
-                <h4>La Gira</h4>
+                <h4>{t('landing.footer.tour')}</h4>
                 {editions.map(e => (
                   <a key={e.slug} href={`/boleteria?ed=${e.slug}`}>
                     {e.city || e.country} {e.year}
-                    {!e.salesOpen && <span className="soon-pill">Pronto</span>}
+                    {!e.salesOpen && <span className="soon-pill">{t('landing.footer.soonPill')}</span>}
                   </a>
                 ))}
               </div>
               <div className="foot-col">
-                <h4>Evento</h4>
-                <a href="#speakers">Conferencistas</a>
-                <a href="#agenda">Agenda</a>
-                <a href="#entradas">Entradas</a>
-                <a href="#aliados">Aliados</a>
+                <h4>{t('landing.footer.event')}</h4>
+                <a href="#speakers">{t('landing.footer.speakers')}</a>
+                <a href="#agenda">{t('landing.footer.agenda')}</a>
+                <a href="#entradas">{t('landing.footer.tickets')}</a>
+                <a href="#aliados">{t('landing.footer.allies')}</a>
               </div>
               <div className="foot-col">
-                <h4>Contacto</h4>
+                <h4>{t('landing.footer.contact')}</h4>
                 <a href="mailto:cnmpcolombia@gmail.com">cnmpcolombia@gmail.com</a>
                 <a href="https://cnmpcolombia.com">cnmpcolombia.com</a>
                 <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
               </div>
             </div>
             <div className="foot-bottom">
-              <span>© {year} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">{editions.length} {editions.length === 1 ? 'CIUDAD' : 'CIUDADES'} · {new Set(editions.map(e => e.country)).size} {new Set(editions.map(e => e.country)).size === 1 ? 'PAÍS' : 'PAÍSES'} · 1 COMUNIDAD</span>
+              <span>{t('landing.footer.rights', { year })}</span>
+              <span className="mono">{editions.length} {editions.length === 1 ? t('landing.footer.city') : t('landing.footer.cities')} · {new Set(editions.map(e => e.country)).size} {new Set(editions.map(e => e.country)).size === 1 ? t('landing.footer.countrySingular') : t('landing.footer.countryPlural')} · {t('landing.footer.community')}</span>
             </div>
           </div>
         </footer>
@@ -877,14 +881,13 @@ export default function LandingPage() {
       <div className={`soon-toast${soon ? ' show' : ''}`} role="status" aria-live="polite">
         <span className="soon-toast-ic">🎟️</span>
         <div className="soon-toast-tx">
-          <strong>¡Muy pronto!</strong>
+          <strong>{t('landing.toast.title')}</strong>
           <span>
-            La boletería de {city.city || 'esta ciudad'} abre en poco. Te
-            avisamos apenas esté lista.
+            {t('landing.toast.text', { city: city.city || t('landing.toast.thisCity') })}
           </span>
         </div>
         <a className="soon-toast-cta" href="mailto:cnmpcolombia@gmail.com">
-          Avísenme
+          {t('landing.toast.cta')}
         </a>
       </div>
 

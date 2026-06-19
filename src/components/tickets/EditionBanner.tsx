@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTicket, faLocationDot, faCalendarDay } from '@fortawesome/free-solid-svg-icons';
 import { Edition } from '@/types/edition';
 import { formatEditionWhere, formatEditionWhen } from '@/utils/editionFormat';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface EditionBannerProps {
   edition: Edition | null;
@@ -17,10 +18,11 @@ interface EditionBannerProps {
  * hay varias ediciones/ciudades abiertas a la vez.
  */
 export default function EditionBanner({ edition, onChange }: EditionBannerProps) {
+  const { t, lang } = useLanguage();
   if (!edition) return null;
 
   const where = formatEditionWhere(edition);
-  const when = formatEditionWhen(edition);
+  const when = formatEditionWhen(edition, lang);
 
   return (
     <div className="sticky top-0 z-30 bg-gradient-to-r from-[#1C2C67] to-[#4B0012] border-b border-white/10 shadow-lg backdrop-blur-sm">
@@ -31,7 +33,7 @@ export default function EditionBanner({ edition, onChange }: EditionBannerProps)
           </span>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wide text-blue-200/80 leading-none mb-1">
-              Estás comprando entradas para
+              {t('forms.banner.buyingForLabel')}
             </p>
             <p className="text-white font-semibold leading-tight truncate">
               {edition.name}
@@ -58,7 +60,7 @@ export default function EditionBanner({ edition, onChange }: EditionBannerProps)
             onClick={onChange}
             className="flex-shrink-0 text-xs text-blue-200 hover:text-white border border-white/20 hover:border-white/40 rounded-full px-3 py-1.5 transition-colors"
           >
-            Cambiar
+            {t('forms.banner.change')}
           </button>
         )}
       </div>

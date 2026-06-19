@@ -11,11 +11,14 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar(props: any) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef(null);
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useLanguage();
 
   // Detectar scroll para cambiar el estilo de la navbar
   useEffect(() => {
@@ -51,11 +54,11 @@ export default function Navbar(props: any) {
     return (
       <>
         {[
-          { label: 'Paneles', alt: '#dirigido-a' },
-          { label: 'Conferencistas', alt: '#conferencistas' },
-          { label: 'Boletería', alt: '#entradas' },
-          { label: 'Testimonios', alt: '#testimonios' },
-          { label: 'Organización', alt: '#aliados' }
+          { label: t('nav.panels'), alt: '#dirigido-a' },
+          { label: t('nav.speakers'), alt: '#conferencistas' },
+          { label: t('nav.tickets'), alt: '#entradas' },
+          { label: t('nav.testimonials'), alt: '#testimonios' },
+          { label: t('nav.organization'), alt: '#aliados' }
         ].map((item, index) => (
           <Link
             href={item.alt}
@@ -107,17 +110,19 @@ export default function Navbar(props: any) {
               className="ml-2 lg:ml-4 px-4 lg:px-6 py-2 bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white rounded-full hover:from-[#293991] hover:to-[#6d0019] transition-all duration-300 text-sm lg:text-base whitespace-nowrap"
               onClick={(e) => handleLinkClick(e, '#contactanos', false)}
             >
-              Contáctanos
+              {t('nav.contact')}
             </Link>
+            <LanguageSwitcher className="ml-2 lg:ml-3" />
           </div>
 
           {/* Botón de menú para móvil - Hacerlo más grande */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            <LanguageSwitcher />
             <button
               ref={btnRef}
               onClick={onOpen}
               className="text-white focus:outline-none p-3"
-              aria-label="Abrir menú"
+              aria-label={t('landing.nav.openMenu')}
             >
               <HamburgerIcon w={24} h={24} />
             </button>
@@ -147,7 +152,7 @@ export default function Navbar(props: any) {
             <button 
               onClick={onClose} 
               className="text-white p-3 focus:outline-none"
-              aria-label="Cerrar menú"
+              aria-label={t('landing.nav.closeMenu')}
             >
               <CloseIcon w={16} h={16} />
             </button>
@@ -163,7 +168,7 @@ export default function Navbar(props: any) {
                   onClick={(e) => handleLinkClick(e, '#contactanos', true)}
                   className="block w-full text-center px-6 py-4 bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white rounded-full text-xl hover:opacity-90 font-medium"
                 >
-                  Contáctanos
+                  {t('nav.contact')}
                 </Link>
               </div>
             </div>

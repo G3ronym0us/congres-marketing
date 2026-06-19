@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { getLecturerByAlt } from '@/services/user';
 import { Lecturer } from '@/types/lecturer';
 import { WHATSAPP_URL } from '@/data/contactData';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import '../../landing.css';
 
 /* ── small inline SVG icons ── */
@@ -32,6 +34,7 @@ const IconYT = () => (
 export default function LecturerDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [lecturer, setLecturer] = useState<Lecturer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,12 +82,13 @@ export default function LecturerDetailPage() {
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/"><img className="logo" src="/logo-principal.png" alt="CNMP 2026" /></a>
         <div className="nav-links">
-          <a href="/#tour">La Gira</a>
-          <a href="/#speakers">Speakers</a>
-          <a href="/#agenda">Agenda</a>
-          <a href="/#entradas">Entradas</a>
-          <a href="/#contacto">Contacto</a>
-          <a className="btn btn-neon" href="/#entradas">Inscríbete <span className="arr">→</span></a>
+          <a href="/#tour">{t('landing.nav.tour')}</a>
+          <a href="/#speakers">{t('landing.nav.speakers')}</a>
+          <a href="/#agenda">{t('landing.nav.agenda')}</a>
+          <a href="/#entradas">{t('landing.nav.tickets')}</a>
+          <a href="/#contacto">{t('landing.nav.contact')}</a>
+          <a className="btn btn-neon" href="/#entradas">{t('landing.nav.register')} <span className="arr">→</span></a>
+          <LanguageSwitcher className="ml-1" />
         </div>
       </nav>
 
@@ -95,7 +99,7 @@ export default function LecturerDetailPage() {
             <div style={{ textAlign: 'center' }}>
               <div className="pulse" style={{ width: 16, height: 16, margin: '0 auto 20px' }} />
               <p style={{ fontFamily: 'var(--display)', letterSpacing: '.2em', color: 'var(--mute)', fontSize: 13, textTransform: 'uppercase' }}>
-                Cargando conferencista…
+                {t('lecturer.loading')}
               </p>
             </div>
           </div>
@@ -105,9 +109,9 @@ export default function LecturerDetailPage() {
           <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
             <div>
               <div style={{ fontFamily: 'var(--display)', fontSize: 64, color: 'var(--neon)', marginBottom: 16 }}>?</div>
-              <h1 style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 32, marginBottom: 12 }}>Conferencista no encontrado</h1>
-              <p style={{ color: 'var(--mute)', marginBottom: 28 }}>No pudimos encontrar el perfil solicitado.</p>
-              <button className="btn btn-ghost" onClick={() => router.push('/')}>← Volver al inicio</button>
+              <h1 style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 32, marginBottom: 12 }}>{t('lecturer.notFoundTitle')}</h1>
+              <p style={{ color: 'var(--mute)', marginBottom: 28 }}>{t('lecturer.notFoundText')}</p>
+              <button className="btn btn-ghost" onClick={() => router.push('/')}>{t('lecturer.backHome')}</button>
             </div>
           </div>
         )}
@@ -118,14 +122,14 @@ export default function LecturerDetailPage() {
             <section className="lp-hero">
               <div className="wrap">
                 <button className="lp-back btn btn-ghost" onClick={() => router.back()}>
-                  ← Volver
+                  {t('lecturer.back')}
                 </button>
 
                 <div className="lp-hero-grid">
                   {/* Left: info */}
                   <div className="lp-hero-info">
                     <span className={`badge-st ${lecturer.type === 'INTERNATIONAL' ? 'ok' : 'tba'}`} style={{ fontSize: 11, padding: '6px 14px', borderRadius: 100, marginBottom: 22, display: 'inline-block' }}>
-                      {lecturer.type === 'INTERNATIONAL' ? 'Internacional' : 'Nacional'}
+                      {lecturer.type === 'INTERNATIONAL' ? t('landing.speakers.international') : t('landing.speakers.national')}
                     </span>
 
                     <h1 className="lp-name">
@@ -161,7 +165,7 @@ export default function LecturerDetailPage() {
                     )}
 
                     <a className="btn btn-neon" href="/#entradas" style={{ marginTop: 28 }}>
-                      Ver entradas <span className="arr">→</span>
+                      {t('lecturer.seeTickets')} <span className="arr">→</span>
                     </a>
                   </div>
 
@@ -214,7 +218,7 @@ export default function LecturerDetailPage() {
                           </div>
                         )}
                         <a className="btn btn-neon" href="/#entradas" style={{ width: '100%', justifyContent: 'center', marginTop: 20 }}>
-                          Comprar entrada <span className="arr">→</span>
+                          {t('landing.hero.buyTicket')} <span className="arr">→</span>
                         </a>
                       </div>
                     </div>
@@ -225,14 +229,14 @@ export default function LecturerDetailPage() {
 
                     {lecturer.title && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Su conferencia</span>
+                        <span className="eyebrow">{t('lecturer.talk')}</span>
                         <h2 className="lp-card-title" style={{ marginTop: 14 }}>{lecturer.title}</h2>
                       </div>
                     )}
 
                     {lecturer.biography && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Biografía</span>
+                        <span className="eyebrow">{t('lecturer.biography')}</span>
                         <div className="lp-bio">
                           {lecturer.biography.split('\n').filter(Boolean).map((p, i) => (
                             <p key={i}>{p}</p>
@@ -243,7 +247,7 @@ export default function LecturerDetailPage() {
 
                     {lecturer.experienceAreas && lecturer.experienceAreas.length > 0 && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Áreas de experiencia</span>
+                        <span className="eyebrow">{t('lecturer.experienceAreas')}</span>
                         <div className="lp-tags">
                           {lecturer.experienceAreas.map((area, i) => (
                             <span key={i} className="lp-tag">{area}</span>
@@ -254,7 +258,7 @@ export default function LecturerDetailPage() {
 
                     {lecturer.createdMethodologies && lecturer.createdMethodologies.length > 0 && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Metodologías creadas</span>
+                        <span className="eyebrow">{t('lecturer.methodologies')}</span>
                         <div className="lp-tags">
                           {lecturer.createdMethodologies.map((m, i) => (
                             <span key={i} className="lp-tag lp-tag-alt">{m}</span>
@@ -265,7 +269,7 @@ export default function LecturerDetailPage() {
 
                     {lecturer.awards && lecturer.awards.length > 0 && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Premios y reconocimientos</span>
+                        <span className="eyebrow">{t('lecturer.awards')}</span>
                         <ul className="lp-list">
                           {lecturer.awards.map((a, i) => (
                             <li key={i}><span className="lp-list-dot">✦</span>{a}</li>
@@ -276,7 +280,7 @@ export default function LecturerDetailPage() {
 
                     {lecturer.academicFormations && lecturer.academicFormations.length > 0 && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Formación académica</span>
+                        <span className="eyebrow">{t('lecturer.academicFormation')}</span>
                         <div className="lp-timeline">
                           {lecturer.academicFormations.map((f, i) => (
                             <div key={i} className="lp-tl-item">
@@ -299,7 +303,7 @@ export default function LecturerDetailPage() {
 
                     {lecturer.publications && lecturer.publications.length > 0 && (
                       <div className="lp-card reveal">
-                        <span className="eyebrow">Publicaciones</span>
+                        <span className="eyebrow">{t('lecturer.publications')}</span>
                         <div className="lp-timeline">
                           {lecturer.publications.map((pub, i) => (
                             <div key={i} className="lp-tl-item">
@@ -323,11 +327,11 @@ export default function LecturerDetailPage() {
 
                     {/* CTA */}
                     <div className="cta-band reveal" style={{ marginTop: 8 }}>
-                      <h2>¿Quieres escuchar a {lecturer.firstName}?</h2>
-                      <p>Asegura tu lugar en la próxima parada de la gira. Cupos limitados por ciudad.</p>
+                      <h2>{t('lecturer.ctaTitle', { name: lecturer.firstName })}</h2>
+                      <p>{t('lecturer.ctaText')}</p>
                       <div className="btns">
-                        <a className="btn btn-neon" href="/#entradas">Inscríbete ahora <span className="arr">→</span></a>
-                        <a className="btn btn-ghost" href="/#speakers">Ver todos los speakers</a>
+                        <a className="btn btn-neon" href="/#entradas">{t('landing.cta.register')} <span className="arr">→</span></a>
+                        <a className="btn btn-ghost" href="/#speakers">{t('lecturer.allSpeakers')}</a>
                       </div>
                     </div>
 
@@ -344,29 +348,29 @@ export default function LecturerDetailPage() {
             <div className="foot-grid">
               <div>
                 <img className="logo" src="/logo-principal.png" alt="CNMP 2026" />
-                <p className="desc">Congreso Nacional de Marketing Político. La gira que redefine cómo se hace política en Latinoamérica.</p>
+                <p className="desc">{t('landing.footer.desc')}</p>
               </div>
               <div className="foot-col">
-                <h4>La Gira</h4>
+                <h4>{t('landing.footer.tour')}</h4>
                 <a href="/#tour">Colombia 2026</a>
                 <a href="/#tour">Santo Domingo 2026</a>
                 <a href="/#tour">Cd. de México 2027</a>
               </div>
               <div className="foot-col">
-                <h4>Evento</h4>
-                <a href="/#speakers">Conferencistas</a>
-                <a href="/#agenda">Agenda</a>
-                <a href="/#entradas">Entradas</a>
+                <h4>{t('landing.footer.event')}</h4>
+                <a href="/#speakers">{t('landing.footer.speakers')}</a>
+                <a href="/#agenda">{t('landing.footer.agenda')}</a>
+                <a href="/#entradas">{t('landing.footer.tickets')}</a>
               </div>
               <div className="foot-col">
-                <h4>Contacto</h4>
+                <h4>{t('landing.footer.contact')}</h4>
                 <a href="mailto:cnmpcolombia@gmail.com">cnmpcolombia@gmail.com</a>
                 <a href="https://cnmpcolombia.com">cnmpcolombia.com</a>
               </div>
             </div>
             <div className="foot-bottom">
-              <span>© {new Date().getFullYear()} CNMP — Congreso Nacional de Marketing Político.</span>
-              <span className="mono">3 CIUDADES · 3 PAÍSES · 1 COMUNIDAD</span>
+              <span>{t('landing.footer.rights', { year: new Date().getFullYear() })}</span>
+              <span className="mono">3 {t('landing.footer.cities')} · 3 {t('landing.footer.countryPlural')} · {t('landing.footer.community')}</span>
             </div>
           </div>
         </footer>

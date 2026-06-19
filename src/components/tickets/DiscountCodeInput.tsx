@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { discountCodeService } from '@/services/discountCode';
 import { ValidateDiscountCodeResponse } from '@/types/discountCode';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DiscountCodeInputProps {
   onDiscountApplied: (discount: { code: string; percentage: number }) => void;
@@ -19,13 +20,14 @@ export default function DiscountCodeInput({
   disabled = false,
   editionId,
 }: DiscountCodeInputProps) {
+  const { t } = useLanguage();
   const [code, setCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>('');
 
   const validateCode = async () => {
     if (!code.trim()) {
-      setError('Ingresa un código de descuento');
+      setError(t('forms.discount.enterCode'));
       return;
     }
 
@@ -45,11 +47,11 @@ export default function DiscountCodeInput({
         });
         setCode('');
       } else {
-        setError(response.message || 'Código de descuento no válido');
+        setError(response.message || t('forms.discount.invalid'));
       }
     } catch (error: any) {
       console.error('Error validating discount code:', error);
-      setError('Error al validar el código. Intenta nuevamente.');
+      setError(t('forms.discount.validateError'));
     } finally {
       setIsValidating(false);
     }
@@ -70,7 +72,7 @@ export default function DiscountCodeInput({
 
   return (
     <div className="bg-white/5 p-6 rounded-xl mb-4">
-      <h4 className="text-white font-semibold mb-4">Código de Descuento</h4>
+      <h4 className="text-white font-semibold mb-4">{t('forms.discount.title')}</h4>
       
       {appliedDiscount ? (
         <div className="flex items-center justify-between bg-green-600/20 border border-green-500/50 rounded-lg p-4">
@@ -81,15 +83,15 @@ export default function DiscountCodeInput({
               </svg>
             </div>
             <div>
-              <p className="text-white font-medium">Código aplicado: {appliedDiscount.code}</p>
-              <p className="text-green-400 text-sm">Descuento del {appliedDiscount.percentage}%</p>
+              <p className="text-white font-medium">{t('forms.discount.appliedPrefix')} {appliedDiscount.code}</p>
+              <p className="text-green-400 text-sm">{t('forms.discount.discountOf', { percentage: appliedDiscount.percentage })}</p>
             </div>
           </div>
           <button
             onClick={removeDiscount}
             disabled={disabled}
             className="text-red-400 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Remover descuento"
+            title={t('forms.discount.removeTitle')}
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -104,7 +106,7 @@ export default function DiscountCodeInput({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               onKeyPress={handleKeyPress}
-              placeholder="Ingresa tu código"
+              placeholder={t('forms.discount.placeholder')}
               disabled={disabled || isValidating}
               className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -116,7 +118,7 @@ export default function DiscountCodeInput({
               {isValidating ? (
                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
-                'Aplicar'
+                t('forms.discount.apply')
               )}
             </button>
           </div>

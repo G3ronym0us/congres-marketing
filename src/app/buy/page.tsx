@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faTicketAlt, faCreditCard, faUser, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { LocalidadDetalle, FormDataType, TicketType } from '@/types/tickets';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function DetallesCompra() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [localidad, setLocalidad] = useState<TicketType>(TicketType.DIAMOND); // Valor por defecto
   const [detallesEntrada, setDetallesEntrada] = useState<LocalidadDetalle>();
   const [formData, setFormData] = useState<FormDataType>({
@@ -125,7 +127,7 @@ export default function DetallesCompra() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Aquí iría la lógica para procesar el pago
-    alert('¡Gracias por tu compra! Serás redirigido al sistema de pagos.');
+    alert(t('buy.alertThanks'));
   };
 
   const handleVolver = () => {
@@ -148,7 +150,7 @@ export default function DetallesCompra() {
           className="flex items-center text-blue-300 hover:text-blue-400 transition mb-8"
         >
           <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-          Volver a entradas
+          {t('carrito.backToTickets')}
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -157,7 +159,7 @@ export default function DetallesCompra() {
             <div className="bg-black/20 backdrop-filter backdrop-blur-sm p-8 rounded-xl">
               <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
                 <FontAwesomeIcon icon={faTicketAlt} className="mr-3 text-blue-300" />
-              Detalles de tu entrada
+              {t('buy.ticketDetails')}
             </h2>
 
             <div className={`${detallesEntrada.color} border-2 ${detallesEntrada.border} p-6 rounded-xl mb-8`}>
@@ -172,7 +174,7 @@ export default function DetallesCompra() {
                 {detallesEntrada.price ? formatoPrecio(detallesEntrada.price) : ''}
               </p>
 
-              <h4 className="text-white font-semibold mb-2">Incluye:</h4>
+              <h4 className="text-white font-semibold mb-2">{t('buy.includes')}</h4>
               <ul className="text-gray-300 list-disc pl-5 space-y-1 mb-4">
                 {detallesEntrada.features?.map((item, index) => (
                   <li key={index}>{item}</li>
@@ -193,10 +195,10 @@ export default function DetallesCompra() {
                   />
                   <div>
                     <label htmlFor="withMemories" className="text-white font-semibold cursor-pointer">
-                      Añadir Memorias del Evento
+                      {t('buy.addMemories')}
                     </label>
                     <p className="text-gray-400 text-sm">
-                      Grabación del evento con todas las intervenciones de los conferencistas
+                      {t('buy.memoriesDesc')}
                     </p>
                   </div>
                   <div className="ml-auto">
@@ -207,29 +209,29 @@ export default function DetallesCompra() {
             )}
 
             <div className="bg-white/5 p-6 rounded-xl">
-              <h4 className="text-white font-semibold mb-4">Resumen de compra</h4>
-              
+              <h4 className="text-white font-semibold mb-4">{t('carrito.summaryTitle')}</h4>
+
               <div className="flex justify-between mb-2">
-                <span className="text-gray-300">Entrada:</span>
+                <span className="text-gray-300">{t('buy.ticket')}</span>
                 <span className="text-white">{detallesEntrada.price ? formatoPrecio(detallesEntrada.price) : ''}</span>
               </div>
-              
+
               {formData.withMemories && !detallesEntrada.withMemories && (
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-300">Memorias:</span>
+                  <span className="text-gray-300">{t('buy.memories')}</span>
                   <span className="text-white">{formatoPrecio(250000)}</span>
                 </div>
               )}
-              
+
               <div className="flex justify-between mb-2">
-                <span className="text-gray-300">Cantidad:</span>
+                <span className="text-gray-300">{t('buy.quantity')}</span>
                 <span className="text-white">{formData.quantity}</span>
               </div>
-              
+
               <div className="border-t border-white/20 my-4"></div>
-              
+
               <div className="flex justify-between text-xl font-bold">
-                <span className="text-white">Total:</span>
+                <span className="text-white">{t('buy.total')}</span>
                 <span className="text-blue-300">{formatoPrecio(total)}</span>
               </div>
             </div>
@@ -240,12 +242,12 @@ export default function DetallesCompra() {
           <div className="bg-black/20 backdrop-filter backdrop-blur-sm p-8 rounded-xl">
             <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
               <FontAwesomeIcon icon={faCreditCard} className="mr-3 text-blue-300" />
-              Información de pago
+              {t('buy.paymentInfo')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="nombre" className="block text-white mb-2">Nombre completo</label>
+                <label htmlFor="nombre" className="block text-white mb-2">{t('buy.fullName')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <FontAwesomeIcon icon={faUser} className="text-gray-500" />
@@ -263,7 +265,7 @@ export default function DetallesCompra() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-white mb-2">Correo electrónico</label>
+                <label htmlFor="email" className="block text-white mb-2">{t('buy.email')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <FontAwesomeIcon icon={faEnvelope} className="text-gray-500" />
@@ -281,7 +283,7 @@ export default function DetallesCompra() {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-white mb-2">Teléfono</label>
+                <label htmlFor="phone" className="block text-white mb-2">{t('buy.phone')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <FontAwesomeIcon icon={faPhone} className="text-gray-500" />
@@ -299,7 +301,7 @@ export default function DetallesCompra() {
               </div>
 
               <div>
-                <label htmlFor="quantity" className="block text-white mb-2">Cantidad de entradas</label>
+                <label htmlFor="quantity" className="block text-white mb-2">{t('buy.quantityLabel')}</label>
                 <select
                   id="quantity"
                   name="quantity"
@@ -314,10 +316,10 @@ export default function DetallesCompra() {
               </div>
 
               <div className="bg-white/5 p-6 rounded-xl">
-                <h4 className="text-white font-semibold mb-4">Métodos de pago</h4>
+                <h4 className="text-white font-semibold mb-4">{t('buy.paymentMethods')}</h4>
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-white/10 p-4 rounded-lg text-center cursor-pointer border-2 border-blue-500">
-                    <span className="text-white">Tarjeta de Crédito</span>
+                    <span className="text-white">{t('buy.creditCard')}</span>
                   </div>
                   <div className="bg-white/10 p-4 rounded-lg text-center cursor-pointer">
                     <span className="text-white">PSE</span>
@@ -325,7 +327,7 @@ export default function DetallesCompra() {
                 </div>
 
                 <p className="text-gray-400 text-sm mb-4">
-                  Al hacer clic en "Proceder al pago", serás redirigido a nuestro sistema seguro de pagos.
+                  {t('buy.redirectNotice')}
                 </p>
               </div>
 
@@ -333,7 +335,7 @@ export default function DetallesCompra() {
                 type="submit"
                 className="w-full bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-4 px-6 rounded-lg hover:opacity-90 transition-opacity text-lg"
               >
-                Proceder al Pago - {formatoPrecio(total)}
+                {t('buy.proceedPayment')} - {formatoPrecio(total)}
               </button>
             </form>
           </div>
