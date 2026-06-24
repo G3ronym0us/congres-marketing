@@ -197,8 +197,8 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
             </div>
           )}
 
-          {/* Reenvío */}
-          {broadcast.status === 'COMPLETED' && (
+          {/* Reenvío: disponible una vez que el envío terminó (completado o fallido) */}
+          {(broadcast.status === 'COMPLETED' || broadcast.status === 'FAILED') && (
             <div style={{ background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px' }}>
               <SectionLabel>✉️ Reenviar broadcast</SectionLabel>
 
