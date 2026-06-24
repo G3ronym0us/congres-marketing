@@ -1555,8 +1555,17 @@ section { position: relative; }
     linear-gradient(115deg, #04EE62 0%, #83FFAD 48%, #04EE62 100%);
   background-size: 190% 100%;
   font-weight: 800;
-  animation: cart-pay-ready-pulse 1.8s cubic-bezier(.23, 1, .32, 1) infinite;
+  /* Pop de una sola vez al completarse todo, luego entra el pulso suave. */
+  animation:
+    cart-pay-ready-pop .34s cubic-bezier(.23, 1, .32, 1) both,
+    cart-pay-ready-pulse 1.8s cubic-bezier(.23, 1, .32, 1) .34s infinite;
   will-change: transform;
+}
+
+@keyframes cart-pay-ready-pop {
+  0%   { transform: scale(.96); opacity: .7; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes cart-pay-ready-pulse {
