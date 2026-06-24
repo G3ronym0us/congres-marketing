@@ -19,10 +19,10 @@ export interface EditionDisplay {
 }
 
 export interface DiscountStage {
-  fechaInicio: string;
-  fechaFin: string;
-  porcentaje: number;
-  etiqueta: string;
+  startDate: string;
+  endDate: string;
+  percentage: number;
+  label: string;
 }
 
 export interface Edition {

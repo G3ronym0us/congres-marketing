@@ -33,54 +33,22 @@ import Cookies from 'js-cookie';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { generateReference } from '@/utils/utils';
 import { useLanguage } from '@/context/LanguageContext';
+import '../landing.css';
 
 // Estructura para las etapas de descuento
-interface DescuentoEtapa {
-  fechaInicio: Date;
-  fechaFin: Date;
-  porcentaje: number;
-  etiqueta: string;
+interface DiscountStageView {
+  startDate: Date;
+  endDate: Date;
+  percentage: number;
+  label: string;
 }
-
-// Etapas de descuento por defecto (legado) si la edición no define las suyas
-const etapasDescuentoDefault: DescuentoEtapa[] = [
-  {
-    fechaInicio: new Date('2025-04-27'),
-    fechaFin: new Date('2025-05-04'),
-    porcentaje: 35,
-    etiqueta: 'Venta exclusiva asistentes 2024',
-  },
-  {
-    fechaInicio: new Date('2025-05-04'),
-    fechaFin: new Date('2025-05-11'),
-    porcentaje: 30,
-    etiqueta: 'Descuento especial',
-  },
-  {
-    fechaInicio: new Date('2025-05-11'),
-    fechaFin: new Date('2025-05-21'),
-    porcentaje: 20,
-    etiqueta: 'Descuento',
-  },
-  {
-    fechaInicio: new Date('2025-05-21'),
-    fechaFin: new Date('2025-06-01'),
-    porcentaje: 10,
-    etiqueta: 'Último descuento',
-  },
-  {
-    fechaInicio: new Date('2025-06-01'),
-    fechaFin: new Date('2025-08-04'), // Fecha del evento
-    porcentaje: 0,
-    etiqueta: 'Precio completo',
-  },
-];
 
 export default function Carrito() {
   const router = useRouter();
   const { t, lang } = useLanguage();
   const {
     state,
+    isHydrated,
     removeItem,
     removeTicket,
     toggleAddOn,
@@ -110,22 +78,26 @@ export default function Carrito() {
   const [errorMessage, setErrorMessage] = useState<string>();
 
   // Estados para descuentos
-  const [descuentoActual, setDescuentoActual] = useState<DescuentoEtapa | null>(
+  const [activeStage, setActiveStage] = useState<DiscountStageView | null>(
     null,
   );
   const [totalConDescuento, setTotalConDescuento] = useState(0);
   const [montoDescuento, setMontoDescuento] = useState(0);
 
-  // Etapas de descuento por fecha: las de la edición si existen, si no las de legado
-  const etapasDescuento: DescuentoEtapa[] =
-    edition?.discountStages && edition.discountStages.length > 0
-      ? edition.discountStages.map((e) => ({
-          fechaInicio: new Date(e.fechaInicio),
-          fechaFin: new Date(e.fechaFin),
-          porcentaje: e.porcentaje,
-          etiqueta: e.etiqueta,
-        }))
-      : etapasDescuentoDefault;
+  // Etapas de descuento por fecha: definidas en la edición desde el admin.
+  // Si la edición no tiene ninguna configurada, no hay descuento por fecha.
+  // Se ignoran etapas con fechas inválidas para no romper el render.
+  const discountStages: DiscountStageView[] = (edition?.discountStages ?? [])
+    .map((e) => ({
+      startDate: new Date(e.startDate),
+      endDate: new Date(e.endDate),
+      percentage: e.percentage,
+      label: e.label,
+    }))
+    .filter(
+      (e) =>
+        !isNaN(e.startDate.getTime()) && !isNaN(e.endDate.getTime()),
+    );
 
   // Cargar la edición del carrito (para etapas de descuento y validaciones)
   useEffect(() => {
@@ -140,10 +112,10 @@ export default function Carrito() {
   // Determinar el descuento aplicable según la fecha actual
   useEffect(() => {
     const hoy = new Date();
-    const descuentoEncontrado = etapasDescuento.find(
-      (etapa) => hoy >= etapa.fechaInicio && hoy <= etapa.fechaFin,
+    const descuentoEncontrado = discountStages.find(
+      (etapa) => hoy >= etapa.startDate && hoy <= etapa.endDate,
     );
-    setDescuentoActual(descuentoEncontrado || null);
+    setActiveStage(descuentoEncontrado || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edition]);
 
@@ -153,15 +125,15 @@ export default function Carrito() {
     let totalFinal = total;
     
     // Aplicar descuento por fecha sobre el total ya con descuento de código
-    if (descuentoActual && descuentoActual.porcentaje > 0) {
-      const descuentoFecha = totalFinal * (descuentoActual.porcentaje / 100);
-      setMontoDescuento(descuentoFecha);
-      setTotalConDescuento(totalFinal - descuentoFecha);
+    if (activeStage && activeStage.percentage > 0) {
+      const stageDiscount = totalFinal * (activeStage.percentage / 100);
+      setMontoDescuento(stageDiscount);
+      setTotalConDescuento(totalFinal - stageDiscount);
     } else {
       setTotalConDescuento(totalFinal);
       setMontoDescuento(0);
     }
-  }, [total, descuentoActual]);
+  }, [total, activeStage]);
 
   // Generar referencia única
   useEffect(() => {
@@ -567,7 +539,9 @@ export default function Carrito() {
   };
 
   return (
-    <>
+    <div className="cnmp-root">
+      <div className="bg-field" />
+
       {/* Cargar el script de Wompi */}
       <Script
         src="https://checkout.wompi.co/widget.js"
@@ -576,319 +550,259 @@ export default function Carrito() {
       />
 
       {/* Recordatorio persistente de la edición que se está comprando */}
-      {!enviado && state.items.length > 0 && (
+      {!enviado && (!isHydrated || state.items.length > 0) && (
         <EditionBanner edition={edition} onChange={handleVolver} />
       )}
 
-      <div className="min-h-screen bg-gradient-to-r from-[#0f1424] to-[#1a0a12] py-12 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <button
-            onClick={handleVolver}
-            className="flex items-center text-blue-300 hover:text-blue-400 transition mb-8"
-          >
-            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
-            {t('carrito.backToTickets')}
-          </button>
+      <main className="page">
+        <section className="band">
+          <div className="wrap" style={{ maxWidth: 880 }}>
+            <button onClick={handleVolver} className="cart-back">
+              <FontAwesomeIcon icon={faArrowLeft} />
+              {t('carrito.backToTickets')}
+            </button>
 
-          {enviado ? (
-            // Confirmación de compra
-            <div className="bg-black/20 backdrop-filter backdrop-blur-sm p-8 rounded-xl text-center">
-              <div className="w-20 h-20 rounded-full bg-green-500/30 flex items-center justify-center mx-auto mb-6">
-                <FontAwesomeIcon
-                  icon={faCheck}
-                  className="text-3xl text-green-400"
-                />
-              </div>
+            {enviado ? (
+              // Confirmación de compra
+              <div className="qs-panel cart-success">
+                <div className="cart-success-icon">
+                  <FontAwesomeIcon icon={faCheck} />
+                </div>
 
-              <h2 className="text-3xl font-bold text-white mb-4">
-                {t('carrito.successTitle')}
-              </h2>
+                <h2 className="cart-success-title">{t('carrito.successTitle')}</h2>
 
-              <p className="text-gray-300 text-lg mb-8">
-                {t('carrito.successText')}
-              </p>
+                <p className="cart-success-text">{t('carrito.successText')}</p>
 
-              {purchasedEditionName && (
-                <p className="text-gray-300 mb-3">
-                  {t('carrito.edition')}{' '}
-                  <span className="text-white font-medium">
-                    {purchasedEditionName}
-                  </span>
+                {purchasedEditionName && (
+                  <p className="cart-success-meta">
+                    {t('carrito.edition')} <strong>{purchasedEditionName}</strong>
+                  </p>
+                )}
+
+                <p className="cart-success-meta" style={{ marginBottom: 28 }}>
+                  {t('carrito.referenceNumber')} <strong>{reference}</strong>
                 </p>
-              )}
 
-              <p className="text-gray-300 mb-6">
-                {t('carrito.referenceNumber')}{' '}
-                <span className="text-white font-medium">{reference}</span>
-              </p>
+                <button onClick={() => router.push('/')} className="btn btn-neon">
+                  {t('carrito.backHome')}
+                </button>
+              </div>
+            ) : (
+              <div className="qs-panel">
+                <h2 className="cart-title">
+                  <FontAwesomeIcon icon={faShoppingCart} className="ic" />
+                  {t('carrito.title')}
+                </h2>
 
-              <button
-                onClick={() => router.push('/')}
-                className="bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
-              >
-                {t('carrito.backHome')}
-              </button>
-            </div>
-          ) : (
-            <div className="bg-black/20 backdrop-filter backdrop-blur-sm p-8 rounded-xl">
-              <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
-                <FontAwesomeIcon
-                  icon={faShoppingCart}
-                  className="mr-3 text-blue-300"
-                />
-                {t('carrito.title')}
-              </h2>
+                {/* Banner de descuento si hay un descuento actual */}
+                {activeStage && activeStage.percentage > 0 && (
+                  <div className="cart-promo-banner">
+                    <FontAwesomeIcon icon={faTags} />
+                    <span>{activeStage.label}:</span>
+                    <span className="pct">{activeStage.percentage}% OFF</span>
+                  </div>
+                )}
 
-              {/* Banner de descuento si hay un descuento actual */}
-              {descuentoActual && descuentoActual.porcentaje > 0 && (
-                <div className="bg-amber-500/20 border border-amber-400 text-amber-100 p-4 rounded-lg mb-6">
-                  <p className="flex items-center justify-center text-lg font-semibold">
-                    <FontAwesomeIcon icon={faTags} className="mr-2" />
-                    <span className="mr-2">{descuentoActual.etiqueta}:</span>
-                    <span className="bg-amber-500 text-white px-3 py-1 rounded-full">
-                      {descuentoActual.porcentaje}% OFF
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {state.items.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-300 text-xl mb-6">
-                    {t('carrito.empty')}
-                  </p>
-                  <button
-                    onClick={handleContinuarComprando}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                  >
-                    {t('carrito.seeTickets')}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  {/* Items del carrito - mantener tu código original */}
-                  <div className="space-y-6 mb-8">
-                    {state.items.map((item) => {
-                      const localidadDetails = getLocalidadDetails(
-                        item.localidad,
-                      );
-                      const isExpanded =
-                        expandedSections[item.localidad] || false;
-
-                      return (
-                        <div
-                          key={item.localidad}
-                          className="bg-white/5 rounded-lg p-4"
-                        >
-                          {/* Header del item */}
-                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-                            {/* Información del producto */}
-                            <div className="flex items-center mb-4 md:mb-0">
-                              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mr-4">
-                                <span>{localidadDetails.icon}</span>
-                              </div>
-                              <div>
-                                <h3 className="text-white font-semibold">
-                                  {localidadDetails.name}
-                                </h3>
-                                <p className="text-gray-400 text-sm">
-                                  {item.tickets.length}{' '}
-                                  {item.tickets.length === 1
-                                    ? t('carrito.ticketSingular')
-                                    : t('carrito.ticketPlural')}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Control de tickets */}
-                            <div className="flex items-center space-x-4">
-                              {/* Precio total por item */}
-                              <div className="text-white font-medium w-24 text-right">
-                                {formatoPrecio(
-                                  item.tickets.reduce((total, ticket) => {
-                                    return (
-                                      total +
-                                      ticket.price +
-                                      ticket.addOns.reduce(
-                                        (s, a) => s + a.price,
-                                        0,
-                                      )
-                                    );
-                                  }, 0),
-                                )}
-                              </div>
-
-                              {/* Botón eliminar todo el tipo de tickets */}
-                              <button
-                                onClick={() =>
-                                  handleEliminarItem(item.localidad)
-                                }
-                                className="text-red-400 hover:text-red-300 transition-colors"
-                                title={t('carrito.removeAllTitle')}
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
-                              </button>
+                {!isHydrated ? (
+                  <div className="cart-list" aria-hidden="true">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="cart-item">
+                        <div className="cart-item-head">
+                          <div className="cart-item-info">
+                            <span className="sk-line" style={{ width: 44, height: 44, borderRadius: '50%' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <span className="sk-line" style={{ width: 140, height: 16 }} />
+                              <span className="sk-line" style={{ width: 90, height: 12 }} />
                             </div>
                           </div>
-
-                          {/* Botón para mostrar/ocultar formularios de asistentes */}
-                          <button
-                            onClick={() => handleToggleSection(item.localidad)}
-                            className="flex items-center justify-between w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-md transition-colors mb-4"
-                          >
-                            <span className="flex items-center text-white">
-                              <FontAwesomeIcon icon={faUser} className="mr-2" />
-                              {t('carrito.attendeeData')}
-                              {!item.tickets.every(
-                                (t) =>
-                                  t.attendee.name &&
-                                  t.attendee.lastname &&
-                                  t.attendee.document &&
-                                  t.attendee.email,
-                              ) && (
-                                <span className="ml-2 text-xs bg-yellow-600 text-white px-2 py-1 rounded-full">
-                                  {t('carrito.needsAttention')}
-                                </span>
-                              )}
-                            </span>
-                            <FontAwesomeIcon
-                              icon={isExpanded ? faChevronUp : faChevronDown}
-                              className="text-gray-400"
-                            />
-                          </button>
-
-                          {/* Formularios de asistentes - uno por cada ticket individual */}
-                          {isExpanded && (
-                            <div className="mt-2">
-                              <p className="text-gray-300 mb-4">
-                                {t('carrito.completeEach')}
-                              </p>
-
-                              {item.tickets.map((ticket, index) => (
-                                <div key={ticket.id} className="mb-6 relative">
-                                  <AttendeeForm
-                                    ticketId={ticket.id}
-                                    attendee={ticket.attendee}
-                                    ticketIndex={index}
-                                    localidadNombre={localidadDetails.name}
-                                    onChange={handleUpdateAsistente}
-                                  />
-
-                                  {/* Opciones del ticket individual */}
-                                  <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                                    <div className="flex flex-col gap-2">
-                                      {(localidadDetails.addOns ?? [])
-                                        .filter((a) => !a.included)
-                                        .map((a) => {
-                                          const on = ticket.addOns.some(
-                                            (x) => x.id === a.id,
-                                          );
-                                          return (
-                                            <div key={a.id} className="flex items-center">
-                                              <input
-                                                type="checkbox"
-                                                id={`addon-${a.id}-${ticket.id}`}
-                                                checked={on}
-                                                onChange={() =>
-                                                  handleToggleAddOn(
-                                                    ticket.id,
-                                                    { id: a.id, slug: a.slug, name: a.name, price: a.price },
-                                                    !on,
-                                                  )
-                                                }
-                                                className="mr-2"
-                                              />
-                                              <label
-                                                htmlFor={`addon-${a.id}-${ticket.id}`}
-                                                className="text-gray-300 text-sm cursor-pointer"
-                                              >
-                                                {a.icon ?? '➕'} {a.name} (+
-                                                {formatoPrecio(a.price)})
-                                              </label>
-                                            </div>
-                                          );
-                                        })}
-                                      {(localidadDetails.addOns ?? [])
-                                        .filter((a) => a.included)
-                                        .map((a) => (
-                                          <div key={a.id} className="text-green-400 text-sm">
-                                            {t('carrito.addonIncluded', { name: a.name })}
-                                          </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex items-center">
-                                      <span className="text-white mr-4">
-                                        {formatoPrecio(
-                                          ticket.price +
-                                            ticket.addOns.reduce(
-                                              (s, a) => s + a.price,
-                                              0,
-                                            ),
-                                        )}
-                                      </span>
-
-                                      {/* Solo permitir eliminar si hay más de un ticket */}
-                                      {item.tickets.length > 1 && (
-                                        <button
-                                          onClick={() =>
-                                            handleEliminarTicket(ticket.id)
-                                          }
-                                          className="text-red-400 hover:text-red-300 transition-colors p-1"
-                                          title={t('carrito.removeTicketTitle')}
-                                        >
-                                          <FontAwesomeIcon icon={faTrash} />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <span className="sk-line" style={{ width: 80, height: 18 }} />
                         </div>
-                      );
-                    })}
+                        <span className="sk-line" style={{ width: '100%', height: 40, borderRadius: 10 }} />
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Resumen */}
-                  <div className="bg-white/5 p-6 rounded-xl mb-8">
-                    <h4 className="text-white font-semibold mb-4">
-                      {t('carrito.summaryTitle')}
-                    </h4>
-
-                    <div className="space-y-2 mb-4">
+                ) : state.items.length === 0 ? (
+                  <div className="cart-empty">
+                    <p>{t('carrito.empty')}</p>
+                    <button onClick={handleContinuarComprando} className="btn btn-neon">
+                      {t('carrito.seeTickets')}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Items del carrito */}
+                    <div className="cart-list">
                       {state.items.map((item) => {
                         const localidadDetails = getLocalidadDetails(
                           item.localidad,
                         );
-
-                        // Total de add-ons (de pago) de este grupo de tickets
-                        const addOnsTotal = item.tickets.reduce(
-                          (sum, t) =>
-                            sum + t.addOns.reduce((s, a) => s + a.price, 0),
-                          0,
-                        );
+                        const isExpanded =
+                          expandedSections[item.localidad] || false;
 
                         return (
-                          <div key={`summary-${item.localidad}`}>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-300">
-                                {item.tickets.length} x {localidadDetails.name}
-                              </span>
-                              <span className="text-white">
-                                {formatoPrecio(
-                                  item.tickets.reduce(
-                                    (sum, t) => sum + t.price,
-                                    0,
-                                  ),
+                          <div key={item.localidad} className="cart-item">
+                            {/* Header del item */}
+                            <div className="cart-item-head">
+                              {/* Información del producto */}
+                              <div className="cart-item-info">
+                                <div className="cart-item-icon">
+                                  <span>{localidadDetails.icon}</span>
+                                </div>
+                                <div>
+                                  <h3 className="cart-item-name">
+                                    {localidadDetails.name}
+                                  </h3>
+                                  <p className="cart-item-qty">
+                                    {item.tickets.length}{' '}
+                                    {item.tickets.length === 1
+                                      ? t('carrito.ticketSingular')
+                                      : t('carrito.ticketPlural')}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Control de tickets */}
+                              <div className="cart-item-controls">
+                                {/* Precio total por item */}
+                                <div className="cart-item-price">
+                                  {formatoPrecio(
+                                    item.tickets.reduce((total, ticket) => {
+                                      return (
+                                        total +
+                                        ticket.price +
+                                        ticket.addOns.reduce(
+                                          (s, a) => s + a.price,
+                                          0,
+                                        )
+                                      );
+                                    }, 0),
+                                  )}
+                                </div>
+
+                                {/* Botón eliminar todo el tipo de tickets */}
+                                <button
+                                  onClick={() =>
+                                    handleEliminarItem(item.localidad)
+                                  }
+                                  className="cart-item-remove"
+                                  title={t('carrito.removeAllTitle')}
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Botón para mostrar/ocultar formularios de asistentes */}
+                            <button
+                              onClick={() => handleToggleSection(item.localidad)}
+                              className="cart-toggle"
+                            >
+                              <span className="lbl">
+                                <FontAwesomeIcon icon={faUser} style={{ marginRight: 8 }} />
+                                {t('carrito.attendeeData')}
+                                {!item.tickets.every(
+                                  (t) =>
+                                    t.attendee.name &&
+                                    t.attendee.lastname &&
+                                    t.attendee.document &&
+                                    t.attendee.email,
+                                ) && (
+                                  <span className="needs-attn">
+                                    {t('carrito.needsAttention')}
+                                  </span>
                                 )}
                               </span>
-                            </div>
-                            {addOnsTotal > 0 && (
-                              <div className="flex justify-between text-xs text-gray-400 pl-2">
-                                <span>{t('carrito.addOns')}</span>
-                                <span>{formatoPrecio(addOnsTotal)}</span>
+                              <FontAwesomeIcon
+                                icon={isExpanded ? faChevronUp : faChevronDown}
+                              />
+                            </button>
+
+                            {/* Formularios de asistentes - uno por cada ticket individual */}
+                            {isExpanded && (
+                              <div style={{ marginTop: 14 }}>
+                                <p style={{ color: 'var(--mute)', fontSize: 14, marginBottom: 14 }}>
+                                  {t('carrito.completeEach')}
+                                </p>
+
+                                {item.tickets.map((ticket, index) => (
+                                  <div key={ticket.id} style={{ marginBottom: 18 }}>
+                                    <AttendeeForm
+                                      ticketId={ticket.id}
+                                      attendee={ticket.attendee}
+                                      ticketIndex={index}
+                                      localidadNombre={localidadDetails.name}
+                                      onChange={handleUpdateAsistente}
+                                    />
+
+                                    {/* Opciones del ticket individual */}
+                                    <div className="cart-ticket-row">
+                                      <div className="cart-addon-opts">
+                                        {(localidadDetails.addOns ?? [])
+                                          .filter((a) => !a.included)
+                                          .map((a) => {
+                                            const on = ticket.addOns.some(
+                                              (x) => x.id === a.id,
+                                            );
+                                            return (
+                                              <div key={a.id} className="cart-addon-opt">
+                                                <input
+                                                  type="checkbox"
+                                                  id={`addon-${a.id}-${ticket.id}`}
+                                                  checked={on}
+                                                  onChange={() =>
+                                                    handleToggleAddOn(
+                                                      ticket.id,
+                                                      { id: a.id, slug: a.slug, name: a.name, price: a.price },
+                                                      !on,
+                                                    )
+                                                  }
+                                                />
+                                                <label
+                                                  htmlFor={`addon-${a.id}-${ticket.id}`}
+                                                  style={{ cursor: 'pointer' }}
+                                                >
+                                                  {a.icon ?? '➕'} {a.name} (+
+                                                  {formatoPrecio(a.price)})
+                                                </label>
+                                              </div>
+                                            );
+                                          })}
+                                        {(localidadDetails.addOns ?? [])
+                                          .filter((a) => a.included)
+                                          .map((a) => (
+                                            <div key={a.id} className="cart-addon-included">
+                                              {t('carrito.addonIncluded', { name: a.name })}
+                                            </div>
+                                          ))}
+                                      </div>
+
+                                      <div className="cart-ticket-total">
+                                        <span className="amt">
+                                          {formatoPrecio(
+                                            ticket.price +
+                                              ticket.addOns.reduce(
+                                                (s, a) => s + a.price,
+                                                0,
+                                              ),
+                                          )}
+                                        </span>
+
+                                        {/* Solo permitir eliminar si hay más de un ticket */}
+                                        {item.tickets.length > 1 && (
+                                          <button
+                                            onClick={() =>
+                                              handleEliminarTicket(ticket.id)
+                                            }
+                                            className="cart-item-remove"
+                                            title={t('carrito.removeTicketTitle')}
+                                          >
+                                            <FontAwesomeIcon icon={faTrash} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -896,205 +810,229 @@ export default function Carrito() {
                       })}
                     </div>
 
-                    <div className="border-t border-white/20 my-4"></div>
+                    {/* Resumen */}
+                    <div className="cart-summary">
+                      <h4 className="cart-summary-title">
+                        {t('carrito.summaryTitle')}
+                      </h4>
 
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">{t('carrito.subtotal')}</span>
-                      <span className="text-white">{formatoPrecio(state.appliedDiscount ? getSubtotalSinDescuentoCodigo() : total)}</span>
+                      <div className="cart-summary-lines">
+                        {state.items.map((item) => {
+                          const localidadDetails = getLocalidadDetails(
+                            item.localidad,
+                          );
+
+                          // Total de add-ons (de pago) de este grupo de tickets
+                          const addOnsTotal = item.tickets.reduce(
+                            (sum, t) =>
+                              sum + t.addOns.reduce((s, a) => s + a.price, 0),
+                            0,
+                          );
+
+                          return (
+                            <div key={`summary-${item.localidad}`}>
+                              <div className="cart-summary-line">
+                                <span className="lbl">
+                                  {item.tickets.length} x {localidadDetails.name}
+                                </span>
+                                <span className="val">
+                                  {formatoPrecio(
+                                    item.tickets.reduce(
+                                      (sum, t) => sum + t.price,
+                                      0,
+                                    ),
+                                  )}
+                                </span>
+                              </div>
+                              {addOnsTotal > 0 && (
+                                <div className="cart-summary-sub">
+                                  <span>{t('carrito.addOns')}</span>
+                                  <span>{formatoPrecio(addOnsTotal)}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="qs-summary">
+                        <div className="row">
+                          <span>{t('carrito.subtotal')}</span>
+                          <span className="v">{formatoPrecio(state.appliedDiscount ? getSubtotalSinDescuentoCodigo() : total)}</span>
+                        </div>
+
+                        {/* Mostrar descuento de código si aplica */}
+                        {state.appliedDiscount && (
+                          <div className="row" style={{ color: 'var(--neon)' }}>
+                            <span>
+                              <FontAwesomeIcon icon={faPercentage} style={{ marginRight: 6 }} />
+                              {t('carrito.discountCode', { code: state.appliedDiscount.code, percentage: state.appliedDiscount.percentage })}
+                            </span>
+                            <span className="v" style={{ color: 'var(--neon)' }}>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.appliedDiscount.percentage))}</span>
+                          </div>
+                        )}
+
+                        {/* Mostrar descuento por fecha si aplica */}
+                        {activeStage && activeStage.percentage > 0 && (
+                          <div className="row" style={{ color: '#FFB020' }}>
+                            <span>
+                              <FontAwesomeIcon icon={faPercentage} style={{ marginRight: 6 }} />
+                              {t('carrito.discountTemporal', { percentage: activeStage.percentage })}
+                            </span>
+                            <span className="v" style={{ color: '#FFB020' }}>-{formatoPrecio(montoDescuento)}</span>
+                          </div>
+                        )}
+
+                        {/* Total con descuentos */}
+                        <div className="total">
+                          <span>{t('carrito.total')}</span>
+                          <span className="v">{formatoPrecio(totalConDescuento)}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Mostrar descuento de código si aplica */}
-                    {state.appliedDiscount && (
-                      <div className="flex justify-between mt-2 text-green-400">
-                        <span className="flex items-center">
-                          <FontAwesomeIcon
-                            icon={faPercentage}
-                            className="mr-1"
-                          />
-                          {t('carrito.discountCode', { code: state.appliedDiscount.code, percentage: state.appliedDiscount.percentage })}
-                        </span>
-                        <span>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.appliedDiscount.percentage))}</span>
-                      </div>
-                    )}
-
-                    {/* Mostrar descuento por fecha si aplica */}
-                    {descuentoActual && descuentoActual.porcentaje > 0 && (
-                      <div className="flex justify-between mt-2 text-amber-300">
-                        <span className="flex items-center">
-                          <FontAwesomeIcon
-                            icon={faPercentage}
-                            className="mr-1"
-                          />
-                          {t('carrito.discountTemporal', { percentage: descuentoActual.porcentaje })}
-                        </span>
-                        <span>-{formatoPrecio(montoDescuento)}</span>
-                      </div>
-                    )}
-
-                    {/* Total con descuentos */}
-                    <div className="flex justify-between text-xl font-bold mt-2">
-                      <span className="text-white">{t('carrito.total')}</span>
-                      <span className="text-blue-300">
-                        {formatoPrecio(totalConDescuento)}
-                      </span>
+                    {/* Componente de código de descuento */}
+                    <div style={{ marginBottom: 24 }}>
+                      <DiscountCodeInput
+                        onDiscountApplied={handleDiscountApplied}
+                        onDiscountRemoved={handleDiscountRemoved}
+                        appliedDiscount={state.appliedDiscount}
+                        disabled={loading}
+                        editionId={state.editionId ?? undefined}
+                      />
                     </div>
-                  </div>
 
-                  {/* Componente de código de descuento */}
-                  <div className="mb-8">
-                    <DiscountCodeInput
-                      onDiscountApplied={handleDiscountApplied}
-                      onDiscountRemoved={handleDiscountRemoved}
-                      appliedDiscount={state.appliedDiscount}
-                      disabled={loading}
-                      editionId={state.editionId ?? undefined}
-                    />
-                  </div>
-
-                  {/* Aviso de datos faltantes */}
-                  {!isAllDataComplete && (
-                    <div className="bg-yellow-900/50 border border-yellow-600 text-yellow-200 p-4 rounded-lg mb-6">
-                      <p className="flex items-start">
-                        <FontAwesomeIcon icon={faUser} className="mr-2 mt-1" />
-                        <span>
+                    {/* Aviso de datos faltantes */}
+                    {!isAllDataComplete && (
+                      <div className="cart-alert warn">
+                        <FontAwesomeIcon icon={faUser} className="ic" />
+                        <span className="cart-alert-body">
                           <strong>{t('carrito.incompleteTitle')}</strong> {t('carrito.incompleteText')}
                         </span>
-                      </p>
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Mensaje promocional sobre descuentos si aplica */}
-                  {descuentoActual && descuentoActual.porcentaje > 0 && (
-                    <div className="bg-green-900/50 border border-green-600 text-green-200 p-4 rounded-lg mb-6">
-                      <p className="flex items-start">
-                        <FontAwesomeIcon icon={faTags} className="mr-2 mt-1" />
-                        <span>
-                          <strong>{t('carrito.promoActiveTitle')}</strong> {t('carrito.promoActiveText', { percentage: descuentoActual.porcentaje })}
-                          {descuentoActual.porcentaje < 35 && (
-                            <span className="block mt-1 text-sm">
+                    {/* Mensaje promocional sobre descuentos si aplica */}
+                    {activeStage && activeStage.percentage > 0 && (
+                      <div className="cart-alert ok">
+                        <FontAwesomeIcon icon={faTags} className="ic" />
+                        <span className="cart-alert-body">
+                          <strong>{t('carrito.promoActiveTitle')}</strong> {t('carrito.promoActiveText', { percentage: activeStage.percentage })}
+                          {activeStage.percentage < 35 && (
+                            <span style={{ display: 'block', marginTop: 4, fontSize: 13 }}>
                               {t('carrito.promoHurry')}
                             </span>
                           )}
                         </span>
-                      </p>
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Mensaje de error */}
-                  {errorMessage && (
-                    <div className="bg-red-900/50 border border-red-600 text-red-200 p-4 rounded-lg mb-6">
-                      <p className="flex items-start">
-                        <FontAwesomeIcon
-                          icon={faExclamationTriangle}
-                          className="mr-2 mt-1"
-                        />
-                        <span>
+                    {/* Mensaje de error */}
+                    {errorMessage && (
+                      <div className="cart-alert err">
+                        <FontAwesomeIcon icon={faExclamationTriangle} className="ic" />
+                        <span className="cart-alert-body">
                           <strong>{t('carrito.errorTitle')}</strong> {errorMessage}
+                          <div className="retry">
+                            <button
+                              onClick={() => handleProcederPago()}
+                              className="btn btn-ghost"
+                              style={{ padding: '8px 18px', fontSize: 13 }}
+                            >
+                              {t('carrito.retry')}
+                            </button>
+                          </div>
                         </span>
-                      </p>
-                      <div className="mt-3 text-center">
-                        <button
-                          onClick={() => handleProcederPago()}
-                          className="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                        >
-                          {t('carrito.retry')}
-                        </button>
+                      </div>
+                    )}
+
+                    {/* Etapas de descuento informativas */}
+                    {discountStages.length > 0 && (
+                    <div className="cart-stages">
+                      <h4 className="cart-stages-title">
+                        <FontAwesomeIcon icon={faTags} />
+                        {t('carrito.stagesTitle')}
+                      </h4>
+
+                      <div className="cart-stage-grid">
+                        {discountStages.map((etapa, index) => {
+                          // Verificar si es la etapa actual
+                          const fechaHoy = new Date();
+                          const esEtapaActual =
+                            fechaHoy >= etapa.startDate &&
+                            fechaHoy <= etapa.endDate;
+
+                          // Formato de fechas
+                          const dateLocale = lang === 'en' ? 'en-US' : 'es-ES';
+                          const startDate =
+                            etapa.startDate.toLocaleDateString(dateLocale, {
+                              day: 'numeric',
+                              month: 'short',
+                            });
+                          const endDate = etapa.endDate.toLocaleDateString(
+                            dateLocale,
+                            { day: 'numeric', month: 'short' },
+                          );
+
+                          return (
+                            <div
+                              key={index}
+                              className={`cart-stage${esEtapaActual ? ' active' : ''}`}
+                            >
+                              <div className="rng">
+                                {startDate} - {endDate}
+                              </div>
+                              <div className="pct">
+                                {etapa.percentage > 0
+                                  ? `${etapa.percentage}% OFF`
+                                  : t('carrito.priceFull')}
+                              </div>
+                              {esEtapaActual && (
+                                <div className="now">
+                                  {t('carrito.activeNow')}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  )}
+                    )}
 
-                  {/* Etapas de descuento informativas */}
-                  <div className="bg-black/30 border border-gray-700 rounded-lg p-4 mb-6">
-                    <h4 className="text-white font-semibold mb-3 flex items-center">
-                      <FontAwesomeIcon icon={faTags} className="mr-2" />
-                      {t('carrito.stagesTitle')}
-                    </h4>
+                    {/* Botones de acción */}
+                    <div className="cart-actions">
+                      <button
+                        onClick={handleContinuarComprando}
+                        className="btn btn-ghost"
+                      >
+                        {t('carrito.continueShopping')}
+                      </button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                      {etapasDescuento.map((etapa, index) => {
-                        // Verificar si es la etapa actual
-                        const fechaHoy = new Date();
-                        const esEtapaActual =
-                          fechaHoy >= etapa.fechaInicio &&
-                          fechaHoy <= etapa.fechaFin;
-
-                        // Formato de fechas
-                        const dateLocale = lang === 'en' ? 'en-US' : 'es-ES';
-                        const fechaInicio =
-                          etapa.fechaInicio.toLocaleDateString(dateLocale, {
-                            day: 'numeric',
-                            month: 'short',
-                          });
-                        const fechaFin = etapa.fechaFin.toLocaleDateString(
-                          dateLocale,
-                          { day: 'numeric', month: 'short' },
-                        );
-
-                        return (
-                          <div
-                            key={index}
-                            className={`p-2 text-center rounded text-sm ${
-                              esEtapaActual
-                                ? 'bg-amber-500/50 border border-amber-400'
-                                : 'bg-white/5'
-                            }`}
-                          >
-                            <div className="text-xs text-gray-300 mb-1">
-                              {fechaInicio} - {fechaFin}
-                            </div>
-                            <div
-                              className={`font-semibold ${esEtapaActual ? 'text-white' : 'text-gray-400'}`}
-                            >
-                              {etapa.porcentaje > 0
-                                ? `${etapa.porcentaje}% OFF`
-                                : t('carrito.priceFull')}
-                            </div>
-                            {esEtapaActual && (
-                              <div className="text-xs text-amber-200 mt-1">
-                                {t('carrito.activeNow')}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      <button
+                        onClick={handleSolicitarPago}
+                        disabled={!isAllDataComplete || loading}
+                        className="btn btn-neon"
+                        style={{ opacity: !isAllDataComplete || loading ? .5 : 1, cursor: !isAllDataComplete || loading ? 'not-allowed' : 'pointer' }}
+                      >
+                        {loading ? (
+                          <span>{t('carrito.processing')}</span>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faCreditCard} />
+                            {activeStage && activeStage.percentage > 0
+                              ? t('carrito.payWithDiscount', { percentage: activeStage.percentage })
+                              : t('carrito.payNow')}
+                          </>
+                        )}
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex flex-col md:flex-row justify-between gap-4">
-                    <button
-                      onClick={handleContinuarComprando}
-                      className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                    >
-                      {t('carrito.continueShopping')}
-                    </button>
-
-                    <button
-                      onClick={handleSolicitarPago}
-                      disabled={!isAllDataComplete || loading}
-                      className={`bg-gradient-to-r from-[#1C2C67] to-[#4B0012] text-white font-semibold py-3 px-6 rounded-lg transition-opacity ${!isAllDataComplete || loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
-                    >
-                      {loading ? (
-                        <span>{t('carrito.processing')}</span>
-                      ) : (
-                        <span className="flex items-center justify-center">
-                          <FontAwesomeIcon
-                            icon={faCreditCard}
-                            className="mr-2"
-                          />
-                          {descuentoActual && descuentoActual.porcentaje > 0
-                            ? t('carrito.payWithDiscount', { percentage: descuentoActual.porcentaje })
-                            : t('carrito.payNow')}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
 
       <ConfirmPurchaseModal
         open={showConfirm}
@@ -1109,6 +1047,6 @@ export default function Carrito() {
         onClose={() => setShowConfirm(false)}
         onChangeEdition={handleVolver}
       />
-    </>
+    </div>
   );
 }

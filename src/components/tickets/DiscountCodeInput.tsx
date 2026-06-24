@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faTimes, faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { discountCodeService } from '@/services/discountCode';
 import { ValidateDiscountCodeResponse } from '@/types/discountCode';
 import { useLanguage } from '@/context/LanguageContext';
@@ -71,36 +73,36 @@ export default function DiscountCodeInput({
   };
 
   return (
-    <div className="bg-white/5 p-6 rounded-xl mb-4">
-      <h4 className="text-white font-semibold mb-4">{t('forms.discount.title')}</h4>
-      
+    <div className="qs-panel">
+      <h4 className="cart-summary-title" style={{ marginBottom: 14 }}>{t('forms.discount.title')}</h4>
+
       {appliedDiscount ? (
-        <div className="flex items-center justify-between bg-green-600/20 border border-green-500/50 rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
+        <div className="cart-alert ok" style={{ marginBottom: 0, alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="cart-edition-icon" style={{ width: 32, height: 32 }}>
+              <FontAwesomeIcon icon={faCheck} />
+            </span>
             <div>
-              <p className="text-white font-medium">{t('forms.discount.appliedPrefix')} {appliedDiscount.code}</p>
-              <p className="text-green-400 text-sm">{t('forms.discount.discountOf', { percentage: appliedDiscount.percentage })}</p>
+              <p style={{ color: 'var(--white)', fontWeight: 600 }}>
+                {t('forms.discount.appliedPrefix')} {appliedDiscount.code}
+              </p>
+              <p style={{ color: 'var(--neon)', fontSize: 13 }}>
+                {t('forms.discount.discountOf', { percentage: appliedDiscount.percentage })}
+              </p>
             </div>
           </div>
           <button
             onClick={removeDiscount}
             disabled={disabled}
-            className="text-red-400 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cart-item-remove"
             title={t('forms.discount.removeTitle')}
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+            <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="flex space-x-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             <input
               type="text"
               value={code}
@@ -108,26 +110,30 @@ export default function DiscountCodeInput({
               onKeyPress={handleKeyPress}
               placeholder={t('forms.discount.placeholder')}
               disabled={disabled || isValidating}
-              className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cart-field"
+              style={{
+                flex: 1, padding: '12px 16px', borderRadius: 10,
+                border: '1px solid var(--line)', background: 'var(--panel-2)', color: 'var(--white)',
+                fontFamily: 'var(--body)', fontSize: 14,
+              }}
             />
             <button
               onClick={validateCode}
               disabled={disabled || isValidating || !code.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors min-w-[100px] flex items-center justify-center"
+              className="btn btn-neon"
+              style={{ minWidth: 110, justifyContent: 'center', opacity: (disabled || isValidating || !code.trim()) ? .5 : 1, cursor: (disabled || isValidating || !code.trim()) ? 'not-allowed' : 'pointer' }}
             >
               {isValidating ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <span style={{ width: 16, height: 16, border: '2px solid rgba(6,43,20,.3)', borderTopColor: '#062B14', borderRadius: '50%', display: 'inline-block' }} className="animate-spin" />
               ) : (
                 t('forms.discount.apply')
               )}
             </button>
           </div>
-          
+
           {error && (
-            <div className="flex items-center space-x-2 text-red-400 text-sm">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#FF5470', fontSize: 13 }}>
+              <FontAwesomeIcon icon={faCircleExclamation} />
               <span>{error}</span>
             </div>
           )}

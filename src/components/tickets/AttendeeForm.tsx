@@ -22,40 +22,38 @@ export default function AttendeeForm({
   const { t } = useLanguage();
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     // Limitar a 10 caracteres para nombre, apellido y documento
     let limitedValue = value;
     if (name === 'name' || name === 'lastname' || name === 'document') {
       limitedValue = value.slice(0, 10);
     }
-    
+
     // Limitar a 15 caracteres para teléfono y asegurar que sean solo números
     if (name === 'phone') {
       // Filtrar solo dígitos
       limitedValue = value.replace(/\D/g, '').slice(0, 15);
     }
-    
+
     const updatedAttendee: AttendeeData = {
       ...attendee,
       [name]: limitedValue,
     };
-    
+
     onChange(ticketId, updatedAttendee);
   };
 
   return (
-    <div className="bg-white/5 p-5 rounded-lg mb-4">
-      <h4 className="text-white font-semibold mb-4 pb-2 border-b border-gray-700">
+    <div className="cart-form">
+      <h4 className="cart-form-title">
         {localidadNombre} - {t('forms.attendee.ticketLabel', { n: ticketIndex + 1 })}
       </h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor={`nombre-${ticketId}`}
-            className="block text-white text-sm mb-1"
-          >
-            {t('forms.attendee.name')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
+        <div className="cart-field">
+          <label htmlFor={`nombre-${ticketId}`}>
+            {t('forms.attendee.name')} <span className="req">*</span>{' '}
+            <span className="hint">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -64,20 +62,15 @@ export default function AttendeeForm({
             value={attendee.name}
             onChange={handleInputChange}
             maxLength={10}
-            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
-          <div className="mt-1 text-xs text-right text-gray-400">
-            {attendee.name ? attendee.name.length : 0}/10
-          </div>
+          <div className="ct">{attendee.name ? attendee.name.length : 0}/10</div>
         </div>
 
-        <div>
-          <label
-            htmlFor={`apellido-${ticketId}`}
-            className="block text-white text-sm mb-1"
-          >
-            {t('forms.attendee.lastname')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
+        <div className="cart-field">
+          <label htmlFor={`apellido-${ticketId}`}>
+            {t('forms.attendee.lastname')} <span className="req">*</span>{' '}
+            <span className="hint">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -86,20 +79,15 @@ export default function AttendeeForm({
             value={attendee.lastname}
             onChange={handleInputChange}
             maxLength={10}
-            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
-          <div className="mt-1 text-xs text-right text-gray-400">
-            {attendee.lastname ? attendee.lastname.length : 0}/10
-          </div>
+          <div className="ct">{attendee.lastname ? attendee.lastname.length : 0}/10</div>
         </div>
 
-        <div>
-          <label
-            htmlFor={`identificacion-${ticketId}`}
-            className="block text-white text-sm mb-1"
-          >
-            {t('forms.attendee.document')} * <span className="text-xs text-gray-400">{t('forms.attendee.maxChars')}</span>
+        <div className="cart-field">
+          <label htmlFor={`identificacion-${ticketId}`}>
+            {t('forms.attendee.document')} <span className="req">*</span>{' '}
+            <span className="hint">{t('forms.attendee.maxChars')}</span>
           </label>
           <input
             type="text"
@@ -108,20 +96,15 @@ export default function AttendeeForm({
             value={attendee.document}
             onChange={handleInputChange}
             maxLength={10}
-            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
-          <div className="mt-1 text-xs text-right text-gray-400">
-            {attendee.document ? attendee.document.length : 0}/10
-          </div>
+          <div className="ct">{attendee.document ? attendee.document.length : 0}/10</div>
         </div>
 
-        <div>
-          <label
-            htmlFor={`telefono-${ticketId}`}
-            className="block text-white text-sm mb-1"
-          >
-            {t('forms.attendee.phone')} * <span className="text-xs text-gray-400">{t('forms.attendee.phoneHint')}</span>
+        <div className="cart-field">
+          <label htmlFor={`telefono-${ticketId}`}>
+            {t('forms.attendee.phone')} <span className="req">*</span>{' '}
+            <span className="hint">{t('forms.attendee.phoneHint')}</span>
           </label>
           <input
             type="tel"
@@ -130,21 +113,15 @@ export default function AttendeeForm({
             value={attendee.phone || ''}
             onChange={handleInputChange}
             maxLength={15}
-            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
             pattern="[0-9]*"
           />
-          <div className="mt-1 text-xs text-right text-gray-400">
-            {attendee.phone ? attendee.phone.length : 0}/15
-          </div>
+          <div className="ct">{attendee.phone ? attendee.phone.length : 0}/15</div>
         </div>
 
-        <div className="md:col-span-2">
-          <label
-            htmlFor={`email-${ticketId}`}
-            className="block text-white text-sm mb-1"
-          >
-            {t('forms.attendee.email')} *
+        <div className="cart-field md:col-span-2">
+          <label htmlFor={`email-${ticketId}`}>
+            {t('forms.attendee.email')} <span className="req">*</span>
           </label>
           <input
             type="email"
@@ -152,7 +129,6 @@ export default function AttendeeForm({
             name="email"
             value={attendee.email}
             onChange={handleInputChange}
-            className="w-full py-2 px-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>

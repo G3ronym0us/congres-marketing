@@ -288,6 +288,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 // Crear contexto
 interface CartContextType {
   state: CartState;
+  /** false hasta que se intenta restaurar el carrito desde localStorage (primer efecto tras el mount) */
+  isHydrated: boolean;
   addItem: (
     localidad: TicketType,
     cantidad: number,
@@ -311,6 +313,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [isHydrated, setIsHydrated] = React.useState(false);
 
   // Cargar el carrito desde localStorage al iniciar
   useEffect(() => {
@@ -323,6 +326,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         console.error('Error parsing stored cart:', error);
       }
     }
+    setIsHydrated(true);
   }, []);
 
   const addItem = (
@@ -376,6 +380,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     <CartContext.Provider
       value={{
         state,
+        isHydrated,
         addItem,
         removeItem,
         removeTicket,

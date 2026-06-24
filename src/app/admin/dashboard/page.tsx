@@ -2,51 +2,39 @@
 
 import { useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ReserveTickets from '@/components/tickets/reserve';
-import TicketsTable from '@/components/tickets/table';
 import NavbarAdmin from '@/components/NavbarAdmin';
 import SidebarAdmin from '@/components/SIdebarAdmin';
 import { AuthContext } from '@/context/AuthContext';
 import { useMetrics } from '@/hooks/useMetrics';
 import { getCurrentEdition, setCurrentEdition } from '@/services/tickets';
 import apiClient from '@/utils/apiClient';
-import Lecturers from '@/components/admin/Lecturers';
 import TestimonialsAdmin from '@/app/admin/testimonials/page';
 import BroadcastsAdmin from '@/components/admin/broadcasts/BroadcastsAdmin';
-import DiscountCodesAdmin from '@/components/admin/discountCodes/DiscountCodesAdmin';
 import CertificatesAdmin from '@/components/admin/certificates/CertificatesAdmin';
-import LocalidadesAdmin from '@/components/admin/LocalidadesAdmin';
-import AddOnsAdmin from '@/components/admin/addOns/AddOnsAdmin';
 import EditionsAdmin from '@/components/admin/editions/EditionsAdmin';
+import EditionWorkspace from '@/components/admin/editions/EditionWorkspace';
 import { adminEditionService } from '@/services/editions';
 import { getLocalidadTypes } from '@/services/localidadTypes';
 import { Edition } from '@/types/edition';
 import '../admin.css';
 
+// Recursos por edición (Tickets, Conferencistas, Localidades, Add-ons, Códigos
+// y Etapas de descuento) ya no viven en el sidebar: se gestionan dentro del
+// workspace de cada edición (ver EditionWorkspace).
 const MENU_ITEMS = [
   { id: 'dashboard',      label: 'Dashboard',           icon: null },
   { id: 'editions',       label: 'Ediciones',           icon: null },
-  { id: 'table',          label: 'Tickets',             icon: null },
-  { id: 'lecturers',      label: 'Conferencistas',      icon: null },
   { id: 'testimonials',   label: 'Testimonios',         icon: null },
   { id: 'broadcasts',     label: 'Email Broadcasts',    icon: null },
-  { id: 'discount-codes', label: 'Códigos de Descuento',icon: null },
   { id: 'certificates',   label: 'Certificados',        icon: null },
-  { id: 'localidades',    label: 'Localidades',         icon: null },
-  { id: 'addons',         label: 'Add-ons',             icon: null },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard:      'Dashboard',
   editions:       'Ediciones',
-  table:          'Gestión de Tickets',
-  lecturers:      'Conferencistas',
   testimonials:   'Testimonios',
   broadcasts:     'Email Broadcasts',
-  'discount-codes': 'Códigos de Descuento',
   certificates:   'Certificados',
-  localidades:    'Localidades',
-  addons:         'Add-ons',
 };
 
 const TYPE_ICONS: Record<string, string> = {
@@ -78,6 +66,8 @@ export default function Dashboard() {
   const [defaultEdition, setDefaultEdition] = useState<number | null>(null);
   const [viewEdition, setViewEdition] = useState<number | undefined>(undefined);
   const [isSwitchingEdition, setIsSwitchingEdition] = useState(false);
+  // Edición abierta en su workspace (submenú de recursos por edición); null = lista.
+  const [workspaceId, setWorkspaceId] = useState<number | null>(null);
   // Icono/nombre por slug de localidad de la edición vista (gráfico dinámico)
   const [localidadMeta, setLocalidadMeta] = useState<Record<string, { icon: string; name: string }>>({});
 
@@ -86,6 +76,7 @@ export default function Dashboard() {
   const { metrics, loading: metricsLoading, refetch } = useMetrics(viewEdition);
 
   const selectedEdition = editions.find(e => e.id === viewEdition);
+  const workspaceEdition = workspaceId != null ? editions.find(e => e.id === workspaceId) : undefined;
   const eventDate = selectedEdition?.display?.iso
     ? new Date(selectedEdition.display.iso)
     : selectedEdition?.eventStartDate
@@ -113,6 +104,7 @@ export default function Dashboard() {
 
   const changeTab = (tab: string) => {
     setActiveTab(tab);
+    setWorkspaceId(null); // salir del workspace de edición al cambiar de sección
     const url = tab === 'dashboard'
       ? window.location.pathname
       : `${window.location.pathname}?tab=${tab}`;
@@ -245,7 +237,7 @@ export default function Dashboard() {
 
       <div className="adm-main">
         <NavbarAdmin
-          title={PAGE_TITLES[activeTab] ?? 'Panel de Administración'}
+          title={workspaceEdition ? workspaceEdition.name : (PAGE_TITLES[activeTab] ?? 'Panel de Administración')}
           onLogout={handleLogout}
           onToggleSidebar={() => setSidebarOpen(v => !v)}
           sidebarOpen={sidebarOpen}
@@ -384,15 +376,19 @@ export default function Dashboard() {
             </>
           )}
 
-          {activeTab === 'editions'       && <EditionsAdmin onChanged={loadEditions} />}
-          {activeTab === 'table'          && <TicketsTable editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
-          {activeTab === 'lecturers'      && <Lecturers editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
+          {activeTab === 'editions' && (
+            workspaceEdition
+              ? <EditionWorkspace
+                  edition={workspaceEdition}
+                  editions={editions}
+                  onBack={() => setWorkspaceId(null)}
+                  onChanged={loadEditions}
+                />
+              : <EditionsAdmin onChanged={loadEditions} onOpen={(e) => setWorkspaceId(e.id)} />
+          )}
           {activeTab === 'testimonials'   && <TestimonialsAdmin />}
           {activeTab === 'broadcasts'     && <BroadcastsAdmin editions={editions} />}
-          {activeTab === 'discount-codes' && <DiscountCodesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
           {activeTab === 'certificates'   && <CertificatesAdmin />}
-          {activeTab === 'localidades'    && <LocalidadesAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
-          {activeTab === 'addons'         && <AddOnsAdmin editionId={viewEdition} editions={editions} onEditionChange={setViewEdition} />}
 
         </main>
       </div>
