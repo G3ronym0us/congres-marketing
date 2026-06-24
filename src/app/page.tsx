@@ -2,6 +2,8 @@
 
 import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { getInternationalWithTitle, getNationalWithTitle } from '@/services/user';
 import { getActiveTestimonials } from '@/services/testimonials';
 import { getPublicEditions } from '@/services/editions';
@@ -13,6 +15,7 @@ import { WHATSAPP_URL } from '@/data/contactData';
 import { useLocalidades } from '@/hooks/useLocalidades';
 import { formatEditionDateLong, formatEditionDateShort, Lang } from '@/utils/editionFormat';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCart } from '@/context/CartContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import './landing.css';
 
@@ -68,6 +71,7 @@ const AUDIENCE = [
 export default function LandingPage() {
   const router = useRouter();
   const { t, lang } = useLanguage();
+  const { state: cartState, isHydrated: isCartHydrated } = useCart();
 
   const [activeSlug, setActiveSlug] = useState<string>('');
   const [activeDay, setActiveDay] = useState(0);
@@ -117,6 +121,11 @@ export default function LandingPage() {
       ? `${Math.min(...giraYears)}`
       : `${Math.min(...giraYears)} — ${Math.max(...giraYears)}`
     : '';
+  const cartTicketCount = cartState.items.reduce(
+    (sum, item) => sum + item.tickets.length,
+    0,
+  );
+  const hasCartItems = isCartHydrated && cartTicketCount > 0;
 
   const startCountdown = useCallback((iso: string) => {
     if (cdRef.current) clearInterval(cdRef.current);
@@ -272,6 +281,22 @@ export default function LandingPage() {
     </a>
   );
 
+  const renderCartCTA = (className = 'nav-cart-link', onClickExtra?: () => void) => {
+    if (!hasCartItems) return null;
+
+    return (
+      <a
+        className={className}
+        href="/carrito"
+        onClick={onClickExtra}
+        aria-label={`${t('carrito.title')}: ${cartTicketCount}`}
+      >
+        <FontAwesomeIcon icon={faShoppingCart} />
+        <span className="nav-cart-count">{cartTicketCount}</span>
+      </a>
+    );
+  };
+
   const delayClass = (i: number) => ['', ' d1', ' d2', ' d3'][i % 4];
 
   return (
@@ -287,6 +312,7 @@ export default function LandingPage() {
           <a href="#agenda">{t('landing.nav.agenda')}</a>
           <a href="#entradas">{t('landing.nav.tickets')}</a>
           <a href="#contacto">{t('landing.nav.contact')}</a>
+          {renderCartCTA()}
           {renderBuyCTA(t('landing.nav.register'))}
           <LanguageSwitcher className="ml-1" />
         </div>
@@ -302,6 +328,7 @@ export default function LandingPage() {
         <a href="#agenda" onClick={closeMenu}>{t('landing.nav.agenda')}</a>
         <a href="#entradas" onClick={closeMenu}>{t('landing.nav.tickets')}</a>
         <a href="#contacto" onClick={closeMenu}>{t('landing.nav.contact')}</a>
+        {renderCartCTA('nav-cart-link mobile', closeMenu)}
         {renderBuyCTA(t('landing.nav.register'), closeMenu)}
         <LanguageSwitcher className="self-center mt-2" />
       </div>
@@ -890,6 +917,8 @@ export default function LandingPage() {
           {t('landing.toast.cta')}
         </a>
       </div>
+
+      {renderCartCTA('landing-cart-fab')}
 
       {/* WhatsApp float */}
       <a className="wa" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">

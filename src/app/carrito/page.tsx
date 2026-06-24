@@ -1011,7 +1011,7 @@ export default function Carrito() {
                       <button
                         onClick={handleSolicitarPago}
                         disabled={!isAllDataComplete || loading}
-                        className="btn btn-neon"
+                        className={`btn btn-neon cart-pay-cta${isAllDataComplete && !loading ? ' ready' : ''}`}
                         style={{ opacity: !isAllDataComplete || loading ? .5 : 1, cursor: !isAllDataComplete || loading ? 'not-allowed' : 'pointer' }}
                       >
                         {loading ? (
