@@ -327,7 +327,7 @@ export default function BoleteriaPage() {
                       <span className="v">COP {precio(total)}</span>
                     </div>
                     <button
-                      className="btn btn-neon"
+                      className={`btn btn-neon cart-pay-cta${detalles ? ' ready' : ''}`}
                       style={{ width: '100%', justifyContent: 'center', marginTop: 24 }}
                       onClick={handleAgregar}
                       disabled={!detalles}

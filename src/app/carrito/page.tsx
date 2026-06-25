@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -250,6 +250,30 @@ export default function Carrito() {
 
     setIsAllDataComplete(allComplete);
   }, [state.items]);
+
+  // Al entrar (una vez hidratado), desplegar automáticamente los formularios de
+  // las localidades cuyos asistentes tengan datos incompletos.
+  const didInitExpand = useRef(false);
+  useEffect(() => {
+    if (!isHydrated || didInitExpand.current || state.items.length === 0) return;
+    didInitExpand.current = true;
+    const initial: Record<string, boolean> = {};
+    state.items.forEach((item) => {
+      const incompleto = item.tickets.some(
+        (t) =>
+          !(
+            t.attendee.name &&
+            t.attendee.lastname &&
+            t.attendee.document &&
+            t.attendee.email
+          ),
+      );
+      if (incompleto) initial[item.localidad] = true;
+    });
+    if (Object.keys(initial).length > 0) {
+      setExpandedSections((prev) => ({ ...initial, ...prev }));
+    }
+  }, [isHydrated, state.items]);
 
   // Actualizar total cuando cambia el estado del carrito
   useEffect(() => {
