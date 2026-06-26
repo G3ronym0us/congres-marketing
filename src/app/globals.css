@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fuente real del boleto (igual que el PDF) para que el preview coincida. */
+@font-face {
+  font-family: 'Garet';
+  src: url('/fonts/Garet-Heavy.ttf') format('truetype');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
