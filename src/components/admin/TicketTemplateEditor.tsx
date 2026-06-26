@@ -225,8 +225,12 @@ export default function TicketTemplateEditor({
   const textBox = (key: 'name' | 'document'): React.CSSProperties => {
     const el = els[key];
     const center = el.align === 'center';
+    // El PDF dibuja la baseline en el.y; en CSS posicionamos por el borde
+    // inferior, que está ~un descender (≈0.2·tamaño) debajo de la baseline.
+    // Restamos ese descender para que la baseline del preview caiga en el.y.
+    const descent = el.size * SCALE * 0.2;
     return {
-      position: 'absolute', bottom: el.y * SCALE,
+      position: 'absolute', bottom: el.y * SCALE - descent,
       left: center ? 0 : el.x * SCALE, right: center ? 0 : undefined,
       textAlign: center ? 'center' : 'left',
       fontSize: Math.max(7, el.size * SCALE), lineHeight: 1,
