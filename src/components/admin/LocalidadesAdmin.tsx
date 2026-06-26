@@ -12,7 +12,8 @@ import { Edition } from '@/types/edition';
 import { AddOn, LocalidadAddOnItem } from '@/types/addOn';
 import { getAddOns, adminAddOnService } from '@/services/addOns';
 import EditionSelect from '@/components/admin/EditionSelect';
-import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
+import { confirmDiscard } from '@/components/admin/ModalShell';
+import TicketTemplateEditor from '@/components/admin/TicketTemplateEditor';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -243,15 +244,17 @@ function LocalidadModal({
   };
 
   return (
-    <ModalShell onClose={handleClose} maxWidth={520}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+          <button onClick={handleClose} type="button" className="adm-btn" style={{ fontSize: 12, padding: '6px 12px' }}>
+            ← Volver a localidades
+          </button>
           <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: 0 }}>
             {form.id ? 'Editar localidad' : 'Nueva localidad'}
           </h3>
-          <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 920 }}>
 
           {/* Slug */}
           {field('Slug *',
@@ -348,6 +351,12 @@ function LocalidadModal({
             </div>
           )}
 
+          {/* Plantilla del boleto (por edición, vía localidad) */}
+          <TicketTemplateEditor
+            value={form.ticketTemplate}
+            onChange={t => set('ticketTemplate', t)}
+          />
+
           {err && <p style={{ color: '#ff6b6b', fontSize: 12, margin: 0 }}>{err}</p>}
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
@@ -361,7 +370,7 @@ function LocalidadModal({
             </button>
           </div>
         </form>
-    </ModalShell>
+    </div>
   );
 }
 
@@ -442,6 +451,16 @@ export default function LocalidadesAdmin({
 
   return (
     <div style={{ padding: 0 }}>
+      {modal ? (
+        <LocalidadModal
+          initial={modal}
+          availableAddOns={availableAddOns}
+          initialAddOns={modalAddOns}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
+      ) : (
+      <>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
@@ -533,6 +552,7 @@ export default function LocalidadesAdmin({
                       slug: item.slug, name: item.name, price: item.price,
                       icon: item.icon, features: item.features, withMemories: item.withMemories,
                       active: item.active, pushable: item.pushable, sortOrder: item.sortOrder,
+                      ticketTemplate: item.ticketTemplate ?? null,
                     });
                   }}
                   className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}
@@ -554,14 +574,7 @@ export default function LocalidadesAdmin({
         </div>
       )}
 
-      {modal && (
-        <LocalidadModal
-          initial={modal}
-          availableAddOns={availableAddOns}
-          initialAddOns={modalAddOns}
-          onSave={handleSave}
-          onClose={() => setModal(null)}
-        />
+      </>
       )}
 
       {toast && (
