@@ -13,14 +13,18 @@ import { useEffect, useRef, useState } from 'react';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { getEditionBySlug } from '@/services/editions';
+import { Edition } from '@/types/edition';
+import { formatEditionDateLong, formatEditionWhere } from '@/utils/editionFormat';
 import '../../landing.css';
 
 export default function TicketDetailPage() {
   const params = useParams();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [uuid, setUuid] = useState<string>();
   const [ticket, setTicket] = useState<Ticket>();
+  const [edition, setEdition] = useState<Edition | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -64,6 +68,11 @@ export default function TicketDetailPage() {
     const ticket = await getTicket(uuid);
     setTicket(ticket);
     setLoading(false);
+    if (ticket?.editionSlug) {
+      getEditionBySlug(ticket.editionSlug)
+        .then(setEdition)
+        .catch(() => setEdition(null));
+    }
   };
 
   const handleDownloadCertificate = async () => {
@@ -89,6 +98,13 @@ export default function TicketDetailPage() {
       }
     }
   };
+
+  // Fecha/lugar/edición derivados de la edición del propio boleto; si es un
+  // boleto antiguo sin edición asociada, se cae al texto por defecto.
+  const eventDate = formatEditionDateLong(edition, lang);
+  const eventWhere = formatEditionWhere(edition);
+  const eventName = edition?.year ? `CNMP ${edition.year}` : 'CNMP';
+  const eventHashtag = edition?.year ? `#CNMP${edition.year}` : '#CNMP';
 
   return (
     <div className="cnmp-root">
@@ -141,7 +157,7 @@ export default function TicketDetailPage() {
                 <div className="lp-hero-grid">
                   {/* Izquierda: datos del boleto */}
                   <div className="lp-hero-info">
-                    <span className="eyebrow">{t('ticketView.official')} · #CNMP2025</span>
+                    <span className="eyebrow">{t('ticketView.official')} · {eventHashtag}</span>
 
                     <span className="badge-st ok" style={{ fontSize: 11, padding: '6px 14px', borderRadius: 100, margin: '18px 0', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <FontAwesomeIcon icon={faCheckCircle} /> {t('ticketView.confirmed')}
@@ -199,14 +215,14 @@ export default function TicketDetailPage() {
                   <div className="lp-card reveal">
                     <span className="eyebrow">{t('ticketView.eventDetails')}</span>
                     <ul className="lp-list" style={{ marginTop: 14 }}>
-                      <li><span className="lp-list-dot">✦</span>{t('ticketView.date')}: {t('ticketView.eventDate')}</li>
-                      <li><span className="lp-list-dot">✦</span>{t('ticketView.location')}: Cartagena, Colombia</li>
+                      {eventDate && <li><span className="lp-list-dot">✦</span>{t('ticketView.date')}: {eventDate}</li>}
+                      {eventWhere && <li><span className="lp-list-dot">✦</span>{t('ticketView.location')}: {eventWhere}</li>}
                     </ul>
                   </div>
                   <div className="lp-card reveal">
                     <span className="eyebrow">{t('ticketView.certificate')}</span>
                     <p className="lp-bio" style={{ marginTop: 12 }}>
-                      {ticket.certificateUrl ? t('ticketView.certAvailable') : t('ticketView.certPending')}
+                      {ticket.certificateUrl ? t('ticketView.certAvailable', { event: eventName }) : t('ticketView.certPending')}
                     </p>
                   </div>
                 </div>
@@ -236,7 +252,7 @@ export default function TicketDetailPage() {
                       <ul className="lp-list">
                         <li><span className="lp-list-dot">✓</span>{t('ticketView.after1')}</li>
                         <li><span className="lp-list-dot">✓</span>{t('ticketView.after2')}</li>
-                        <li><span className="lp-list-dot">✓</span>{t('ticketView.after3')}</li>
+                        <li><span className="lp-list-dot">✓</span>{t('ticketView.after3', { hashtag: eventHashtag })}</li>
                       </ul>
                     </div>
                   </div>

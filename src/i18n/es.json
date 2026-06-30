@@ -303,13 +303,12 @@
     "document": "Documento",
     "eventDetails": "Detalles del Evento",
     "date": "Fecha",
-    "eventDate": "1 y 2 de agosto, 2025",
     "location": "Ubicación",
     "accessCode": "Código de Acceso",
     "qrAlt": "Código QR",
     "qrHint": "Presenta este código en la entrada del evento para registrar tu asistencia",
     "certificate": "Certificado de Asistencia",
-    "certAvailable": "Tu certificado oficial de asistencia al CNMP 2025 está disponible para descarga.",
+    "certAvailable": "Tu certificado oficial de asistencia al {event} está disponible para descarga.",
     "downloading": "Descargando...",
     "downloadCert": "Descargar Certificado",
     "certPending": "El certificado oficial de asistencia estará disponible después del evento. Mantente atento para recibir notificaciones sobre su disponibilidad.",
@@ -333,7 +332,7 @@
     "after": "Después del Evento",
     "after1": "Descarga tu certificado de asistencia",
     "after2": "Accede al material exclusivo del evento",
-    "after3": "Comparte tu experiencia usando #CNMP2025"
+    "after3": "Comparte tu experiencia usando {hashtag}"
   },
   "lecturer": {
     "loading": "Cargando conferencista…",
