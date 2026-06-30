@@ -1,27 +1,33 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export type AdminMenuItem = { id: string; label: string; href: string };
 
 const SidebarAdmin = ({
   isOpen,
   toggleSidebar,
-  activeTab,
-  setActiveTab,
   menuItems,
   user,
   onLogout,
 }: {
   isOpen: boolean;
   toggleSidebar: () => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  menuItems: { id: string; label: string; icon: any }[];
+  menuItems: AdminMenuItem[];
   user: { username: string };
   onLogout: () => void;
   logo?: string;
 }) => {
-  const handleNav = (id: string) => {
-    setActiveTab(id);
+  const pathname = usePathname();
+
+  // Activo: coincidencia exacta para el dashboard; prefijo para el resto
+  // (así /admin/editions/123 mantiene "Ediciones" resaltado).
+  const isActive = (href: string) =>
+    href === '/admin/dashboard' ? pathname === href : pathname.startsWith(href);
+
+  const handleNav = () => {
     if (window.innerWidth < 900) toggleSidebar();
   };
 
@@ -45,14 +51,15 @@ const SidebarAdmin = ({
         {/* Nav */}
         <nav className="adm-nav">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.id}
-              onClick={() => handleNav(item.id)}
-              className={`adm-nav-item${activeTab === item.id ? ' active' : ''}`}
+              href={item.href}
+              onClick={handleNav}
+              className={`adm-nav-item${isActive(item.href) ? ' active' : ''}`}
             >
               <NavIcon id={item.id} />
               {item.label}
-            </button>
+            </Link>
           ))}
         </nav>
 
