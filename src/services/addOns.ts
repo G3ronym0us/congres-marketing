@@ -42,9 +42,9 @@ export const adminAddOnService = {
     }
   },
 
-  async update(id: number, input: UpdateAddOnInput): Promise<AddOn> {
+  async update(uuid: string, input: UpdateAddOnInput): Promise<AddOn> {
     try {
-      const res = await apiClient.patch(`/admin/add-ons/${id}`, input);
+      const res = await apiClient.patch(`/admin/add-ons/${uuid}`, input);
       return res.data;
     } catch (error) {
       handleError(error);
@@ -52,9 +52,9 @@ export const adminAddOnService = {
     }
   },
 
-  async remove(id: number): Promise<void> {
+  async remove(uuid: string): Promise<void> {
     try {
-      await apiClient.delete(`/admin/add-ons/${id}`);
+      await apiClient.delete(`/admin/add-ons/${uuid}`);
     } catch (error) {
       handleError(error);
       throw error;
@@ -63,11 +63,11 @@ export const adminAddOnService = {
 
   // Reemplaza los add-ons asociados a una localidad
   async setLocalidadAddOns(
-    localidadTypeId: number,
+    localidadTypeUuid: string,
     items: LocalidadAddOnItem[],
   ): Promise<void> {
     try {
-      await apiClient.put(`/admin/add-ons/localidad/${localidadTypeId}`, {
+      await apiClient.put(`/admin/add-ons/localidad/${localidadTypeUuid}`, {
         items,
       });
     } catch (error) {

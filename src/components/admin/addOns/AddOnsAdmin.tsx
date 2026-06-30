@@ -38,8 +38,8 @@ function AddOnModal({
   onSave,
   onClose,
 }: {
-  initial: CreateAddOnInput & { id?: number };
-  onSave: (data: CreateAddOnInput & { id?: number }) => Promise<void>;
+  initial: CreateAddOnInput & { id?: number; uuid?: string };
+  onSave: (data: CreateAddOnInput & { id?: number; uuid?: string }) => Promise<void>;
   onClose: () => void;
 }) {
   const [form, setForm] = useState(initial);
@@ -145,7 +145,7 @@ export default function AddOnsAdmin({
 }) {
   const [items, setItems] = useState<AddOn[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<(CreateAddOnInput & { id?: number }) | null>(null);
+  const [modal, setModal] = useState<(CreateAddOnInput & { id?: number; uuid?: string }) | null>(null);
   const [toast, setToast] = useState('');
   const toastRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -163,10 +163,10 @@ export default function AddOnsAdmin({
 
   useEffect(() => { load(); }, [editionId]);
 
-  const handleSave = async (data: CreateAddOnInput & { id?: number }) => {
-    if (data.id) {
-      const { id, ...rest } = data;
-      await adminAddOnService.update(id, rest);
+  const handleSave = async (data: CreateAddOnInput & { id?: number; uuid?: string }) => {
+    if (data.uuid) {
+      const { id, uuid, ...rest } = data;
+      await adminAddOnService.update(data.uuid!, rest);
       showToast('Add-on actualizado');
     } else {
       await adminAddOnService.create({ ...data, edition: editionId! });
@@ -178,7 +178,7 @@ export default function AddOnsAdmin({
 
   const handleDelete = async (item: AddOn) => {
     if (!confirm(`¿Eliminar el add-on "${item.name}"? Se quitará de las localidades que lo ofrecen.`)) return;
-    await adminAddOnService.remove(item.id);
+    await adminAddOnService.remove(item.uuid);
     showToast('Add-on eliminado');
     load();
   };
@@ -229,7 +229,7 @@ export default function AddOnsAdmin({
                 {fmt(item.price)}
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-                <button onClick={() => setModal({ id: item.id, edition: item.edition, slug: item.slug, name: item.name, description: item.description ?? '', price: item.price, icon: item.icon, active: item.active, sortOrder: item.sortOrder })} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
+                <button onClick={() => setModal({ id: item.id, uuid: item.uuid, edition: item.edition, slug: item.slug, name: item.name, description: item.description ?? '', price: item.price, icon: item.icon, active: item.active, sortOrder: item.sortOrder })} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                   Editar
                 </button>
                 <button onClick={() => handleDelete(item)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 12px' }}>

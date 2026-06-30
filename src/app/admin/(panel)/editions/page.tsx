@@ -11,7 +11,7 @@ export default function EditionsPage() {
   return (
     <EditionsAdmin
       onChanged={loadEditions}
-      onOpen={(e) => router.push(`/admin/editions/${e.id}`)}
+      onOpen={(e) => router.push(`/admin/editions/${e.uuid}`)}
     />
   );
 }

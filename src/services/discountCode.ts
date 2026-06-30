@@ -50,9 +50,9 @@ export const adminDiscountCodeService = {
   },
 
   // Obtener código por ID
-  async getCodeById(id: number): Promise<DiscountCode> {
+  async getCodeByUuid(uuid: string): Promise<DiscountCode> {
     try {
-      const response = await apiClient.get(`/admin/discount-codes/${id}`);
+      const response = await apiClient.get(`/admin/discount-codes/${uuid}`);
       return response.data;
     } catch (error) {
       handleError(error);
@@ -61,9 +61,9 @@ export const adminDiscountCodeService = {
   },
 
   // Actualizar código
-  async updateCode(id: number, input: UpdateDiscountCodeInput): Promise<DiscountCode> {
+  async updateCode(uuid: string, input: UpdateDiscountCodeInput): Promise<DiscountCode> {
     try {
-      const response = await apiClient.patch(`/admin/discount-codes/${id}`, input);
+      const response = await apiClient.patch(`/admin/discount-codes/${uuid}`, input);
       return response.data;
     } catch (error) {
       handleError(error);
@@ -72,9 +72,9 @@ export const adminDiscountCodeService = {
   },
 
   // Eliminar código
-  async deleteCode(id: number): Promise<void> {
+  async deleteCode(uuid: string): Promise<void> {
     try {
-      await apiClient.delete(`/admin/discount-codes/${id}`);
+      await apiClient.delete(`/admin/discount-codes/${uuid}`);
     } catch (error) {
       handleError(error);
       throw error;

@@ -106,9 +106,9 @@ export async function create(lecturer: CreateLecturerData): Promise<Lecturer> {
   return response;
 }
 
-export async function update(id: number, lecturer: UpdateLecturerData): Promise<Lecturer> {
+export async function update(uuid: string, lecturer: UpdateLecturerData): Promise<Lecturer> {
   console.log(lecturer);
-  const response = await apiClient.patch(`/lecturers/${id}`, lecturer).then((res) => res.data).catch((err) => {
+  const response = await apiClient.patch(`/lecturers/${uuid}`, lecturer).then((res) => res.data).catch((err) => {
     console.error('Error updating lecturer:', err);
     return [];
   });
@@ -116,36 +116,36 @@ export async function update(id: number, lecturer: UpdateLecturerData): Promise<
 }
 
 export async function copyLecturer(
-  id: number,
+  uuid: string,
   editionId: number,
 ): Promise<Lecturer> {
   const response = await apiClient
-    .post(`/lecturers/${id}/copy`, { editionId })
+    .post(`/lecturers/${uuid}/copy`, { editionId })
     .then((res) => res.data);
   return response;
 }
 
-export async function deleteLecturer(id: number): Promise<void> {
-  const response = await apiClient.delete(`/lecturers/${id}`).then((res) => res.data).catch((err) => {
+export async function deleteLecturer(uuid: string): Promise<void> {
+  const response = await apiClient.delete(`/lecturers/${uuid}`).then((res) => res.data).catch((err) => {
     console.error('Error deleting lecturer:', err);
     return [];
   });
   return response;
 }
 
-export async function toggleShow(id: number): Promise<Lecturer> {
-  const response = await apiClient.patch(`/lecturers/${id}/toggle-show`).then((res) => res.data).catch((err) => {
+export async function toggleShow(uuid: string): Promise<Lecturer> {
+  const response = await apiClient.patch(`/lecturers/${uuid}/toggle-show`).then((res) => res.data).catch((err) => {
     console.error('Error toggling visibility:', err);
     return [];
   });
   return response;
 }
 
-export async function uploadImage(id: number, file: File): Promise<Lecturer> {
+export async function uploadImage(uuid: string, file: File): Promise<Lecturer> {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await apiClient.post(`/lecturers/${id}/upload-image`, formData).then((res) => res.data).catch((err) => {
+  const response = await apiClient.post(`/lecturers/${uuid}/upload-image`, formData).then((res) => res.data).catch((err) => {
     console.error('Error uploading image:', err);
     return [];
   });

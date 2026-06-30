@@ -16,7 +16,7 @@ const PANEL2 = '#332A30';
 
 // Edition -> estado del formulario de "Resumen" (misma forma que en EditionsAdmin).
 const toFormState = (e: Edition): EditionFormState => ({
-  id: e.id, slug: e.slug, name: e.name, year: e.year, country: e.country,
+  id: e.id, uuid: e.uuid, slug: e.slug, name: e.name, year: e.year, country: e.country,
   city: e.city ?? '', venue: e.venue ?? '',
   iso: toLocalInput(e.display?.iso ?? e.eventStartDate),
   endDate: toDateInput(e.eventEndDate),
@@ -28,7 +28,8 @@ export default function EditionOverviewPage() {
   const params = useParams();
   const router = useRouter();
   const { editions, loadEditions } = useAdminEditions();
-  const edition = editions.find((e) => e.id === Number(params?.id));
+  const uuid = String(params?.uuid ?? '');
+  const edition = editions.find((e) => e.uuid === uuid);
 
   const [toast, setToast] = useState('');
   const toastRef = useRef<ReturnType<typeof setTimeout>>();
@@ -50,7 +51,7 @@ export default function EditionOverviewPage() {
   }
 
   const handleSave = async (data: EditionFormState) => {
-    await adminEditionService.update(edition.id, stripFormMeta(data));
+    await adminEditionService.update(edition.uuid, stripFormMeta(data));
     showToast('Edición actualizada');
     loadEditions();
   };

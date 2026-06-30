@@ -2,6 +2,7 @@
 
 export interface Testimonial {
   id: number;
+  uuid: string;
   firstName: string;
   lastName: string;
   position: string;

@@ -2,6 +2,7 @@
 
 export interface DiscountCode {
   id: number;
+  uuid: string;
   edition: number;
   code: string;
   discountPercentage: string;

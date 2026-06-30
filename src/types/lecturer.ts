@@ -25,6 +25,7 @@ export interface AcademicFormation {
 
 export interface Lecturer {
   id: number;
+  uuid: string;
   firstName: string;
   lastName?: string;
   alt: string;

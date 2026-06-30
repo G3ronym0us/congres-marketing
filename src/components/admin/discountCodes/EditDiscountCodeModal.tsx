@@ -68,7 +68,7 @@ export default function EditDiscountCodeModal({ discountCode, onClose, onSuccess
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      await adminDiscountCodeService.updateCode(discountCode.id, formData);
+      await adminDiscountCodeService.updateCode(discountCode.uuid, formData);
       Swal.fire({ icon: 'success', title: 'Código actualizado', timer: 1500, showConfirmButton: false });
       onSuccess();
     } catch (err: any) {

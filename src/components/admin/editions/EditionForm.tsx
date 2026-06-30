@@ -40,6 +40,7 @@ const inputStyle: React.CSSProperties = {
 
 export type EditionFormState = CreateEditionInput & {
   id?: number;
+  uuid?: string;
   // Fecha y hora de inicio (alimenta countdown y todos los textos de fecha)
   iso?: string;
   // Fecha de finalización, solo fecha (opcional) -> eventEndDate
@@ -55,7 +56,7 @@ export type EditionFormState = CreateEditionInput & {
 // espeja a eventStartDate para reportes.
 export function stripFormMeta(data: EditionFormState): CreateEditionInput {
   const {
-    id, iso, endDate, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
+    id, uuid, iso, endDate, sourceEditionId, cloneLocalidades, cloneLecturers, cloneDiscountCodes,
     // discountStages se gestionan en su propia pestaña, no desde el form de edición.
     discountStages,
     display, eventStartDate, eventEndDate, ...rest

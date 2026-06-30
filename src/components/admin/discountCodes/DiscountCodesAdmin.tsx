@@ -58,7 +58,7 @@ export default function DiscountCodesAdmin({
 
   useEffect(() => { load(); }, [editionId]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (uuid: string) => {
     const { isConfirmed } = await Swal.fire({
       title: '¿Eliminar código?', text: 'Esta acción no se puede revertir',
       icon: 'warning', showCancelButton: true,
@@ -67,7 +67,7 @@ export default function DiscountCodesAdmin({
     });
     if (!isConfirmed) return;
     try {
-      await adminDiscountCodeService.deleteCode(id);
+      await adminDiscountCodeService.deleteCode(uuid);
       load();
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el código' });
@@ -76,7 +76,7 @@ export default function DiscountCodesAdmin({
 
   const handleToggle = async (code: DiscountCode) => {
     try {
-      await adminDiscountCodeService.updateCode(code.id, { isActive: !code.isActive });
+      await adminDiscountCodeService.updateCode(code.uuid, { isActive: !code.isActive });
       setCodes(prev => prev.map(c => c.id === code.id ? { ...c, isActive: !c.isActive } : c));
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el código' });
@@ -167,7 +167,7 @@ export default function DiscountCodesAdmin({
                 <button onClick={() => setEditingCode(code)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                   Editar
                 </button>
-                <button onClick={() => handleDelete(code.id)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 12px' }}>
+                <button onClick={() => handleDelete(code.uuid)} className="adm-btn danger" style={{ fontSize: 11, padding: '6px 12px' }}>
                   Eliminar
                 </button>
               </div>

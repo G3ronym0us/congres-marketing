@@ -30,11 +30,13 @@ const isActiveNow = (s: DiscountStage): boolean => {
 
 export default function DiscountStagesAdmin({
   editionId,
+  editionUuid,
   editions = [],
   onEditionChange,
   onChanged,
 }: {
   editionId?: number;
+  editionUuid?: string;
   editions?: Edition[];
   onEditionChange?: (id: number) => void;
   onChanged?: () => void;
@@ -42,14 +44,15 @@ export default function DiscountStagesAdmin({
   const [stages, setStages] = useState<DiscountStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const selectedEditionUuid = editionUuid ?? editions.find((e) => e.id === editionId)?.uuid;
   // null = sin modal; { stage } = editar/crear (stage null = nueva)
   const [modal, setModal] = useState<{ stage: DiscountStage | null; index: number | null } | null>(null);
 
   const load = async () => {
-    if (!editionId) { setStages([]); setLoading(false); return; }
+    if (!selectedEditionUuid) { setStages([]); setLoading(false); return; }
     try {
       setLoading(true);
-      const edition = await adminEditionService.getById(editionId);
+      const edition = await adminEditionService.getByUuid(selectedEditionUuid);
       setStages(edition.discountStages ?? []);
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las etapas de descuento' });
@@ -58,14 +61,14 @@ export default function DiscountStagesAdmin({
     }
   };
 
-  useEffect(() => { load(); }, [editionId]);
+  useEffect(() => { load(); }, [editionId, selectedEditionUuid]);
 
   // Persiste el array completo y refresca el estado local.
   const persist = async (next: DiscountStage[]) => {
-    if (!editionId) return;
+    if (!selectedEditionUuid) return;
     setSaving(true);
     try {
-      const updated = await adminEditionService.update(editionId, { discountStages: next });
+      const updated = await adminEditionService.update(selectedEditionUuid, { discountStages: next });
       setStages(updated.discountStages ?? next);
       onChanged?.();
     } catch (err: unknown) {

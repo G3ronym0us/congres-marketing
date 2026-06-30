@@ -10,7 +10,7 @@ import '../admin.css';
 
 // Recursos por edición (Tickets, Conferencistas, Localidades, Add-ons, Códigos
 // y Etapas de descuento) no viven en el sidebar: se gestionan dentro de la ruta
-// de cada edición (/admin/editions/[id]).
+// de cada edición (/admin/editions/[uuid]).
 const MENU_ITEMS: AdminMenuItem[] = [
   { id: 'dashboard',    label: 'Dashboard',        href: '/admin/dashboard' },
   { id: 'editions',     label: 'Ediciones',        href: '/admin/editions' },
@@ -46,11 +46,11 @@ function AdminShell({ children }: { children: ReactNode }) {
   const handleLogout = () => { auth?.logout(); router.push('/admin/auth'); };
 
   // Título del navbar derivado de la ruta. En el detalle de una edición
-  // (/admin/editions/[id]) se muestra el nombre de la edición.
+  // (/admin/editions/[uuid]) se muestra el nombre de la edición.
   const title = (() => {
-    const m = pathname.match(/^\/admin\/editions\/(\d+)/);
+    const m = pathname.match(/^\/admin\/editions\/([^/]+)/);
     if (m) {
-      const ed = editions.find(e => e.id === Number(m[1]));
+      const ed = editions.find(e => e.uuid === m[1]);
       return ed?.name ?? 'Edición';
     }
     const active = [...MENU_ITEMS]

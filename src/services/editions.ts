@@ -39,9 +39,9 @@ export const adminEditionService = {
     }
   },
 
-  async getById(id: number): Promise<Edition> {
+  async getByUuid(uuid: string): Promise<Edition> {
     try {
-      const res = await apiClient.get(`/admin/editions/${id}`);
+      const res = await apiClient.get(`/admin/editions/${uuid}`);
       return res.data;
     } catch (error) {
       return handleError(error);
@@ -68,9 +68,9 @@ export const adminEditionService = {
     }
   },
 
-  async update(id: number, input: UpdateEditionInput): Promise<Edition> {
+  async update(uuid: string, input: UpdateEditionInput): Promise<Edition> {
     try {
-      const res = await apiClient.patch(`/admin/editions/${id}`, input);
+      const res = await apiClient.patch(`/admin/editions/${uuid}`, input);
       return res.data;
     } catch (error) {
       handleError(error);
@@ -79,12 +79,12 @@ export const adminEditionService = {
   },
 
   // Sube el PDF de hoteles de la edición y devuelve la edición actualizada.
-  async uploadHotelBrochure(id: number, file: File): Promise<Edition> {
+  async uploadHotelBrochure(uuid: string, file: File): Promise<Edition> {
     try {
       const form = new FormData();
       form.append('file', file);
       const res = await apiClient.post(
-        `/admin/editions/${id}/hotel-brochure`,
+        `/admin/editions/${uuid}/hotel-brochure`,
         form,
         { headers: { 'Content-Type': 'multipart/form-data' } },
       );
@@ -95,9 +95,9 @@ export const adminEditionService = {
     }
   },
 
-  async removeHotelBrochure(id: number): Promise<Edition> {
+  async removeHotelBrochure(uuid: string): Promise<Edition> {
     try {
-      const res = await apiClient.delete(`/admin/editions/${id}/hotel-brochure`);
+      const res = await apiClient.delete(`/admin/editions/${uuid}/hotel-brochure`);
       return res.data;
     } catch (error) {
       handleError(error);
@@ -106,9 +106,9 @@ export const adminEditionService = {
   },
 
   // URL firmada para ver/descargar el brochure actual.
-  async getHotelBrochureUrl(id: number): Promise<string | null> {
+  async getHotelBrochureUrl(uuid: string): Promise<string | null> {
     try {
-      const res = await apiClient.get(`/admin/editions/${id}/hotel-brochure-url`);
+      const res = await apiClient.get(`/admin/editions/${uuid}/hotel-brochure-url`);
       return res.data?.url ?? null;
     } catch (error) {
       return handleError(error);
@@ -116,17 +116,17 @@ export const adminEditionService = {
   },
 
   // HTML de la vista previa del correo de compra (en el idioma indicado).
-  async getPurchaseEmailPreview(id: number, lang: 'es' | 'en'): Promise<string> {
+  async getPurchaseEmailPreview(uuid: string, lang: 'es' | 'en'): Promise<string> {
     const res = await apiClient.get(
-      `/admin/editions/${id}/purchase-email-preview`,
+      `/admin/editions/${uuid}/purchase-email-preview`,
       { params: { lang }, responseType: 'text' },
     );
     return res.data as string;
   },
 
-  async setFlags(id: number, input: SetEditionFlagsInput): Promise<Edition> {
+  async setFlags(uuid: string, input: SetEditionFlagsInput): Promise<Edition> {
     try {
-      const res = await apiClient.patch(`/admin/editions/${id}/flags`, input);
+      const res = await apiClient.patch(`/admin/editions/${uuid}/flags`, input);
       return res.data;
     } catch (error) {
       handleError(error);
@@ -134,9 +134,9 @@ export const adminEditionService = {
     }
   },
 
-  async remove(id: number): Promise<void> {
+  async remove(uuid: string): Promise<void> {
     try {
-      await apiClient.delete(`/admin/editions/${id}`);
+      await apiClient.delete(`/admin/editions/${uuid}`);
     } catch (error) {
       handleError(error);
       throw error;

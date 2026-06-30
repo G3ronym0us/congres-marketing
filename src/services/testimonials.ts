@@ -33,9 +33,9 @@ export const getActiveTestimonials = async (): Promise<Testimonial[]> => {
   }
 };
 
-export const getTestimonialById = async (id: number): Promise<Testimonial> => {
+export const getTestimonialByUuid = async (uuid: string): Promise<Testimonial> => {
   try {
-    const response = await apiClient.get(`/testimonials/${id}`);
+    const response = await apiClient.get(`/testimonials/${uuid}`);
     return response.data;
   } catch (error) {
     return handleError(error);
@@ -52,30 +52,30 @@ export const createTestimonial = async (data: CreateTestimonialInput): Promise<T
   }
 };
 
-export const updateTestimonial = async (id: number, data: UpdateTestimonialInput): Promise<Testimonial> => {
+export const updateTestimonial = async (uuid: string, data: UpdateTestimonialInput): Promise<Testimonial> => {
   try {
-    const response = await apiClient.patch(`/testimonials/${id}`, data);
+    const response = await apiClient.patch(`/testimonials/${uuid}`, data);
     return response.data;
   } catch (error) {
     return handleError(error);
   }
 };
 
-export const toggleTestimonialActive = async (id: number): Promise<Testimonial> => {
+export const toggleTestimonialActive = async (uuid: string): Promise<Testimonial> => {
   try {
-    const response = await apiClient.patch(`/testimonials/${id}/toggle-active`, {});
+    const response = await apiClient.patch(`/testimonials/${uuid}/toggle-active`, {});
     return response.data;
   } catch (error) {
     return handleError(error);
   }
 };
 
-export const uploadTestimonialImage = async (id: number, file: File): Promise<Testimonial> => {
+export const uploadTestimonialImage = async (uuid: string, file: File): Promise<Testimonial> => {
   try {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await apiClient.post(`/testimonials/${id}/upload-image`, formData, {
+    const response = await apiClient.post(`/testimonials/${uuid}/upload-image`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -86,18 +86,18 @@ export const uploadTestimonialImage = async (id: number, file: File): Promise<Te
   }
 };
 
-export const deleteTestimonialImage = async (id: number): Promise<Testimonial> => {
+export const deleteTestimonialImage = async (uuid: string): Promise<Testimonial> => {
   try {
-    const response = await apiClient.delete(`/testimonials/${id}/image`);
+    const response = await apiClient.delete(`/testimonials/${uuid}/image`);
     return response.data;
   } catch (error) {
     return handleError(error);
   }
 };
 
-export const deleteTestimonial = async (id: number): Promise<void> => {
+export const deleteTestimonial = async (uuid: string): Promise<void> => {
   try {
-    await apiClient.delete(`/testimonials/${id}`);
+    await apiClient.delete(`/testimonials/${uuid}`);
   } catch (error) {
     return handleError(error);
   }

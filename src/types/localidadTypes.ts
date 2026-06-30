@@ -26,6 +26,7 @@ export interface TicketTemplate {
 
 export interface LocalidadType {
   id: number;
+  uuid: string;
   edition: number;
   slug: string;
   name: string;

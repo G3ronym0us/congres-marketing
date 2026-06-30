@@ -68,7 +68,7 @@ const TestimonialsAdmin = () => {
 
   const handleToggle = async (t: Testimonial) => {
     try {
-      await toggleTestimonialActive(t.id);
+      await toggleTestimonialActive(t.uuid);
       setTestimonials(prev => prev.map(x => x.id === t.id ? { ...x, active: !x.active } : x));
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cambiar el estado' });
@@ -85,7 +85,7 @@ const TestimonialsAdmin = () => {
     });
     if (!isConfirmed) return;
     try {
-      await deleteTestimonial(t.id);
+      await deleteTestimonial(t.uuid);
       setTestimonials(prev => prev.filter(x => x.id !== t.id));
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el testimonio' });

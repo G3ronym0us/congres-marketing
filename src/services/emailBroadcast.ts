@@ -11,9 +11,9 @@ class EmailBroadcastService {
     }
   }
 
-  async getBroadcastById(id: number): Promise<EmailBroadcast> {
+  async getBroadcastByUuid(uuid: string): Promise<EmailBroadcast> {
     try {
-      const response = await apiClient.get(`/email-broadcasts/${id}`);
+      const response = await apiClient.get(`/email-broadcasts/${uuid}`);
       return response.data;
     } catch (error) {
       return handleError(error);
@@ -45,9 +45,9 @@ class EmailBroadcastService {
     }
   }
 
-  async resendBroadcast(id: number, resendData?: ResendEmailBroadcastRequest): Promise<void> {
+  async resendBroadcast(uuid: string, resendData?: ResendEmailBroadcastRequest): Promise<void> {
     try {
-      await apiClient.post(`/email-broadcasts/${id}/resend`, resendData || {});
+      await apiClient.post(`/email-broadcasts/${uuid}/resend`, resendData || {});
     } catch (error) {
       return handleError(error);
     }

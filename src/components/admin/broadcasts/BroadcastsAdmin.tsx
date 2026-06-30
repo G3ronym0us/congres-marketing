@@ -90,7 +90,7 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
     });
     if (!isConfirmed) return;
     try {
-      await emailBroadcastService.resendBroadcast(b.id, {});
+      await emailBroadcastService.resendBroadcast(b.uuid, {});
       Swal.fire({ icon: 'success', title: 'Reenviado', timer: 1500, showConfirmButton: false });
       load();
     } catch {

@@ -62,8 +62,8 @@ export default function EditionsAdmin({
       };
       await adminEditionService.clone(payload);
       showToast('Edición clonada');
-    } else if (data.id) {
-      await adminEditionService.update(data.id, stripFormMeta(data));
+    } else if (data.uuid) {
+      await adminEditionService.update(data.uuid, stripFormMeta(data));
       showToast('Edición actualizada');
     } else {
       await adminEditionService.create(stripFormMeta(data));
@@ -74,14 +74,14 @@ export default function EditionsAdmin({
   };
 
   const handleFlag = async (e: Edition, key: 'salesOpen' | 'visible') => {
-    await adminEditionService.setFlags(e.id, { [key]: !e[key] });
+    await adminEditionService.setFlags(e.uuid, { [key]: !e[key] });
     refresh();
   };
 
   const handleDelete = async (e: Edition) => {
     if (!confirm(`¿Eliminar la edición "${e.name}"? Solo es posible si no tiene tickets/transacciones asociadas.`)) return;
     try {
-      await adminEditionService.remove(e.id);
+      await adminEditionService.remove(e.uuid);
       showToast('Edición eliminada');
       refresh();
     } catch (err: unknown) {

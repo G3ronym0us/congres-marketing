@@ -77,7 +77,7 @@ function CopyFromEditionModal({
     if (!currentEditionId) return;
     setCopyingId(l.id);
     try {
-      await copyLecturer(l.id, currentEditionId);
+      await copyLecturer(l.uuid, currentEditionId);
       setCopiedIds((prev) => [...prev, l.id]);
       onCopied();
     } catch {
@@ -212,14 +212,14 @@ const LecturersTable = ({
 
   const handleToggleVisibility = async (lecturer: Lecturer) => {
     try {
-      await toggleShow(lecturer.id);
+      await toggleShow(lecturer.uuid);
       setData(prev => prev.map(l => l.id === lecturer.id ? { ...l, show: !l.show } : l));
     } catch {
       Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al cambiar visibilidad', showConfirmButton: false, timer: 1500 });
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
+  const handleDelete = async (uuid: string, name: string) => {
     const { isConfirmed } = await Swal.fire({
       title: '¿Estás seguro?', text: `Se eliminará permanentemente a ${name}`,
       icon: 'warning', showCancelButton: true,
@@ -228,8 +228,8 @@ const LecturersTable = ({
     });
     if (!isConfirmed) return;
     try {
-      await deleteLecturerService(id);
-      setData(prev => prev.filter(l => l.id !== id));
+      await deleteLecturerService(uuid);
+      setData(prev => prev.filter(l => l.uuid !== uuid));
     } catch {
       Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al eliminar', showConfirmButton: false, timer: 1500 });
     }
@@ -259,7 +259,7 @@ const LecturersTable = ({
     if (!lecturerEdit) return;
     setIsLoading(true);
     try {
-      await update(lecturerEdit.id, {
+      await update(lecturerEdit.uuid, {
         ...lecturer,
         academicFormations: lecturer.academicFormations?.map(f => ({ title: f.title, institution: f.institution, year: f.year, place: f.place })),
         publications: lecturer.publications?.map(p => ({ title: p.title, editorial: p.editorial, year: p.year, role: p.role, description: p.description })),
@@ -277,7 +277,7 @@ const LecturersTable = ({
 
   const handleImageUpload = async (lecturer: Lecturer, file: File) => {
     try {
-      await uploadImage(lecturer.id, file);
+      await uploadImage(lecturer.uuid, file);
       Swal.fire({ position: 'top-end', icon: 'success', title: 'Imagen actualizada', showConfirmButton: false, timer: 1500 });
       getLecturers();
     } catch {
@@ -441,7 +441,7 @@ const LecturersTable = ({
                 </button>
 
                 <button
-                  onClick={() => handleDelete(item.id, `${item.firstName} ${item.lastName}`)}
+                  onClick={() => handleDelete(item.uuid, `${item.firstName} ${item.lastName}`)}
                   className="adm-btn danger"
                   style={{ fontSize: 11, padding: '6px 12px' }}
                 >

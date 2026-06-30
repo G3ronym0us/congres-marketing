@@ -1,5 +1,6 @@
 export interface AddOn {
   id: number;
+  uuid: string;
   edition: number;
   slug: string;
   name: string;
@@ -40,6 +41,7 @@ export interface LocalidadAddOnItem {
 // Add-on seleccionado en un ticket del carrito (snapshot ligero)
 export interface SelectedAddOn {
   id: number;
+  uuid?: string;
   slug: string;
   name: string;
   price: number;

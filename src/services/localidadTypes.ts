@@ -31,20 +31,20 @@ export async function createLocalidadType(
 }
 
 export async function updateLocalidadType(
-  id: number,
+  uuid: string,
   data: UpdateLocalidadTypeInput,
 ): Promise<LocalidadType> {
   try {
-    const res = await apiClient.patch(`/admin/localidad-types/${id}`, data);
+    const res = await apiClient.patch(`/admin/localidad-types/${uuid}`, data);
     return res.data;
   } catch (error) {
     return handleError(error);
   }
 }
 
-export async function deleteLocalidadType(id: number): Promise<void> {
+export async function deleteLocalidadType(uuid: string): Promise<void> {
   try {
-    await apiClient.delete(`/admin/localidad-types/${id}`);
+    await apiClient.delete(`/admin/localidad-types/${uuid}`);
   } catch (error) {
     return handleError(error);
   }

@@ -169,16 +169,16 @@ function LocalidadModal({
   onSave,
   onClose,
 }: {
-  initial: CreateLocalidadTypeInput & { id?: number };
+  initial: CreateLocalidadTypeInput & { id?: number; uuid?: string };
   availableAddOns: AddOn[];
   initialAddOns: LocalidadAddOnItem[];
   onSave: (
-    data: CreateLocalidadTypeInput & { id?: number },
+    data: CreateLocalidadTypeInput & { id?: number; uuid?: string },
     addOnItems: LocalidadAddOnItem[],
   ) => Promise<void>;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<CreateLocalidadTypeInput & { id?: number }>(initial);
+  const [form, setForm] = useState<CreateLocalidadTypeInput & { id?: number; uuid?: string }>(initial);
   const [featuresText, setFeaturesText] = useState((initial.features ?? []).join('\n'));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -387,7 +387,7 @@ export default function LocalidadesAdmin({
   const [items, setItems] = useState<LocalidadType[]>([]);
   const [availableAddOns, setAvailableAddOns] = useState<AddOn[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<(CreateLocalidadTypeInput & { id?: number }) | null>(null);
+  const [modal, setModal] = useState<(CreateLocalidadTypeInput & { id?: number; uuid?: string }) | null>(null);
   const [modalAddOns, setModalAddOns] = useState<LocalidadAddOnItem[]>([]);
   const [toast, setToast] = useState('');
   const toastRef = useRef<ReturnType<typeof setTimeout>>();
@@ -416,21 +416,21 @@ export default function LocalidadesAdmin({
   useEffect(() => { load(); }, [editionId]);
 
   const handleSave = async (
-    data: CreateLocalidadTypeInput & { id?: number },
+    data: CreateLocalidadTypeInput & { id?: number; uuid?: string },
     addOnItems: LocalidadAddOnItem[],
   ) => {
-    let localidadId = data.id;
-    if (data.id) {
-      const { id, ...rest } = data;
-      await updateLocalidadType(id, rest);
+    let localidadUuid = data.uuid;
+    if (data.uuid) {
+      const { id, uuid, ...rest } = data;
+      await updateLocalidadType(data.uuid, rest);
       showToast('Localidad actualizada');
     } else {
       const created = await createLocalidadType({ ...data, edition: editionId! });
-      localidadId = created.id;
+      localidadUuid = created.uuid;
       showToast('Localidad creada');
     }
-    if (localidadId) {
-      await adminAddOnService.setLocalidadAddOns(localidadId, addOnItems);
+    if (localidadUuid) {
+      await adminAddOnService.setLocalidadAddOns(localidadUuid, addOnItems);
     }
     setModal(null);
     load();
@@ -438,13 +438,13 @@ export default function LocalidadesAdmin({
 
   const handleDelete = async (item: LocalidadType) => {
     if (!confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) return;
-    await deleteLocalidadType(item.id);
+    await deleteLocalidadType(item.uuid);
     showToast('Localidad eliminada');
     load();
   };
 
   const handleToggle = async (item: LocalidadType) => {
-    await updateLocalidadType(item.id, { active: !item.active });
+    await updateLocalidadType(item.uuid, { active: !item.active });
     showToast(item.active ? 'Localidad desactivada' : 'Localidad activada');
     load();
   };
@@ -548,7 +548,7 @@ export default function LocalidadesAdmin({
                       (item.addOns ?? []).map(a => ({ addOnId: a.addOn.id, included: a.included })),
                     );
                     setModal({
-                      id: item.id, edition: item.edition,
+                      id: item.id, uuid: item.uuid, edition: item.edition,
                       slug: item.slug, name: item.name, price: item.price,
                       icon: item.icon, features: item.features, withMemories: item.withMemories,
                       active: item.active, pushable: item.pushable, sortOrder: item.sortOrder,

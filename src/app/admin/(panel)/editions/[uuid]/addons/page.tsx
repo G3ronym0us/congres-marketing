@@ -7,5 +7,7 @@ import { useAdminEditions } from '@/context/AdminEditionsContext';
 export default function EditionAddOnsPage() {
   const params = useParams();
   const { editions } = useAdminEditions();
-  return <AddOnsAdmin editionId={Number(params?.id)} editions={editions} />;
+  const uuid = String(params?.uuid ?? '');
+  const edition = editions.find((e) => e.uuid === uuid);
+  return <AddOnsAdmin editionId={edition?.id} editions={editions} />;
 }

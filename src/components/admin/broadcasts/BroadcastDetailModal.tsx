@@ -85,7 +85,7 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
   const handleResend = async () => {
     setResending(true);
     try {
-      await emailBroadcastService.resendBroadcast(broadcast.id, {
+      await emailBroadcastService.resendBroadcast(broadcast.uuid, {
         ...resendData,
         specific_email: resendEmail || undefined,
       });

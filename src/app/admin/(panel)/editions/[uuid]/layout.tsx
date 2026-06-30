@@ -11,7 +11,7 @@ const LINE  = 'rgba(255,255,255,.08)';
 const MUTE2 = 'rgba(255,255,255,.28)';
 
 // Sub-recursos de una edición, ahora como rutas anidadas (cada uno deep-linkable).
-// `seg` vacío = ruta índice (Resumen) en /admin/editions/[id].
+// `seg` vacío = ruta índice (Resumen) en /admin/editions/[uuid].
 const SUBS: { seg: string; label: string }[] = [
   { seg: '',                label: 'Resumen' },
   { seg: 'tickets',         label: 'Tickets' },
@@ -28,9 +28,9 @@ export default function EditionDetailLayout({ children }: { children: ReactNode 
   const pathname = usePathname();
   const { editions } = useAdminEditions();
 
-  const id = Number(params?.id);
-  const base = `/admin/editions/${id}`;
-  const edition = editions.find((e) => e.id === id);
+  const uuid = String(params?.uuid ?? '');
+  const base = `/admin/editions/${uuid}`;
+  const edition = editions.find((e) => e.uuid === uuid);
 
   const hrefFor = (seg: string) => (seg ? `${base}/${seg}` : base);
   const isActive = (seg: string) => pathname === hrefFor(seg);

@@ -31,7 +31,8 @@ const taStyle: React.CSSProperties = {
 export default function EditionEmailPage() {
   const params = useParams();
   const { editions, loadEditions } = useAdminEditions();
-  const edition = editions.find((e) => e.id === Number(params?.id));
+  const uuid = String(params?.uuid ?? '');
+  const edition = editions.find((e) => e.uuid === uuid);
 
   const [es, setEs] = useState('');
   const [en, setEn] = useState('');
@@ -90,7 +91,7 @@ export default function EditionEmailPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await adminEditionService.update(edition.id, {
+      await adminEditionService.update(edition.uuid, {
         // Cadenas vacías se guardan como undefined → el correo usa su texto por defecto.
         purchaseEmailMessage: {
           es: es.trim() || undefined,
@@ -109,7 +110,7 @@ export default function EditionEmailPage() {
   const handleUpload = async (file: File) => {
     try {
       setUploading(true);
-      await adminEditionService.uploadHotelBrochure(edition.id, file);
+      await adminEditionService.uploadHotelBrochure(edition.uuid, file);
       setHasBrochure(true);
       await loadEditions();
       showToast('Brochure subido');
@@ -123,7 +124,7 @@ export default function EditionEmailPage() {
 
   const handleRemoveBrochure = async () => {
     try {
-      await adminEditionService.removeHotelBrochure(edition.id);
+      await adminEditionService.removeHotelBrochure(edition.uuid);
       setHasBrochure(false);
       await loadEditions();
       showToast('Brochure quitado');
@@ -133,7 +134,7 @@ export default function EditionEmailPage() {
   };
 
   const handleViewBrochure = async () => {
-    const url = await adminEditionService.getHotelBrochureUrl(edition.id);
+    const url = await adminEditionService.getHotelBrochureUrl(edition.uuid);
     if (url) window.open(url, '_blank');
   };
 
@@ -141,7 +142,7 @@ export default function EditionEmailPage() {
     try {
       setPreviewLang(lang);
       setPreviewLoading(true);
-      const html = await adminEditionService.getPurchaseEmailPreview(edition.id, lang);
+      const html = await adminEditionService.getPurchaseEmailPreview(edition.uuid, lang);
       setPreviewHtml(html);
     } catch {
       showToast('Error al generar la vista previa');

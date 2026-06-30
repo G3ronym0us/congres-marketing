@@ -7,9 +7,12 @@ import { useAdminEditions } from '@/context/AdminEditionsContext';
 export default function EditionDiscountStagesPage() {
   const params = useParams();
   const { editions, loadEditions } = useAdminEditions();
+  const uuid = String(params?.uuid ?? '');
+  const edition = editions.find((e) => e.uuid === uuid);
   return (
     <DiscountStagesAdmin
-      editionId={Number(params?.id)}
+      editionId={edition?.id}
+      editionUuid={edition?.uuid}
       editions={editions}
       onChanged={loadEditions}
     />

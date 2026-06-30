@@ -55,7 +55,7 @@ const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuc
     if (!selectedFile) return;
     try {
       setUploading(true);
-      await uploadTestimonialImage(testimonial.id, selectedFile);
+      await uploadTestimonialImage(testimonial.uuid, selectedFile);
       Swal.fire({ icon: 'success', title: 'Imagen subida', timer: 1500, showConfirmButton: false });
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -77,7 +77,7 @@ const ImageUploadModal: React.FC<Props> = ({ isOpen, onClose, testimonial, onSuc
     if (!isConfirmed) return;
     try {
       setDeleting(true);
-      await deleteTestimonialImage(testimonial.id);
+      await deleteTestimonialImage(testimonial.uuid);
       Swal.fire({ icon: 'success', title: 'Imagen eliminada', timer: 1500, showConfirmButton: false });
       onSuccess();
     } catch (error: any) {

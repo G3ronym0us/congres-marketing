@@ -55,7 +55,7 @@ const EditTestimonialModal: React.FC<Props> = ({ isOpen, onClose, testimonial, o
 
   const onSubmit = async (data: UpdateTestimonialInput) => {
     try {
-      await updateTestimonial(testimonial.id, data);
+      await updateTestimonial(testimonial.uuid, data);
       Swal.fire({ icon: 'success', title: 'Testimonio actualizado', timer: 1500, showConfirmButton: false });
       onSuccess();
     } catch (error: any) {

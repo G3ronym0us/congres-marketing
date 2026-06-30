@@ -27,6 +27,7 @@ export interface DiscountStage {
 
 export interface Edition {
   id: number;
+  uuid: string;
   slug: string;
   name: string;
   year: number;

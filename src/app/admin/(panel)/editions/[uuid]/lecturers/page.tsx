@@ -7,5 +7,7 @@ import { useAdminEditions } from '@/context/AdminEditionsContext';
 export default function EditionLecturersPage() {
   const params = useParams();
   const { editions } = useAdminEditions();
-  return <Lecturers editionId={Number(params?.id)} editions={editions} />;
+  const uuid = String(params?.uuid ?? '');
+  const edition = editions.find((e) => e.uuid === uuid);
+  return <Lecturers editionId={edition?.id} editions={editions} />;
 }

@@ -1,5 +1,6 @@
 export interface EmailBroadcast {
   id: number;
+  uuid: string;
   title: string;
   sender_name: string;
   content: string;
