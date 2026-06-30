@@ -41,8 +41,16 @@ export interface Edition {
   sortOrder: number;
   display?: EditionDisplay | null;
   discountStages?: DiscountStage[] | null;
+  purchaseEmailMessage?: PurchaseEmailMessage | null;
+  hotelBrochureKey?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Mensaje editable del correo de compra, por idioma.
+export interface PurchaseEmailMessage {
+  es?: string;
+  en?: string;
 }
 
 export interface CreateEditionInput {
@@ -60,6 +68,7 @@ export interface CreateEditionInput {
   sortOrder?: number;
   display?: EditionDisplay;
   discountStages?: DiscountStage[];
+  purchaseEmailMessage?: PurchaseEmailMessage;
 }
 
 export type UpdateEditionInput = Partial<CreateEditionInput>;

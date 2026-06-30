@@ -20,6 +20,7 @@ const SUBS: { seg: string; label: string }[] = [
   { seg: 'addons',          label: 'Add-ons' },
   { seg: 'discount-codes',  label: 'Códigos de descuento' },
   { seg: 'discount-stages', label: 'Etapas de descuento' },
+  { seg: 'email',           label: 'Correo de compra' },
 ];
 
 export default function EditionDetailLayout({ children }: { children: ReactNode }) {
