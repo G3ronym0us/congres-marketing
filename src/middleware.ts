@@ -1,30 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
+// Verifica el JWT de la cookie. Devuelve true solo si es válido y no expiró.
+async function hasValidSession(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get("token");
+  if (!token) return false;
+  try {
+    await jwtVerify(token.value, new TextEncoder().encode(process.env.JWT_SECRET));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  console.log(`Middleware called for path: ${pathname}`);
 
-  if (pathname === "/admin/auth") {
+  if (!pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/admin")) {
-    const token = request.cookies.get("token");
-    
-    if (!token) {
-      console.log("No token found, redirecting to /admin/auth");
-      return NextResponse.redirect(new URL("/admin/auth", request.url));
-    }
+  const loggedIn = await hasValidSession(request);
 
-    try {
-      await jwtVerify(token.value, new TextEncoder().encode(process.env.JWT_SECRET));
-      console.log("Token verified successfully");
-      return NextResponse.next();
-    } catch (error) {
-      console.error("Token verification failed:", error);
-      return NextResponse.redirect(new URL("/admin/auth", request.url));
+  // La pantalla de login no debe ser accesible si ya hay sesión: se envía al panel.
+  if (pathname === "/admin/auth") {
+    if (loggedIn) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
+    return NextResponse.next();
+  }
+
+  // Resto de /admin requiere sesión válida.
+  if (!loggedIn) {
+    return NextResponse.redirect(new URL("/admin/auth", request.url));
   }
 
   return NextResponse.next();

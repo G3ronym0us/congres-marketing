@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/user';
 import { LoginUserInput } from '@/types/user';
@@ -10,6 +10,11 @@ import '../../landing.css';
 const Login = () => {
   const router = useRouter();
   const auth = useContext(AuthContext);
+
+  // Si ya hay sesión, no mostrar el login: enviar al panel.
+  useEffect(() => {
+    if (auth?.user) router.replace('/admin/dashboard');
+  }, [auth?.user, router]);
 
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
