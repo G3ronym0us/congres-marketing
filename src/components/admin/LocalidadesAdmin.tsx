@@ -6,6 +6,7 @@ import {
   createLocalidadType,
   updateLocalidadType,
   deleteLocalidadType,
+  regenerateLocalidadTickets,
 } from '@/services/localidadTypes';
 import { LocalidadType, CreateLocalidadTypeInput } from '@/types/localidadTypes';
 import { Edition } from '@/types/edition';
@@ -182,6 +183,8 @@ function LocalidadModal({
   const [featuresText, setFeaturesText] = useState((initial.features ?? []).join('\n'));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenMsg, setRegenMsg] = useState('');
   // Selección de add-ons: id -> { offered, included }
   const [addOnSel, setAddOnSel] = useState<Record<number, { offered: boolean; included: boolean }>>(
     () => {
@@ -225,6 +228,32 @@ function LocalidadModal({
   const handleClose = async () => {
     if (isDirty && !(await confirmDiscard())) return;
     onClose();
+  };
+
+  const handleRegenerate = async () => {
+    if (!form.uuid) return;
+    if (isDirty) {
+      setRegenMsg('Guarda los cambios del template antes de regenerar.');
+      return;
+    }
+    if (!window.confirm(
+      'Se regenerará el PDF de todos los boletos pagados y reservados de esta ' +
+      'localidad con el template actual. No se reenvían correos. ¿Continuar?',
+    )) return;
+    setRegenerating(true);
+    setRegenMsg('');
+    try {
+      const { queued } = await regenerateLocalidadTickets(form.uuid);
+      setRegenMsg(
+        queued === 0
+          ? 'No hay boletos pagados/reservados para regenerar.'
+          : `Regeneración encolada para ${queued} boleto(s). Se procesa en segundo plano.`,
+      );
+    } catch {
+      setRegenMsg('No se pudo iniciar la regeneración. Intenta de nuevo.');
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const field = (label: string, children: React.ReactNode) => (
@@ -356,6 +385,25 @@ function LocalidadModal({
             value={form.ticketTemplate}
             onChange={t => set('ticketTemplate', t)}
           />
+
+          {/* Regenerar boletos ya emitidos con el template actual (solo al editar) */}
+          {form.uuid && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: INK, border: `1px solid ${LINE}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  style={{ padding: '9px 16px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: '#fff', cursor: regenerating ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 12, opacity: regenerating ? .7 : 1 }}>
+                  {regenerating ? 'Encolando…' : '↻ Regenerar boletos emitidos'}
+                </button>
+                <span style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Aplica el template actual a los boletos pagados/reservados. No reenvía correos.
+                </span>
+              </div>
+              {regenMsg && <p style={{ color: NEON, fontSize: 12, margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>{regenMsg}</p>}
+            </div>
+          )}
 
           {err && <p style={{ color: '#ff6b6b', fontSize: 12, margin: 0 }}>{err}</p>}
 

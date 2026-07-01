@@ -50,6 +50,21 @@ export async function deleteLocalidadType(uuid: string): Promise<void> {
   }
 }
 
+// Regenera el PDF de los boletos PAID/RESERVED de esta localidad (para aplicar
+// el nuevo template). Encola el trabajo en el backend; no reenvía correos.
+export async function regenerateLocalidadTickets(
+  uuid: string,
+): Promise<{ queued: number }> {
+  try {
+    const res = await apiClient.post(
+      `/admin/localidad-types/${uuid}/regenerate-tickets`,
+    );
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 // Genera y descarga un boleto de prueba con la plantilla del editor.
 export async function downloadTicketPreview(payload: {
   template: TicketTemplate;
