@@ -15,6 +15,7 @@ import { getAddOns, adminAddOnService } from '@/services/addOns';
 import EditionSelect from '@/components/admin/EditionSelect';
 import { confirmDiscard } from '@/components/admin/ModalShell';
 import TicketTemplateEditor from '@/components/admin/TicketTemplateEditor';
+import Swal from 'sweetalert2';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -184,7 +185,6 @@ function LocalidadModal({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [regenerating, setRegenerating] = useState(false);
-  const [regenMsg, setRegenMsg] = useState('');
   // Selección de add-ons: id -> { offered, included }
   const [addOnSel, setAddOnSel] = useState<Record<number, { offered: boolean; included: boolean }>>(
     () => {
@@ -232,25 +232,56 @@ function LocalidadModal({
 
   const handleRegenerate = async () => {
     if (!form.uuid) return;
+
     if (isDirty) {
-      setRegenMsg('Guarda los cambios del template antes de regenerar.');
+      await Swal.fire({
+        title: 'Guarda primero',
+        text: 'Guarda los cambios del template antes de regenerar los boletos.',
+        icon: 'info',
+        confirmButtonColor: NEON,
+        background: '#2A2228',
+        color: '#fff',
+      });
       return;
     }
-    if (!window.confirm(
-      'Se regenerará el PDF de todos los boletos pagados y reservados de esta ' +
-      'localidad con el template actual. No se reenvían correos. ¿Continuar?',
-    )) return;
+
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Regenerar boletos?',
+      text: 'Se regenerará el PDF de todos los boletos pagados y reservados de ' +
+        'esta localidad con el template actual. No se reenvían correos.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, regenerar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: NEON,
+      cancelButtonColor: '#6b7280',
+      background: '#2A2228',
+      color: '#fff',
+    });
+    if (!isConfirmed) return;
+
     setRegenerating(true);
-    setRegenMsg('');
     try {
       const { queued } = await regenerateLocalidadTickets(form.uuid);
-      setRegenMsg(
-        queued === 0
+      await Swal.fire({
+        title: queued === 0 ? 'Sin boletos' : 'Regeneración encolada',
+        text: queued === 0
           ? 'No hay boletos pagados/reservados para regenerar.'
-          : `Regeneración encolada para ${queued} boleto(s). Se procesa en segundo plano.`,
-      );
+          : `Se encolaron ${queued} boleto(s). Se procesan en segundo plano.`,
+        icon: queued === 0 ? 'info' : 'success',
+        confirmButtonColor: NEON,
+        background: '#2A2228',
+        color: '#fff',
+      });
     } catch {
-      setRegenMsg('No se pudo iniciar la regeneración. Intenta de nuevo.');
+      await Swal.fire({
+        title: 'Error',
+        text: 'No se pudo iniciar la regeneración. Intenta de nuevo.',
+        icon: 'error',
+        confirmButtonColor: NEON,
+        background: '#2A2228',
+        color: '#fff',
+      });
     } finally {
       setRegenerating(false);
     }
@@ -401,7 +432,6 @@ function LocalidadModal({
                   Aplica el template actual a los boletos pagados/reservados. No reenvía correos.
                 </span>
               </div>
-              {regenMsg && <p style={{ color: NEON, fontSize: 12, margin: 0, fontFamily: 'Space Grotesk, sans-serif' }}>{regenMsg}</p>}
             </div>
           )}
 
