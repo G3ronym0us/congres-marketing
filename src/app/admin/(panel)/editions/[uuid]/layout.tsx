@@ -19,6 +19,7 @@ const SUBS: { seg: string; label: string }[] = [
   { seg: 'localidades',     label: 'Localidades' },
   { seg: 'addons',          label: 'Add-ons' },
   { seg: 'discount-codes',  label: 'Códigos de descuento' },
+  { seg: 'asociados',       label: 'Asociados' },
   { seg: 'discount-stages', label: 'Etapas de descuento' },
   { seg: 'email',           label: 'Correo de compra' },
 ];

@@ -56,6 +56,7 @@ export default function Carrito() {
     clearCart,
     applyDiscount,
     removeDiscount,
+    clearReferralPrefill,
   } = useCart();
   const { localidades } = useLocalidades(state.editionId ?? undefined);
   const [edition, setEditionData] = useState<Edition | null>(null);
@@ -275,6 +276,28 @@ export default function Carrito() {
     }
   }, [isHydrated, state.items]);
 
+  // Prellenar el primer asistente con los datos del lead del asociado, solo
+  // si el formulario está intacto; luego se consume el prefill para no pisar
+  // ediciones del usuario (leadUuid y código se conservan para la atribución).
+  useEffect(() => {
+    if (!isHydrated || !state.referral?.prefill || state.items.length === 0)
+      return;
+    const firstTicket = state.items[0]?.tickets[0];
+    if (!firstTicket) return;
+    if (firstTicket.attendee.name === '' && firstTicket.attendee.email === '') {
+      const p = state.referral.prefill;
+      updateAttendee(firstTicket.id, {
+        name: p.name ?? '',
+        lastname: p.lastname ?? '',
+        document: p.document ?? '',
+        email: p.email ?? '',
+        phone: p.phone ?? '',
+      });
+    }
+    clearReferralPrefill();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated, state.referral?.prefill, state.items.length]);
+
   // Actualizar total cuando cambia el estado del carrito
   useEffect(() => {
     setTotal(state.total);
@@ -396,6 +419,10 @@ export default function Carrito() {
           editionId: state.editionId,
           amountInCents: amountInCents,
           discountCode: state.appliedDiscount?.code || null,
+          // Atribución de asociado (link congreso.com/CODIGO); el backend la
+          // registra y marca el lead como convertido al aprobarse el pago.
+          referralCode: state.referral?.code || null,
+          leadUuid: state.referral?.leadUuid || null,
           // Idioma del comprador: el backend lo persiste en el ticket para
           // generar el correo/PDF del boleto en el idioma correcto.
           language: Cookies.get('lang') || 'es',
@@ -882,7 +909,7 @@ export default function Carrito() {
                       <div className="qs-summary">
                         <div className="row">
                           <span>{t('carrito.subtotal')}</span>
-                          <span className="v">{formatoPrecio(state.appliedDiscount ? getSubtotalSinDescuentoCodigo() : total)}</span>
+                          <span className="v">{formatoPrecio(state.appliedDiscount || (state.referral?.percentage) ? getSubtotalSinDescuentoCodigo() : total)}</span>
                         </div>
 
                         {/* Mostrar descuento de código si aplica */}
@@ -895,6 +922,18 @@ export default function Carrito() {
                             <span className="v" style={{ color: 'var(--neon)' }}>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.appliedDiscount.percentage))}</span>
                           </div>
                         )}
+
+                        {/* Descuento del código de asociado (solo si no hay
+                            discount code manual, que tiene prioridad) */}
+                        {!state.appliedDiscount && state.referral?.percentage ? (
+                          <div className="row" style={{ color: 'var(--neon)' }}>
+                            <span>
+                              <FontAwesomeIcon icon={faPercentage} style={{ marginRight: 6 }} />
+                              {t('carrito.referralDiscount', { code: state.referral.code, percentage: state.referral.percentage })}
+                            </span>
+                            <span className="v" style={{ color: 'var(--neon)' }}>-{formatoPrecio(discountUtils.getDiscountAmount(getSubtotalSinDescuentoCodigo(), state.referral.percentage))}</span>
+                          </div>
+                        ) : null}
 
                         {/* Mostrar descuento por fecha si aplica */}
                         {activeStage && activeStage.percentage > 0 && (
@@ -925,6 +964,14 @@ export default function Carrito() {
                         editionId={state.editionId ?? undefined}
                       />
                     </div>
+
+                    {/* Atribución del asociado cuando su % no está aplicando
+                        (código solo de atribución, o pisado por un discount code) */}
+                    {state.referral && (state.appliedDiscount || !state.referral.percentage) && (
+                      <div style={{ marginBottom: 24, fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
+                        {t('carrito.referralApplied', { code: state.referral.code })}
+                      </div>
+                    )}
 
                     {/* Aviso de datos faltantes */}
                     {!isAllDataComplete && (

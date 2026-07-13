@@ -211,4 +211,7 @@ export interface CartState {
   // Edición a la que pertenece el carrito (no se mezclan localidades de ediciones distintas)
   editionId?: number | null;
   editionSlug?: string | null;
+  // Código de asociado (referral) vigente: atribuye la compra y puede traer
+  // descuento propio. Un discount code manual tiene prioridad en el precio.
+  referral?: import('@/types/asociado').ReferralInfo | null;
 }

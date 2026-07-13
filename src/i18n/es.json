@@ -206,6 +206,8 @@
     "addOns": "+ Add-ons",
     "subtotal": "Subtotal:",
     "discountCode": "Descuento ({code} - {percentage}%):",
+    "referralDiscount": "Descuento asociado ({code} - {percentage}%):",
+    "referralApplied": "Compra referida por el asociado {code}",
     "discountTemporal": "Descuento temporal ({percentage}%):",
     "total": "Total:",
     "incompleteTitle": "Datos incompletos:",

@@ -15,6 +15,7 @@ import {
   TicketType,
 } from '@/types/tickets';
 import { AppliedDiscount } from '@/types/discountCode';
+import { ReferralInfo } from '@/types/asociado';
 import { SelectedAddOn } from '@/types/addOn';
 import { discountUtils } from '@/services/discountCode';
 import { v4 as uuidv4 } from 'uuid'; // Necesitarás instalar esta dependencia: npm install uuid @types/uuid
@@ -42,6 +43,9 @@ type CartAction =
     }
   | { type: 'APPLY_DISCOUNT'; payload: { discount: AppliedDiscount } }
   | { type: 'REMOVE_DISCOUNT' }
+  | { type: 'SET_REFERRAL'; payload: { referral: ReferralInfo } }
+  | { type: 'CLEAR_REFERRAL' }
+  | { type: 'CLEAR_REFERRAL_PREFILL' }
   | { type: 'SET_EDITION'; payload: { editionId: number; editionSlug: string } }
   | { type: 'RESTORE_CART'; payload: CartState }
   | { type: 'CLEAR_CART' };
@@ -53,6 +57,7 @@ const initialState: CartState = {
   appliedDiscount: null,
   editionId: null,
   editionSlug: null,
+  referral: null,
 };
 
 // Clave para almacenar el carrito en localStorage
@@ -77,8 +82,15 @@ const createEmptyTicket = (
   },
 });
 
-// Función para calcular el total del carrito
-const calcularTotal = (items: CartItem[], appliedDiscount?: { code: string; percentage: number } | null): number => {
+// Función para calcular el total del carrito.
+// Precedencia de descuentos (espejo del backend): un discount code manual
+// manda sobre el % del código de asociado; el referral solo descuenta cuando
+// no hay discount code aplicado.
+const calcularTotal = (
+  items: CartItem[],
+  appliedDiscount?: { code: string; percentage: number } | null,
+  referral?: ReferralInfo | null,
+): number => {
   const subtotal = items.reduce((total, item) => {
     return (
       total +
@@ -89,8 +101,11 @@ const calcularTotal = (items: CartItem[], appliedDiscount?: { code: string; perc
     );
   }, 0);
 
-  if (appliedDiscount) {
-    const discountAmount = discountUtils.getDiscountAmount(subtotal, appliedDiscount.percentage);
+  const percentage =
+    appliedDiscount?.percentage ?? referral?.percentage ?? null;
+
+  if (percentage) {
+    const discountAmount = discountUtils.getDiscountAmount(subtotal, percentage);
     return subtotal - discountAmount;
   }
 
@@ -141,7 +156,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems, state.appliedDiscount),
+        total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
       // Guardar en localStorage
@@ -158,7 +173,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems, state.appliedDiscount),
+        total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -181,7 +196,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems, state.appliedDiscount),
+        total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -204,7 +219,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         items: newItems,
-        total: calcularTotal(newItems, state.appliedDiscount),
+        total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -253,7 +268,44 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       const newState = {
         ...state,
         appliedDiscount: null,
-        total: calcularTotal(state.items, null),
+        // Sin discount code, el % del referral (si existe) vuelve a aplicar
+        total: calcularTotal(state.items, null, state.referral),
+      };
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
+    case 'SET_REFERRAL': {
+      const { referral } = action.payload;
+      const newState = {
+        ...state,
+        referral,
+        total: calcularTotal(state.items, state.appliedDiscount, referral),
+      };
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
+    case 'CLEAR_REFERRAL': {
+      const newState = {
+        ...state,
+        referral: null,
+        total: calcularTotal(state.items, state.appliedDiscount, null),
+      };
+
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      return newState;
+    }
+
+    // Se consume el prellenado tras aplicarlo una vez, para no pisar lo que
+    // el usuario edite después. leadUuid y code se conservan.
+    case 'CLEAR_REFERRAL_PREFILL': {
+      if (!state.referral) return state;
+      const newState = {
+        ...state,
+        referral: { ...state.referral, prefill: null },
       };
 
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
@@ -262,11 +314,18 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case 'SET_EDITION': {
       const { editionId, editionSlug } = action.payload;
-      // Si el carrito pertenece a otra edición, se vacía para no mezclar localidades.
+      // Si el carrito pertenece a otra edición, se vacía para no mezclar
+      // localidades. El referral del asociado se preserva: el flujo /CODIGO
+      // llega aquí justo después de guardar el referral.
       const sameEdition = state.editionId === editionId;
       const newState: CartState = sameEdition
         ? { ...state, editionId, editionSlug }
-        : { ...initialState, editionId, editionSlug };
+        : {
+            ...initialState,
+            editionId,
+            editionSlug,
+            referral: state.referral ?? null,
+          };
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
       return newState;
     }
@@ -302,6 +361,9 @@ interface CartContextType {
   updateAttendee: (ticketId: string, attendee: AttendeeData) => void;
   applyDiscount: (discount: AppliedDiscount) => void;
   removeDiscount: () => void;
+  setReferral: (referral: ReferralInfo) => void;
+  clearReferral: () => void;
+  clearReferralPrefill: () => void;
   setEdition: (editionId: number, editionSlug: string) => void;
   clearCart: () => void;
 }
@@ -368,6 +430,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     dispatch({ type: 'REMOVE_DISCOUNT' });
   };
 
+  const setReferral = (referral: ReferralInfo) => {
+    dispatch({ type: 'SET_REFERRAL', payload: { referral } });
+  };
+
+  const clearReferral = () => {
+    dispatch({ type: 'CLEAR_REFERRAL' });
+  };
+
+  const clearReferralPrefill = () => {
+    dispatch({ type: 'CLEAR_REFERRAL_PREFILL' });
+  };
+
   const setEdition = (editionId: number, editionSlug: string) => {
     dispatch({ type: 'SET_EDITION', payload: { editionId, editionSlug } });
   };
@@ -388,6 +462,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         updateAttendee,
         applyDiscount,
         removeDiscount,
+        setReferral,
+        clearReferral,
+        clearReferralPrefill,
         setEdition,
         clearCart,
       }}
