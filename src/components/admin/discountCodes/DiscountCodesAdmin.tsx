@@ -25,7 +25,7 @@ const StatusBadge = ({ code }: { code: DiscountCode }) => {
     return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE, background: 'rgba(255,255,255,.08)', borderRadius: 6, padding: '3px 9px' }}>Inactivo</span>;
   if (discountUtils.isCodeExpired(code.expiresAt))
     return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#ff6b6b', background: 'rgba(255,80,80,.1)', borderRadius: 6, padding: '3px 9px' }}>Expirado</span>;
-  if (code.currentUses >= code.maxUses)
+  if (code.maxUses != null && code.currentUses >= code.maxUses)
     return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: '#f97316', background: 'rgba(249,115,22,.12)', borderRadius: 6, padding: '3px 9px' }}>Agotado</span>;
   return <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: NEON, background: 'rgba(4,238,98,.1)', borderRadius: 6, padding: '3px 9px' }}>Activo</span>;
 };
@@ -83,7 +83,7 @@ export default function DiscountCodesAdmin({
     }
   };
 
-  const activeCount = codes.filter(c => c.isActive && !discountUtils.isCodeExpired(c.expiresAt) && c.currentUses < c.maxUses).length;
+  const activeCount = codes.filter(c => discountUtils.isCodeAvailable(c)).length;
 
   return (
     <div>
@@ -134,7 +134,7 @@ export default function DiscountCodesAdmin({
                   <StatusBadge code={code} />
                 </div>
                 <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
-                  Expira: {formatDate(code.expiresAt)}
+                  Expira: {code.expiresAt ? formatDate(code.expiresAt) : 'Sin expiración'}
                   {' · '}Creado: {formatDate(code.createdAt)}
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function DiscountCodesAdmin({
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>
-                    {code.currentUses}/{code.maxUses}
+                    {code.currentUses}/{code.maxUses ?? '∞'}
                   </div>
                   <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 10, color: MUTE, textTransform: 'uppercase', letterSpacing: '.06em' }}>
                     usos

@@ -31,11 +31,11 @@ const getDiscountDisplay = (asociado: Asociado) => {
   let suffix = '';
   if (!dc.isActive) suffix = ' · inactivo';
   else if (discountUtils.isCodeExpired(dc.expiresAt)) suffix = ' · vencido';
-  else if (dc.currentUses >= dc.maxUses) suffix = ' · agotado';
+  else if (dc.maxUses != null && dc.currentUses >= dc.maxUses) suffix = ' · agotado';
 
   return {
     number: `${parseFloat(dc.discountPercentage)}%`,
-    label: `${dc.code} · ${dc.currentUses}/${dc.maxUses}${suffix}`,
+    label: `${dc.code} · ${dc.currentUses}/${dc.maxUses ?? '∞'}${suffix}`,
     color: suffix ? MUTE : '#fff',
   };
 };

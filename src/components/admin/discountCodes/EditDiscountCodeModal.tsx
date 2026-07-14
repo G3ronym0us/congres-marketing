@@ -42,20 +42,34 @@ interface Props {
   onSuccess: () => void;
 }
 
+interface FormState {
+  discountPercentage: number;
+  maxUses: string;
+  isActive: boolean;
+  expiresAt: string;
+}
+
 export default function EditDiscountCodeModal({ discountCode, onClose, onSuccess }: Props) {
   const today = new Date().toISOString().slice(0, 16);
 
-  const [formData, setFormData] = useState<UpdateDiscountCodeInput>({
+  const initialMaxUses = discountCode.maxUses != null ? String(discountCode.maxUses) : '';
+  const initialExpiresAt = discountCode.expiresAt ? discountCode.expiresAt.slice(0, 16) : '';
+
+  const [formData, setFormData] = useState<FormState>({
     discountPercentage: parseFloat(discountCode.discountPercentage),
-    maxUses:    discountCode.maxUses,
+    maxUses:    initialMaxUses,
     isActive:   discountCode.isActive,
-    expiresAt:  discountCode.expiresAt.slice(0, 16),
+    expiresAt:  initialExpiresAt,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
+    if (name === 'maxUses') {
+      setFormData(prev => ({ ...prev, maxUses: value }));
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox'
@@ -68,7 +82,19 @@ export default function EditDiscountCodeModal({ discountCode, onClose, onSuccess
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      await adminDiscountCodeService.updateCode(discountCode.uuid, formData);
+      const payload: UpdateDiscountCodeInput = {
+        discountPercentage: formData.discountPercentage,
+        isActive: formData.isActive,
+      };
+
+      if (formData.maxUses !== initialMaxUses) {
+        payload.maxUses = formData.maxUses === '' ? null : parseInt(formData.maxUses, 10);
+      }
+      if (formData.expiresAt !== initialExpiresAt) {
+        payload.expiresAt = formData.expiresAt === '' ? null : formData.expiresAt;
+      }
+
+      await adminDiscountCodeService.updateCode(discountCode.uuid, payload);
       Swal.fire({ icon: 'success', title: 'Código actualizado', timer: 1500, showConfirmButton: false });
       onSuccess();
     } catch (err: any) {
@@ -81,9 +107,9 @@ export default function EditDiscountCodeModal({ discountCode, onClose, onSuccess
 
   const isDirty =
     formData.discountPercentage !== parseFloat(discountCode.discountPercentage) ||
-    formData.maxUses !== discountCode.maxUses ||
+    formData.maxUses !== initialMaxUses ||
     formData.isActive !== discountCode.isActive ||
-    formData.expiresAt !== discountCode.expiresAt.slice(0, 16);
+    formData.expiresAt !== initialExpiresAt;
 
   const handleClose = async () => {
     if (isDirty && !(await confirmDiscard())) return;
@@ -125,15 +151,15 @@ export default function EditDiscountCodeModal({ discountCode, onClose, onSuccess
               <input type="number" name="discountPercentage" value={formData.discountPercentage}
                 onChange={handleChange} required min="0.01" max="100" step="0.01" style={iS} />
             </Field>
-            <Field label="Usos máximos *" hint={`Mínimo: ${discountCode.currentUses}`}>
+            <Field label="Usos máximos" hint={`Vacío = usos ilimitados · mínimo: ${discountCode.currentUses}`}>
               <input type="number" name="maxUses" value={formData.maxUses}
-                onChange={handleChange} required min={discountCode.currentUses} style={iS} />
+                onChange={handleChange} min={discountCode.currentUses} style={iS} />
             </Field>
           </div>
 
-          <Field label="Fecha de expiración *">
+          <Field label="Fecha de expiración" hint="Vacío = sin expiración">
             <input type="datetime-local" name="expiresAt" value={formData.expiresAt}
-              onChange={handleChange} required min={today}
+              onChange={handleChange} min={today}
               style={{ ...iS, colorScheme: 'dark' }} />
           </Field>
 

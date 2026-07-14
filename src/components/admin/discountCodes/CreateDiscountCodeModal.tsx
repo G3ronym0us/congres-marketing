@@ -37,17 +37,34 @@ interface Props {
   onSuccess: () => void;
 }
 
+interface FormState {
+  edition: number;
+  code: string;
+  discountPercentage: number;
+  maxUses: string;
+  isActive: boolean;
+  expiresAt: string;
+}
+
 export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess }: Props) {
   const today = new Date().toISOString().slice(0, 16);
 
-  const [formData, setFormData] = useState<CreateDiscountCodeInput>({
-    edition: editionId, code: '', discountPercentage: 0, maxUses: 1, isActive: true, expiresAt: '',
+  const [formData, setFormData] = useState<FormState>({
+    edition: editionId, code: '', discountPercentage: 0, maxUses: '', isActive: true, expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
+    if (name === 'code') {
+      setFormData(prev => ({ ...prev, code: value.replace(/[^A-Za-z0-9_-]/g, '') }));
+      return;
+    }
+    if (name === 'maxUses') {
+      setFormData(prev => ({ ...prev, maxUses: value }));
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox'
@@ -60,7 +77,15 @@ export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess 
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      await adminDiscountCodeService.createCode(formData);
+      const payload: CreateDiscountCodeInput = {
+        edition: formData.edition,
+        code: formData.code,
+        discountPercentage: formData.discountPercentage,
+        isActive: formData.isActive,
+        ...(formData.maxUses !== '' && { maxUses: parseInt(formData.maxUses, 10) }),
+        ...(formData.expiresAt !== '' && { expiresAt: formData.expiresAt }),
+      };
+      await adminDiscountCodeService.createCode(payload);
       Swal.fire({ icon: 'success', title: 'Código creado', timer: 1500, showConfirmButton: false });
       onSuccess();
     } catch (err: any) {
@@ -74,7 +99,7 @@ export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess 
   const isDirty =
     !!(formData.code || formData.expiresAt) ||
     formData.discountPercentage !== 0 ||
-    formData.maxUses !== 1 ||
+    formData.maxUses !== '' ||
     formData.isActive !== true;
 
   const handleClose = async () => {
@@ -101,7 +126,7 @@ export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess 
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          <Field label="Código *" hint="3–20 caracteres, sin espacios">
+          <Field label="Código *" hint="3–20 caracteres; solo letras, números, guiones (sin espacios)">
             <input type="text" name="code" value={formData.code} onChange={handleChange}
               required minLength={3} maxLength={20} placeholder="ej: EARLY2025"
               style={{ ...iS, textTransform: 'uppercase', letterSpacing: '.05em' }} />
@@ -113,15 +138,15 @@ export default function CreateDiscountCodeModal({ editionId, onClose, onSuccess 
                 onChange={handleChange} required min="0.01" max="100" step="0.01"
                 placeholder="15.50" style={iS} />
             </Field>
-            <Field label="Usos máximos *">
+            <Field label="Usos máximos" hint="Vacío = usos ilimitados">
               <input type="number" name="maxUses" value={formData.maxUses}
-                onChange={handleChange} required min="1" style={iS} />
+                onChange={handleChange} min="1" style={iS} />
             </Field>
           </div>
 
-          <Field label="Fecha de expiración *">
+          <Field label="Fecha de expiración" hint="Vacío = sin expiración">
             <input type="datetime-local" name="expiresAt" value={formData.expiresAt}
-              onChange={handleChange} required min={today}
+              onChange={handleChange} min={today}
               style={{ ...iS, colorScheme: 'dark' }} />
           </Field>
 

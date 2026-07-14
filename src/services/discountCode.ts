@@ -113,7 +113,8 @@ export const discountUtils = {
   },
 
   // Validar si un código ha expirado
-  isCodeExpired(expiresAt: string): boolean {
+  isCodeExpired(expiresAt: string | null): boolean {
+    if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
   },
 
@@ -122,7 +123,7 @@ export const discountUtils = {
     return (
       code.isActive &&
       !this.isCodeExpired(code.expiresAt) &&
-      code.currentUses < code.maxUses
+      (code.maxUses == null || code.currentUses < code.maxUses)
     );
   },
 };

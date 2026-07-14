@@ -6,10 +6,10 @@ export interface DiscountCode {
   edition: number;
   code: string;
   discountPercentage: string;
-  maxUses: number;
+  maxUses: number | null;
   currentUses: number;
   isActive: boolean;
-  expiresAt: string;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,16 +18,16 @@ export interface CreateDiscountCodeInput {
   edition: number;
   code: string;
   discountPercentage: number;
-  maxUses: number;
+  maxUses?: number;
   isActive: boolean;
-  expiresAt: string;
+  expiresAt?: string;
 }
 
 export interface UpdateDiscountCodeInput {
   discountPercentage?: number;
-  maxUses?: number;
+  maxUses?: number | null;
   isActive?: boolean;
-  expiresAt?: string;
+  expiresAt?: string | null;
 }
 
 export interface ValidateDiscountCodeInput {

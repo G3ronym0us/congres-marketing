@@ -77,6 +77,10 @@ export default function EditAsociadoModal({ asociado, onClose, onSuccess }: Prop
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    if (name === 'code') {
+      setFormData(prev => ({ ...prev, code: value.replace(/[^A-Za-z0-9_-]/g, '') }));
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
@@ -157,7 +161,7 @@ export default function EditAsociadoModal({ asociado, onClose, onSuccess }: Prop
               required maxLength={150} placeholder="ej: Clínica Dental X" style={iS} />
           </Field>
 
-          <Field label="Código *" hint="Se usará como URL: tudominio.com/CODIGO">
+          <Field label="Código *" hint="Se usará como URL: tudominio.com/CODIGO — solo letras, números, guiones (sin espacios)">
             <input type="text" name="code" value={formData.code} onChange={handleChange}
               required minLength={3} maxLength={50} placeholder="ej: PARTNERX"
               style={{ ...iS, textTransform: 'uppercase', letterSpacing: '.05em' }} />
@@ -184,7 +188,7 @@ export default function EditAsociadoModal({ asociado, onClose, onSuccess }: Prop
               <option value="">Sin descuento</option>
               {codes.map(c => (
                 <option key={c.uuid} value={c.uuid}>
-                  {c.code} — {parseFloat(c.discountPercentage)}% ({c.currentUses}/{c.maxUses} usos)
+                  {c.code} — {parseFloat(c.discountPercentage)}% ({c.currentUses}/{c.maxUses ?? '∞'} usos)
                 </option>
               ))}
             </select>
