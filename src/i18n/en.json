@@ -182,7 +182,9 @@
       "4": "Tickets cannot be purchased for individual days. Tickets apply to the full event.",
       "5": "Streaming does not include event proceedings.",
       "6": "Limited spots per ticket type. Prices subject to change based on availability."
-    }
+    },
+    "referralBanner": "You are buying in partnership with {name}",
+    "referralBannerDiscount": "with {percentage}% off"
   },
   "carrito": {
     "backToTickets": "Back to tickets",
@@ -207,7 +209,7 @@
     "subtotal": "Subtotal:",
     "discountCode": "Discount ({code} - {percentage}%):",
     "referralDiscount": "Partner discount ({code} - {percentage}%):",
-    "referralApplied": "Purchase referred by partner {code}",
+    "referralApplied": "You are buying in partnership with {name} (code {code})",
     "discountTemporal": "Temporary discount ({percentage}%):",
     "total": "Total:",
     "incompleteTitle": "Incomplete details:",

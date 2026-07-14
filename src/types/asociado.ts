@@ -1,5 +1,7 @@
 // @/types/asociado.ts
 
+import { DiscountCode } from './discountCode';
+
 export interface Asociado {
   id: number;
   uuid: string;
@@ -9,9 +11,11 @@ export interface Asociado {
   email?: string | null;
   website?: string | null;
   code: string;
-  // Decimal de PG: llega como string (igual que DiscountCode) o null si el
-  // código es solo de atribución (sin descuento)
-  discountPercentage: string | null;
+  // FK al código de descuento vinculado (null = el código es solo de
+  // atribución, sin descuento). En respuestas admin viene con la relación
+  // cargada en `discountCode`.
+  discountCodeId: number | null;
+  discountCode?: DiscountCode | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -24,7 +28,7 @@ export interface CreateAsociadoInput {
   company?: string;
   email?: string;
   website?: string;
-  discountPercentage?: number | null;
+  discountCodeUuid?: string;
   isActive?: boolean;
 }
 
@@ -34,7 +38,7 @@ export interface UpdateAsociadoInput {
   company?: string;
   email?: string;
   website?: string;
-  discountPercentage?: number | null;
+  discountCodeUuid?: string | null;
   isActive?: boolean;
 }
 
@@ -71,6 +75,8 @@ export interface AsociadoLead {
 export interface ValidateReferralResponse {
   isValid: boolean;
   discountPercentage?: number | null;
+  asociadoName?: string;
+  discountCode?: string | null;
   message?: string;
 }
 
@@ -87,6 +93,7 @@ export interface LeadPrefill {
 export interface ReferralInfo {
   code: string;
   percentage: number | null;
+  asociadoName?: string;
   leadUuid?: string;
   prefill?: LeadPrefill | null;
 }

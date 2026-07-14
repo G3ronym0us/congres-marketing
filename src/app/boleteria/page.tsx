@@ -26,7 +26,7 @@ export default function BoleteriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
-  const { addItem, setEdition } = useCart();
+  const { addItem, setEdition, state: cartState } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [edition, setEditionData] = useState<Edition | null>(null);
   const [allEditions, setAllEditions] = useState<Edition[]>([]);
@@ -178,6 +178,39 @@ export default function BoleteriaPage() {
                 <span style={{ color: 'var(--neon)' }}> {t('boleteria.salesSoon')}</span>
               )}
             </p>
+
+            {/* Banner de compra referida por un asociado */}
+            {cartState.referral && (
+              <div
+                style={{
+                  marginTop: 16,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(4,238,98,.35)',
+                  background: 'rgba(4,238,98,.07)',
+                  fontSize: 13,
+                  color: '#fff',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span>🤝</span>
+                <span>
+                  {t('boleteria.referralBanner', {
+                    name: cartState.referral.asociadoName ?? cartState.referral.code,
+                  })}
+                  {cartState.referral.percentage ? (
+                    <strong style={{ color: 'var(--neon)' }}>
+                      {' '}{t('boleteria.referralBannerDiscount', {
+                        percentage: cartState.referral.percentage,
+                      })}
+                    </strong>
+                  ) : null}
+                </span>
+              </div>
+            )}
           </div>
         </section>
 

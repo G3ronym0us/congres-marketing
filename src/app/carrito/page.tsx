@@ -965,11 +965,37 @@ export default function Carrito() {
                       />
                     </div>
 
-                    {/* Atribución del asociado cuando su % no está aplicando
-                        (código solo de atribución, o pisado por un discount code) */}
-                    {state.referral && (state.appliedDiscount || !state.referral.percentage) && (
-                      <div style={{ marginBottom: 24, fontSize: 13, color: 'rgba(255,255,255,.45)' }}>
-                        {t('carrito.referralApplied', { code: state.referral.code })}
+                    {/* Compra referida por un asociado: siempre visible */}
+                    {state.referral && (
+                      <div
+                        style={{
+                          marginBottom: 24,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          padding: '10px 14px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(4,238,98,.35)',
+                          background: 'rgba(4,238,98,.07)',
+                          fontSize: 13,
+                          color: '#fff',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span>🤝</span>
+                        <span>
+                          {t('carrito.referralApplied', {
+                            name: state.referral.asociadoName ?? state.referral.code,
+                            code: state.referral.code,
+                          })}
+                          {!state.appliedDiscount && state.referral.percentage ? (
+                            <strong style={{ color: 'var(--neon)' }}>
+                              {' '}{t('boleteria.referralBannerDiscount', {
+                                percentage: state.referral.percentage,
+                              })}
+                            </strong>
+                          ) : null}
+                        </span>
                       </div>
                     )}
 

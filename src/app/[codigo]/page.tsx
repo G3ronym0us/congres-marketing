@@ -46,6 +46,7 @@ export default function ReferralLandingPage() {
       const referral: ReferralInfo = {
         code,
         percentage: validation.discountPercentage ?? null,
+        asociadoName: validation.asociadoName,
       };
 
       // Lead pre-capturado por el asociado: si falla, se sigue sin prellenado

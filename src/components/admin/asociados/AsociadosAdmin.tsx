@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { adminAsociadoService } from '@/services/asociado';
+import { discountUtils } from '@/services/discountCode';
 import { Asociado, AsociadoStats } from '@/types/asociado';
 import { Edition } from '@/types/edition';
 import EditionSelect from '@/components/admin/EditionSelect';
@@ -22,6 +23,22 @@ const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 const currencyFmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
+const getDiscountDisplay = (asociado: Asociado) => {
+  const dc = asociado.discountCode;
+  if (!dc) return { number: '—', label: 'sin descuento', color: '#fff' };
+
+  let suffix = '';
+  if (!dc.isActive) suffix = ' · inactivo';
+  else if (discountUtils.isCodeExpired(dc.expiresAt)) suffix = ' · vencido';
+  else if (dc.currentUses >= dc.maxUses) suffix = ' · agotado';
+
+  return {
+    number: `${parseFloat(dc.discountPercentage)}%`,
+    label: `${dc.code} · ${dc.currentUses}/${dc.maxUses}${suffix}`,
+    color: suffix ? MUTE : '#fff',
+  };
+};
 
 const StatusBadge = ({ asociado }: { asociado: Asociado }) => {
   if (!asociado.isActive)
@@ -146,6 +163,7 @@ export default function AsociadosAdmin({
           {asociados.map(asociado => {
             const stats = statsByUuid[asociado.uuid];
             const details = [asociado.company, asociado.email, asociado.website].filter(Boolean).join(' · ');
+            const discountDisplay = getDiscountDisplay(asociado);
             return (
               <div key={asociado.id} style={{ background: PANEL, border: `1px solid ${asociado.isActive ? LINE2 : LINE}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', opacity: asociado.isActive ? 1 : .6 }}>
 
@@ -172,11 +190,11 @@ export default function AsociadosAdmin({
 
                 {/* Descuento */}
                 <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff' }}>
-                    {asociado.discountPercentage !== null ? `${parseFloat(asociado.discountPercentage)}%` : '—'}
+                  <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 18, color: discountDisplay.color }}>
+                    {discountDisplay.number}
                   </div>
                   <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 10, color: MUTE, textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                    {asociado.discountPercentage !== null ? 'descuento' : 'sin descuento'}
+                    {discountDisplay.label}
                   </div>
                 </div>
 

@@ -2,10 +2,12 @@
 
 import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { adminAsociadoService } from '@/services/asociado';
+import { adminDiscountCodeService } from '@/services/discountCode';
 import { CreateAsociadoInput } from '@/types/asociado';
+import { DiscountCode } from '@/types/discountCode';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -37,7 +39,7 @@ interface FormState {
   company: string;
   email: string;
   website: string;
-  discountPercentage: string;
+  discountCodeUuid: string;
   isActive: boolean;
 }
 
@@ -48,15 +50,22 @@ interface Props {
 }
 
 const initialForm: FormState = {
-  name: '', code: '', company: '', email: '', website: '', discountPercentage: '', isActive: true,
+  name: '', code: '', company: '', email: '', website: '', discountCodeUuid: '', isActive: true,
 };
 
 export default function CreateAsociadoModal({ editionId, onClose, onSuccess }: Props) {
   const [formData, setFormData] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [codes, setCodes]     = useState<DiscountCode[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    adminDiscountCodeService.getAllCodes(editionId)
+      .then(setCodes)
+      .catch(() => setCodes([]));
+  }, [editionId]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -76,7 +85,7 @@ export default function CreateAsociadoModal({ editionId, onClose, onSuccess }: P
         ...(formData.company && { company: formData.company }),
         ...(formData.email && { email: formData.email }),
         ...(formData.website && { website: formData.website }),
-        ...(formData.discountPercentage !== '' && { discountPercentage: parseFloat(formData.discountPercentage) }),
+        ...(formData.discountCodeUuid && { discountCodeUuid: formData.discountCodeUuid }),
       };
       await adminAsociadoService.create(input);
       Swal.fire({ icon: 'success', title: 'Asociado creado', timer: 1500, showConfirmButton: false });
@@ -90,7 +99,7 @@ export default function CreateAsociadoModal({ editionId, onClose, onSuccess }: P
   };
 
   const isDirty =
-    !!(formData.name || formData.code || formData.company || formData.email || formData.website || formData.discountPercentage) ||
+    !!(formData.name || formData.code || formData.company || formData.email || formData.website || formData.discountCodeUuid) ||
     formData.isActive !== true;
 
   const handleClose = async () => {
@@ -144,9 +153,15 @@ export default function CreateAsociadoModal({ editionId, onClose, onSuccess }: P
               placeholder="https://…" style={iS} />
           </Field>
 
-          <Field label="Descuento (%)" hint="Déjalo vacío si el código es solo para atribuir ventas, sin descuento">
-            <input type="number" name="discountPercentage" value={formData.discountPercentage}
-              onChange={handleChange} min="1" max="100" step="0.01" placeholder="15.50" style={iS} />
+          <Field label="Código de descuento" hint="Aporta el % y hereda sus usos máximos y expiración. Déjalo en &quot;Sin descuento&quot; si el código solo atribuye ventas.">
+            <select name="discountCodeUuid" value={formData.discountCodeUuid} onChange={handleChange} style={{ ...iS, colorScheme: 'dark' }}>
+              <option value="">Sin descuento</option>
+              {codes.map(c => (
+                <option key={c.uuid} value={c.uuid}>
+                  {c.code} — {parseFloat(c.discountPercentage)}% ({c.currentUses}/{c.maxUses} usos)
+                </option>
+              ))}
+            </select>
           </Field>
 
           {/* Toggle activo */}

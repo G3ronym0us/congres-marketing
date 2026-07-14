@@ -182,7 +182,9 @@
       "4": "No se pueden adquirir entradas por jornadas independientes. Las entradas aplican para el evento completo.",
       "5": "El streaming no incluye memorias del evento.",
       "6": "Cupos limitados por localidad. Precios sujetos a cambio según disponibilidad."
-    }
+    },
+    "referralBanner": "Estás comprando en sociedad de {name}",
+    "referralBannerDiscount": "con {percentage}% de descuento"
   },
   "carrito": {
     "backToTickets": "Volver a entradas",
@@ -207,7 +209,7 @@
     "subtotal": "Subtotal:",
     "discountCode": "Descuento ({code} - {percentage}%):",
     "referralDiscount": "Descuento asociado ({code} - {percentage}%):",
-    "referralApplied": "Compra referida por el asociado {code}",
+    "referralApplied": "Compras en sociedad de {name} (código {code})",
     "discountTemporal": "Descuento temporal ({percentage}%):",
     "total": "Total:",
     "incompleteTitle": "Datos incompletos:",
