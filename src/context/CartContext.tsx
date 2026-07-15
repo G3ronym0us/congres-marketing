@@ -63,6 +63,35 @@ const initialState: CartState = {
 // Clave para almacenar el carrito en localStorage
 const CART_STORAGE_KEY = 'event-cart-data';
 
+// Acceso seguro a localStorage: en webviews in-app (WhatsApp/Instagram) y en
+// Safari privado, setItem/getItem lanzan (QuotaExceededError/SecurityError).
+// Como esto corre dentro del reducer durante el render de React, una excepción
+// tumbaría toda la app ("Application error"). Ante un fallo seguimos sin
+// persistir: se pierde el carrito entre recargas, pero el flujo no se rompe.
+const safeGetCart = (): string | null => {
+  try {
+    return localStorage.getItem(CART_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const safeSetCart = (value: string): void => {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, value);
+  } catch {
+    // storage no disponible: se continúa sin persistir
+  }
+};
+
+const safeRemoveCart = (): void => {
+  try {
+    localStorage.removeItem(CART_STORAGE_KEY);
+  } catch {
+    // storage no disponible: no hay nada que limpiar
+  }
+};
+
 // Crear un ticket vacío
 const createEmptyTicket = (
   type: TicketType,
@@ -160,7 +189,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
 
       // Guardar en localStorage
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
 
       return newState;
     }
@@ -176,7 +205,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
 
       return newState;
     }
@@ -199,7 +228,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
 
       return newState;
     }
@@ -222,7 +251,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(newItems, state.appliedDiscount, state.referral),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
 
       return newState;
     }
@@ -242,7 +271,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         items: newItems,
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
 
       return newState;
     }
@@ -260,7 +289,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         }),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -272,7 +301,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(state.items, null, state.referral),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -284,7 +313,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(state.items, state.appliedDiscount, referral),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -295,7 +324,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         total: calcularTotal(state.items, state.appliedDiscount, null),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -308,7 +337,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         referral: { ...state.referral, prefill: null },
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -326,7 +355,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             editionSlug,
             referral: state.referral ?? null,
           };
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newState));
+      safeSetCart(JSON.stringify(newState));
       return newState;
     }
 
@@ -335,7 +364,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case 'CLEAR_CART': {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      safeRemoveCart();
       return initialState;
     }
 
@@ -379,7 +408,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   // Cargar el carrito desde localStorage al iniciar
   useEffect(() => {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+    const storedCart = safeGetCart();
     if (storedCart) {
       try {
         const parsedCart = JSON.parse(storedCart) as CartState;
