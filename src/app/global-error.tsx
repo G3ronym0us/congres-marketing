@@ -5,9 +5,8 @@ import { useEffect } from 'react';
 /**
  * Boundary global de Next: reemplaza el genérico "Application error: a
  * client-side exception has occurred" (que oculta el detalle) por una pantalla
- * que muestra el error real. Sobrevive al crash aunque eruda u otros overlays
- * se pierdan, así que sirve para detectar en producción qué falló y en qué
- * navegador, sin depender de DevTools.
+ * que muestra el error real. Sirve para detectar en producción qué falló y en
+ * qué navegador, sin depender de DevTools.
  */
 export default function GlobalError({
   error,
@@ -17,7 +16,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Queda en la consola (para eruda / DevTools / logs del navegador)
+    // Queda en la consola (DevTools / logs del navegador)
     console.error('[GlobalError]', error);
   }, [error]);
 
