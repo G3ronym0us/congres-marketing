@@ -1639,3 +1639,20 @@ section { position: relative; }
 .cart-modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
 .cart-modal-secondary { font-family: var(--display); font-size: 13px; color: var(--mute); padding: 8px; transition: color .2s; }
 .cart-modal-secondary:hover { color: var(--white); }
+
+/* En móvil, el carrito anidaba tres tarjetas (panel > item > formulario), lo
+   que con triple padding apretaba los campos y se veía como cuadros dentro de
+   cuadros. Reducimos el padding del panel y del item, y aplanamos el
+   formulario interno (sin borde ni fondo) para dejar solo dos niveles. */
+@media (max-width: 600px) {
+  .cart-panel { padding: 16px; border-radius: 16px; }
+  .cart-item { padding: 14px; border-radius: 14px; }
+  .cart-item-head { gap: 12px; margin-bottom: 12px; }
+  .cart-form {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-top: 12px;
+  }
+}

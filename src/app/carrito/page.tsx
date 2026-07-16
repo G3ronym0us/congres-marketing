@@ -639,7 +639,7 @@ export default function Carrito() {
                 </button>
               </div>
             ) : (
-              <div className="qs-panel">
+              <div className="qs-panel cart-panel">
                 <h2 className="cart-title">
                   <FontAwesomeIcon icon={faShoppingCart} className="ic" />
                   {t('carrito.title')}

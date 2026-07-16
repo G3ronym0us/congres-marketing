@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { reportClientError } from '@/utils/reportClientError';
 
 /**
  * Boundary global de Next: reemplaza el genérico "Application error: a
- * client-side exception has occurred" (que oculta el detalle) por una pantalla
- * que muestra el error real. Sirve para detectar en producción qué falló y en
- * qué navegador, sin depender de DevTools.
+ * client-side exception has occurred" por una pantalla amigable para el
+ * usuario, y reporta el error real al backend (queda en los logs de PM2) para
+ * detectarlo sin depender de que la persona avise. El detalle técnico solo se
+ * muestra en pantalla con ?debug=1.
  */
 export default function GlobalError({
   error,
@@ -15,9 +17,23 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [showDetail, setShowDetail] = useState(false);
+
   useEffect(() => {
-    // Queda en la consola (DevTools / logs del navegador)
     console.error('[GlobalError]', error);
+    reportClientError({
+      message: error?.message,
+      stack: error?.stack,
+      digest: error?.digest,
+      source: 'global-error',
+    });
+    try {
+      setShowDetail(
+        new URLSearchParams(window.location.search).get('debug') === '1',
+      );
+    } catch {
+      /* noop */
+    }
   }, [error]);
 
   return (
@@ -33,43 +49,72 @@ export default function GlobalError({
           alignItems: 'center',
           justifyContent: 'center',
           padding: 24,
+          boxSizing: 'border-box',
         }}
       >
-        <div style={{ maxWidth: 640, width: '100%' }}>
-          <h1 style={{ fontSize: 22, margin: '0 0 8px' }}>
-            Ocurrió un error inesperado
+        <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>😕</div>
+          <h1 style={{ fontSize: 22, margin: '0 0 10px', fontWeight: 700 }}>
+            Algo salió mal
           </h1>
-          <p style={{ opacity: 0.8, margin: '0 0 20px', lineHeight: 1.5 }}>
-            Intenta recargar la página. Si el problema persiste, comparte esta
-            pantalla con el equipo.
-          </p>
-
-          <button
-            onClick={() => reset()}
+          <p
             style={{
-              background: '#04EE62',
-              color: '#0B0B0B',
-              border: 'none',
-              borderRadius: 8,
-              padding: '12px 20px',
+              opacity: 0.75,
+              margin: '0 0 24px',
+              lineHeight: 1.6,
               fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
             }}
           >
-            Reintentar
-          </button>
+            Tuvimos un problema al cargar esta página. Por favor intenta de
+            nuevo; si continúa, escríbenos y lo resolvemos.
+          </p>
 
-          <details style={{ marginTop: 24 }}>
-            <summary
-              style={{ cursor: 'pointer', opacity: 0.7, fontSize: 13 }}
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <button
+              onClick={() => reset()}
+              style={{
+                background: '#04EE62',
+                color: '#0B0B0B',
+                border: 'none',
+                borderRadius: 8,
+                padding: '12px 22px',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
-              Detalle técnico
-            </summary>
+              Reintentar
+            </button>
+            <a
+              href="/"
+              style={{
+                background: 'transparent',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,.25)',
+                borderRadius: 8,
+                padding: '12px 22px',
+                fontSize: 15,
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Ir al inicio
+            </a>
+          </div>
+
+          {showDetail && (
             <pre
               style={{
-                marginTop: 12,
+                marginTop: 24,
                 padding: 12,
+                textAlign: 'left',
                 background: 'rgba(255,255,255,.06)',
                 borderRadius: 8,
                 fontSize: 12,
@@ -83,7 +128,7 @@ export default function GlobalError({
               {error?.digest ? `\n\ndigest: ${error.digest}` : ''}
               {error?.stack ? `\n\n${error.stack}` : ''}
             </pre>
-          </details>
+          )}
         </div>
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import ClientErrorReporter from '@/components/ClientErrorReporter';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import './globals.css';
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className + ` min-h-screen`}>
+        <ClientErrorReporter />
         <LanguageProvider>
           <AuthProvider>
             <CartProvider>
