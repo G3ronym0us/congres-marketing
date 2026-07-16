@@ -120,12 +120,18 @@ const calcularTotal = (
   appliedDiscount?: { code: string; percentage: number } | null,
   referral?: ReferralInfo | null,
 ): number => {
-  const subtotal = items.reduce((total, item) => {
+  // Defensivo ante carritos guardados con esquema viejo (p.ej. tickets sin
+  // addOns, anteriores a esa feature): un campo faltante no debe romper el
+  // cálculo ni tumbar la app al restaurar desde localStorage.
+  const subtotal = (items ?? []).reduce((total, item) => {
     return (
       total +
-      item.tickets.reduce((subtotal, ticket) => {
-        const addOnsTotal = ticket.addOns.reduce((s, a) => s + a.price, 0);
-        return subtotal + ticket.price + addOnsTotal;
+      (item?.tickets ?? []).reduce((subtotal, ticket) => {
+        const addOnsTotal = (ticket?.addOns ?? []).reduce(
+          (s, a) => s + (a?.price ?? 0),
+          0,
+        );
+        return subtotal + (ticket?.price ?? 0) + addOnsTotal;
       }, 0)
     );
   }, 0);
@@ -139,6 +145,46 @@ const calcularTotal = (
   }
 
   return subtotal;
+};
+
+// Normaliza un carrito restaurado desde localStorage. Un carrito guardado por
+// una versión anterior de la app puede tener campos faltantes (tickets sin
+// addOns, items sin tickets, etc.); si eso llega crudo al estado, revienta el
+// render. Aquí garantizamos la forma esperada y recalculamos el total.
+const sanitizeCart = (raw: unknown): CartState => {
+  const data = (raw && typeof raw === 'object' ? raw : {}) as Partial<CartState>;
+
+  const items: CartItem[] = Array.isArray(data.items)
+    ? data.items
+        .filter((it): it is CartItem => !!it && typeof it === 'object')
+        .map((it) => ({
+          localidad: it.localidad,
+          tickets: Array.isArray(it.tickets)
+            ? it.tickets
+                .filter((t) => !!t && typeof t === 'object')
+                .map((t) => ({
+                  ...t,
+                  addOns: Array.isArray(t.addOns) ? t.addOns : [],
+                }))
+            : [],
+        }))
+    : [];
+
+  const appliedDiscount =
+    data.appliedDiscount && typeof data.appliedDiscount === 'object'
+      ? data.appliedDiscount
+      : null;
+  const referral =
+    data.referral && typeof data.referral === 'object' ? data.referral : null;
+
+  return {
+    items,
+    total: calcularTotal(items, appliedDiscount, referral),
+    appliedDiscount,
+    editionId: typeof data.editionId === 'number' ? data.editionId : null,
+    editionSlug: typeof data.editionSlug === 'string' ? data.editionSlug : null,
+    referral,
+  };
 };
 
 // Reducer para manejar las acciones del carrito
@@ -411,7 +457,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     const storedCart = safeGetCart();
     if (storedCart) {
       try {
-        const parsedCart = JSON.parse(storedCart) as CartState;
+        const parsedCart = sanitizeCart(JSON.parse(storedCart));
         dispatch({ type: 'RESTORE_CART', payload: parsedCart });
       } catch (error) {
         console.error('Error parsing stored cart:', error);
