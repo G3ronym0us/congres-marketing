@@ -5,7 +5,9 @@ export interface EditionDisplay {
   id?: string;
   leg?: string;
   flag?: string;
+  /** @deprecated Legacy: texto congelado en la BD. Usa formatEditionDateShort(). */
   dateShort?: string;
+  /** @deprecated Legacy: texto congelado en la BD. Usa formatEditionDateLong(). */
   dateLong?: string;
   iso?: string;
   status?: string;
@@ -39,6 +41,8 @@ export interface Edition {
   status: EditionStatus;
   salesOpen: boolean;
   visible: boolean;
+  /** Libera los certificados antes de que termine la edición. Si ya terminó, se habilitan solos. */
+  certificatesEnabled: boolean;
   sortOrder: number;
   display?: EditionDisplay | null;
   discountStages?: DiscountStage[] | null;
@@ -66,6 +70,7 @@ export interface CreateEditionInput {
   status?: EditionStatus;
   salesOpen?: boolean;
   visible?: boolean;
+  certificatesEnabled?: boolean;
   sortOrder?: number;
   display?: EditionDisplay;
   discountStages?: DiscountStage[];
@@ -84,4 +89,5 @@ export interface CloneEditionInput extends CreateEditionInput {
 export interface SetEditionFlagsInput {
   salesOpen?: boolean;
   visible?: boolean;
+  certificatesEnabled?: boolean;
 }

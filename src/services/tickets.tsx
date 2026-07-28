@@ -167,24 +167,6 @@ export async function getTicketsMetrics(edition?: number) {
   }
 }
 
-export async function getCertificateStatus(): Promise<{ enabled: boolean }> {
-  try {
-    const response = await apiClient.get('/admin/certificates/status');
-    return response.data;
-  } catch (error) {
-    return handleError(error);
-  }
-}
-
-export async function toggleCertificates(enabled: boolean): Promise<{ enabled: boolean }> {
-  try {
-    const response = await apiClient.put('/admin/certificates/toggle', { enabled });
-    return response.data;
-  } catch (error) {
-    return handleError(error);
-  }
-}
-
 export async function getCurrentEdition(): Promise<{ currentEdition: number }> {
   try {
     const response = await apiClient.get('/admin/edition');

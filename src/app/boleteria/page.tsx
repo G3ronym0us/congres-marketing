@@ -10,6 +10,7 @@ import { TicketType } from '@/types/tickets';
 import { Edition } from '@/types/edition';
 import { getPublicEditions, getEditionBySlug } from '@/services/editions';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatEditionDateShort } from '@/utils/editionFormat';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import '../landing.css';
 
@@ -25,7 +26,7 @@ const precio = (n: number) =>
 export default function BoleteriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { addItem, setEdition, state: cartState } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [edition, setEditionData] = useState<Edition | null>(null);
@@ -43,6 +44,9 @@ export default function BoleteriaPage() {
   const featuredSlug = Object.entries(localidades)
     .filter(([key, loc]) => key !== 'memorias' && loc.pushable)
     .sort((a, b) => b[1].price - a[1].price)[0]?.[0];
+
+  // Fecha del evento derivada de la edición (nunca del texto legacy display.dateShort)
+  const editionDateShort = formatEditionDateShort(edition, lang);
 
   const detalles = localidades[localidad];
   const includedAddOns = (detalles?.addOns ?? []).filter(a => a.included);
@@ -167,7 +171,7 @@ export default function BoleteriaPage() {
         <section className="wrap" style={{ paddingBottom: 0 }}>
           <div style={{ maxWidth: 880, marginBottom: 28 }}>
             <span className="eyebrow">
-              {t('boleteria.eyebrow')} · {edition ? `${edition.city ?? edition.country}${edition.display?.dateShort ? ` · ${edition.display.dateShort}` : ''}` : '…'}
+              {t('boleteria.eyebrow')} · {edition ? `${edition.city ?? edition.country}${editionDateShort ? ` · ${editionDateShort}` : ''}` : '…'}
             </span>
             <h1 className="h-sec" style={{ marginTop: 12, fontSize: 'clamp(30px,4vw,48px)' }}>
               {t('boleteria.titleMain')} <span style={{ color: 'var(--neon)' }}>{t('boleteria.titleAccent')}</span>

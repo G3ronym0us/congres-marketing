@@ -5,6 +5,7 @@ import { useAdminEditions } from '@/context/AdminEditionsContext';
 import { useMetrics } from '@/hooks/useMetrics';
 import apiClient from '@/utils/apiClient';
 import { getLocalidadTypes } from '@/services/localidadTypes';
+import { formatEditionDateShort } from '@/utils/editionFormat';
 
 const TYPE_ICONS: Record<string, string> = {
   diamond: '💎', gold: '🥇', silver: '🥈', vip: '🟣', general: '🔵',
@@ -30,6 +31,8 @@ export default function DashboardPage() {
   const daysLeft = eventDate
     ? Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86400000))
     : 0;
+  // Fecha corta derivada de la edición (no del texto legacy display.dateShort)
+  const eventDateShort = formatEditionDateShort(selectedEdition);
 
   // Localidades de la edición vista (para íconos/nombres dinámicos del gráfico)
   useEffect(() => {
@@ -151,7 +154,7 @@ export default function DashboardPage() {
         <div className="adm-stat">
           <div className="adm-stat-label">Días para el evento</div>
           <div className={`adm-stat-value${daysLeft <= 30 ? ' neon' : ''}`}>{daysLeft}</div>
-          <div className="adm-stat-sub">{selectedEdition?.display?.dateShort ?? selectedEdition?.name ?? '—'}</div>
+          <div className="adm-stat-sub">{eventDateShort || selectedEdition?.name || '—'}</div>
         </div>
       </div>
 

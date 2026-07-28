@@ -125,6 +125,30 @@ function rangeShort(start: DateParts | null, end: DateParts | null, lang: Lang):
     : `${start.d} ${sMonth}–${end.d} ${eMonth}`;
 }
 
+/** La edición ya terminó (pasó el último día completo del evento). */
+export function editionHasEnded(edition: Edition | null | undefined): boolean {
+  const p = endParts(edition) ?? startParts(edition);
+  // Sin fechas (caso real: la edición 2025) se cae al año, igual que el
+  // backend: la edición cuenta como pasada al terminar su año.
+  if (!p) {
+    if (!edition?.year) return false;
+    return new Date(edition.year, 11, 31, 23, 59, 59, 999).getTime() < Date.now();
+  }
+  // Fin del día de cierre: durante el evento todavía no cuenta como pasado.
+  return new Date(p.y, p.m - 1, p.d, 23, 59, 59, 999).getTime() < Date.now();
+}
+
+/**
+ * Misma regla que aplica el backend para entregar certificados: la edición ya
+ * terminó, o el panel los liberó anticipadamente.
+ */
+export function editionCertificatesAvailable(
+  edition: Edition | null | undefined,
+): boolean {
+  if (!edition) return false;
+  return edition.certificatesEnabled || editionHasEnded(edition);
+}
+
 /** Lugar legible: "Bogotá, Colombia" (o solo el país si no hay ciudad). */
 export function formatEditionWhere(edition: Edition | null | undefined): string {
   if (!edition) return '';
@@ -156,7 +180,9 @@ export function formatEditionWhen(
   lang: Lang = 'es',
 ): string {
   const s = startParts(edition);
-  if (!s) return edition?.display?.dateLong ?? '';
+  // Sin fecha parseable no se muestra nada: el texto legacy display.dateLong
+  // está congelado en la BD y mostraría la fecha vieja.
+  if (!s) return '';
   const base = rangeLong(s, endParts(edition), lang);
   const tieneHora = s.hh !== 0 || s.mm !== 0;
   return tieneHora ? `${base} · ${formatTime(s.hh, s.mm, lang)}` : base;

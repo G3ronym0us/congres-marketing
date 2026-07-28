@@ -4,6 +4,7 @@ import React from 'react';
 import Swal from 'sweetalert2';
 import {
   deleteTickets,
+  downloadCertificate,
   downloadTicket,
   downloadTicketsExcel,
   getTicketsApproved,
@@ -22,6 +23,7 @@ import TicketModal from './Modals/CreateTicket';
 import EditTicketModal from './Modals/EditTicket';
 import { Edition } from '@/types/edition';
 import { getLocalidadTypes } from '@/services/localidadTypes';
+import { editionCertificatesAvailable } from '@/utils/editionFormat';
 
 /* ── helpers ── */
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -107,11 +109,19 @@ const TicketsTable = ({
   const [isExporting, setIsExporting] = React.useState(false);
   const [isOpenEdit, setIsOpenEdit] = React.useState(false);
   const [ticketEdit, setTicketEdit] = React.useState<Ticket | null>(null);
+  // uuid del ticket cuyo certificado se está generando/descargando (evita doble clic)
+  const [certUuid, setCertUuid] = React.useState<string | null>(null);
   // Metadatos de localidades de la edición (icono/nombre por slug) — dinámico
   const [localidadMeta, setLocalidadMeta] = React.useState<Record<string, { icon: string; name: string }>>({});
 
   // La edición a visualizar la decide el selector global del dashboard
   const edition = editionId;
+
+  // El backend responde 403 si la edición aún no libera certificados, así que
+  // la acción de descarga solo se ofrece cuando ya están disponibles.
+  const certsAvailable = editionCertificatesAvailable(
+    editions.find(e => e.id === editionId),
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
@@ -202,6 +212,34 @@ const TicketsTable = ({
     }
   };
 
+  // El backend genera el certificado on-demand si el ticket aún no lo tiene,
+  // así que esto sirve igual para boletos viejos sin certificate_url.
+  const downloadCert = async (ticket: Ticket) => {
+    if (certUuid) return;
+    setCertUuid(ticket.uuid);
+    try {
+      const blob = await downloadCertificate(ticket.uuid);
+      if (!blob) { toast('error', 'Error al descargar el certificado'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CNMP_CERTIFICADO(${ticket.name ? `${ticket.name.toUpperCase()} ${ticket.lastname.toUpperCase()}` : ticket.uuid}).pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast(
+        'error',
+        e?.response?.status === 403
+          ? 'Los certificados de esta edición aún no están disponibles'
+          : 'Error al descargar el certificado',
+      );
+    } finally {
+      setCertUuid(null);
+    }
+  };
+
   const exportExcel = async () => {
     setIsExporting(true);
     try {
@@ -287,6 +325,17 @@ const TicketsTable = ({
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
         </svg>
       </IconBtn>
+      {certsAvailable && (
+        <IconBtn
+          title={certUuid === item.uuid ? 'Generando certificado…' : 'Descargar certificado'}
+          onClick={() => downloadCert(item)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
+            <circle cx="12" cy="8" r="6"/>
+            <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+          </svg>
+        </IconBtn>
+      )}
       <IconBtn title="Editar ticket" onClick={() => { setTicketEdit(item); setIsOpenEdit(true); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={s16}>
           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>

@@ -14,6 +14,7 @@ import {
   copyLecturer,
   deleteLecturer as deleteLecturerService,
   getAll,
+  getPropagationTargets,
   toggleShow,
   update,
   uploadImage,
@@ -31,6 +32,20 @@ const LINE   = 'rgba(255,255,255,.08)';
 const LINE2  = 'rgba(255,255,255,.14)';
 const MUTE   = 'rgba(255,255,255,.45)';
 const MUTE2  = 'rgba(255,255,255,.28)';
+
+/* ── subida de imagen: mismos límites que el ParseFilePipe del backend ── */
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// Nest manda el detalle en response.data.message, como string o como array de
+// errores de validación. Sin esto el panel solo decía "Error" y no por qué.
+function apiErrorMessage(err: any, fallback: string): string {
+  const msg = err?.response?.data?.message;
+  if (Array.isArray(msg) && msg.length) return msg.join(' · ');
+  if (typeof msg === 'string' && msg) return msg;
+  if (!err?.response) return 'No se pudo conectar con el servidor. Verifica tu conexión.';
+  return fallback;
+}
 
 const inputStyle: React.CSSProperties = {
   background: INK,
@@ -238,18 +253,15 @@ const LecturersTable = ({
   const handleCreate = async (lecturer: CreateLecturerData): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true);
     try {
-      const response = await create({ ...lecturer, edition: editionId });
-      if (response instanceof Error) {
-        Swal.fire({ icon: 'error', title: 'Error', text: response.message });
-        return { success: false, message: response.message };
-      }
+      await create({ ...lecturer, edition: editionId });
       Swal.fire({ position: 'top-end', icon: 'success', title: 'Conferencista creado', showConfirmButton: false, timer: 1500 });
       setIsOpen(false);
       getLecturers();
       return { success: true, message: 'Conferencista creado' };
-    } catch {
-      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo crear el conferencista' });
-      return { success: false, message: 'No se pudo crear el conferencista' };
+    } catch (err) {
+      const message = apiErrorMessage(err, 'No se pudo crear el conferencista');
+      Swal.fire({ icon: 'error', title: 'Error', text: message });
+      return { success: false, message };
     } finally {
       setIsLoading(false);
     }
@@ -268,20 +280,81 @@ const LecturersTable = ({
       setIsOpenEdit(false);
       setLecturerEdit(null);
       getLecturers();
-    } catch {
-      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar el conferencista' });
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: apiErrorMessage(err, 'No se pudo actualizar el conferencista'),
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleImageUpload = async (lecturer: Lecturer, file: File) => {
+    // Se valida en cliente porque el backend rechaza con un 400 cuyo mensaje de
+    // Nest no le dice nada al usuario. Los límites son los del ParseFilePipe.
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Formato no admitido',
+        text: 'La imagen debe ser JPG, PNG o WEBP. Las fotos de iPhone (HEIC) hay que convertirlas antes de subirlas.',
+      });
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Imagen demasiado pesada',
+        text: `Pesa ${(file.size / 1024 / 1024).toFixed(1)} MB y el máximo son 5 MB.`,
+      });
+      return;
+    }
+    // Si la persona existe en ediciones posteriores se pregunta antes de
+    // propagar. Las ediciones anteriores no se tocan nunca.
+    let propagate = false;
     try {
-      await uploadImage(lecturer.uuid, file);
+      const targets = await getPropagationTargets(lecturer.uuid);
+      if (targets.length) {
+        const lista = targets.map(t => `<li>${t.name}</li>`).join('');
+        const result = await Swal.fire({
+          title: 'Esta persona está en otras ediciones',
+          html: `<p style="margin-bottom:8px">También aparece en ${targets.length === 1 ? 'la edición posterior' : 'las ediciones posteriores'}:</p><ul style="text-align:left;display:inline-block;margin:0">${lista}</ul><p style="margin-top:12px">Las ediciones anteriores no se modifican.</p>`,
+          icon: 'question',
+          showCancelButton: true,
+          showCloseButton: true,
+          confirmButtonText: `Esta y ${targets.length === 1 ? 'la posterior' : `las ${targets.length} posteriores`}`,
+          cancelButtonText: 'Solo esta edición',
+          confirmButtonColor: '#04EE62',
+          cancelButtonColor: '#555',
+          background: '#2A2228',
+          color: '#fff',
+        });
+        if (result.isConfirmed) {
+          propagate = true;
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          // "Solo esta edición": sí se sube, pero sin propagar.
+          propagate = false;
+        } else {
+          // Cerró con la X, Esc o clic fuera: no se sube nada.
+          return;
+        }
+      }
+    } catch {
+      // Si no se pudieron consultar las ediciones, se sube solo a la actual.
+      propagate = false;
+    }
+
+    try {
+      await uploadImage(lecturer.uuid, file, propagate);
       Swal.fire({ position: 'top-end', icon: 'success', title: 'Imagen actualizada', showConfirmButton: false, timer: 1500 });
       getLecturers();
-    } catch {
-      Swal.fire({ position: 'top-end', icon: 'error', title: 'Error al subir imagen', showConfirmButton: false, timer: 1500 });
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al subir imagen',
+        text: apiErrorMessage(err, 'No se pudo subir la imagen.'),
+      });
     }
   };
 
@@ -426,8 +499,14 @@ const LecturersTable = ({
                   Imagen
                   <input
                     type="file"
-                    accept="image/*"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(item, f); }}
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      // Se limpia el input para que reintentar con el mismo
+                      // archivo vuelva a disparar el onChange.
+                      e.target.value = '';
+                      if (f) handleImageUpload(item, f);
+                    }}
                     style={{ display: 'none' }}
                   />
                 </label>

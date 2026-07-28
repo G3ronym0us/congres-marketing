@@ -1,4 +1,9 @@
-import { CreateLecturerData, Lecturer, UpdateLecturerData } from '@/types/lecturer';
+import {
+  CreateLecturerData,
+  Lecturer,
+  PropagationTarget,
+  UpdateLecturerData,
+} from '@/types/lecturer';
 import { UpdateTicketInput } from '@/types/tickets';
 import { LoginUserInput } from '@/types/user';
 import apiClient, { handleError } from '@/utils/apiClient';
@@ -49,20 +54,18 @@ export async function loginUser(user: LoginUserInput) {
   }
 }
 
+// Todas las funciones de conferencistas propagan el error con handleError en
+// vez de devolver []: un [] donde se espera un Lecturer hacía que el panel
+// mostrara "éxito" en operaciones que en realidad habían fallado.
+
 export async function getInternationalWithTitle(
   edition?: number,
 ): Promise<Lecturer[]> {
   try {
-    const response = await apiClient
-      .get('/lecturers/internationals', {
-        params: edition ? { edition } : undefined,
-      })
-      .then((res) => res.data)
-      .catch((err) => {
-        console.error('Error fetching international lecturers:', err);
-        return [];
-      });
-    return response;
+    const response = await apiClient.get('/lecturers/internationals', {
+      params: edition ? { edition } : undefined,
+    });
+    return response.data;
   } catch (error) {
     return handleError(error);
   }
@@ -72,47 +75,42 @@ export async function getNationalWithTitle(
   edition?: number,
 ): Promise<Lecturer[]> {
   try {
-    const response = await apiClient
-      .get('/lecturers/nationals', {
-        params: edition ? { edition } : undefined,
-      })
-      .then((res) => res.data)
-      .catch((err) => {
-        console.error('Error fetching national lecturers:', err);
-        return [];
-      });
-    return response;
+    const response = await apiClient.get('/lecturers/nationals', {
+      params: edition ? { edition } : undefined,
+    });
+    return response.data;
   } catch (error) {
     return handleError(error);
   }
 }
 
 export async function getAll(edition?: number): Promise<Lecturer[]> {
-  const response = await apiClient
-    .get('/lecturers', { params: edition ? { edition } : undefined })
-    .then((res) => res.data)
-    .catch((err) => {
-      console.error('Error fetching lecturers:', err);
-      return [];
+  try {
+    const response = await apiClient.get('/lecturers', {
+      params: edition ? { edition } : undefined,
     });
-  return response;
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
 export async function create(lecturer: CreateLecturerData): Promise<Lecturer> {
-  const response = await apiClient.post('/lecturers', lecturer).then((res) => res.data).catch((err) => {
-    console.error('Error creating lecturer:', err);
-    return err;
-  });
-  return response;
+  try {
+    const response = await apiClient.post('/lecturers', lecturer);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
 export async function update(uuid: string, lecturer: UpdateLecturerData): Promise<Lecturer> {
-  console.log(lecturer);
-  const response = await apiClient.patch(`/lecturers/${uuid}`, lecturer).then((res) => res.data).catch((err) => {
-    console.error('Error updating lecturer:', err);
-    return [];
-  });
-  return response;
+  try {
+    const response = await apiClient.patch(`/lecturers/${uuid}`, lecturer);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
 export async function copyLecturer(
@@ -126,36 +124,67 @@ export async function copyLecturer(
 }
 
 export async function deleteLecturer(uuid: string): Promise<void> {
-  const response = await apiClient.delete(`/lecturers/${uuid}`).then((res) => res.data).catch((err) => {
-    console.error('Error deleting lecturer:', err);
-    return [];
-  });
-  return response;
+  try {
+    const response = await apiClient.delete(`/lecturers/${uuid}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
 export async function toggleShow(uuid: string): Promise<Lecturer> {
-  const response = await apiClient.patch(`/lecturers/${uuid}/toggle-show`).then((res) => res.data).catch((err) => {
-    console.error('Error toggling visibility:', err);
-    return [];
-  });
-  return response;
+  try {
+    const response = await apiClient.patch(`/lecturers/${uuid}/toggle-show`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
-export async function uploadImage(uuid: string, file: File): Promise<Lecturer> {
+export async function uploadImage(
+  uuid: string,
+  file: File,
+  propagate = false,
+): Promise<Lecturer> {
   const formData = new FormData();
   formData.append('file', file);
-  
-  const response = await apiClient.post(`/lecturers/${uuid}/upload-image`, formData).then((res) => res.data).catch((err) => {
-    console.error('Error uploading image:', err);
-    return [];
-  });
-  return response;
+
+  try {
+    const response = await apiClient.post(
+      `/lecturers/${uuid}/upload-image`,
+      formData,
+      { params: propagate ? { propagate: 'true' } : undefined },
+    );
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
-export async function getLecturerByAlt(alt: string): Promise<Lecturer> {
-  const response = await apiClient.get(`/lecturers/alt/${alt}`).then((res) => res.data).catch((err) => {
-    console.error('Error fetching lecturer by alt:', err);
-    return [];
-  });
-  return response;
+/** Ediciones POSTERIORES en las que existe la misma persona. */
+export async function getPropagationTargets(
+  uuid: string,
+): Promise<PropagationTarget[]> {
+  try {
+    const response = await apiClient.get(
+      `/lecturers/${uuid}/propagation-targets`,
+    );
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+export async function getLecturerByAlt(
+  alt: string,
+  edition?: number,
+): Promise<Lecturer> {
+  try {
+    const response = await apiClient.get(`/lecturers/alt/${alt}`, {
+      params: edition ? { edition } : undefined,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
 }

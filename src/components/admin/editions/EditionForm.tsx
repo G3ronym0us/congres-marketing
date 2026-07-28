@@ -62,9 +62,12 @@ export function stripFormMeta(data: EditionFormState): CreateEditionInput {
     display, eventStartDate, eventEndDate, ...rest
   } = data;
   const isoIso = toIso(iso);
+  // Los textos legacy display.dateShort/dateLong quedaron congelados con la fecha
+  // vieja y ya no los lee nadie: se descartan al guardar para purgarlos de la BD.
+  const { dateShort: _ds, dateLong: _dl, ...displayRest } = display ?? {};
   return {
     ...rest,
-    display: { ...(display ?? {}), ...(isoIso ? { iso: isoIso } : {}) },
+    display: { ...displayRest, ...(isoIso ? { iso: isoIso } : {}) },
     eventStartDate: isoIso,
     // Solo fecha; null para limpiarla si se quita en edición.
     eventEndDate: endDate ? endDate : null,
@@ -198,7 +201,7 @@ export default function EditionForm({
         )}
 
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          {([['salesOpen', 'Abierta a ventas'], ['visible', 'Visible en la web']] as [keyof EditionFormState, string][]).map(([k, lbl]) => (
+          {([['salesOpen', 'Abierta a ventas'], ['visible', 'Visible en la web'], ['certificatesEnabled', 'Certificados disponibles']] as [keyof EditionFormState, string][]).map(([k, lbl]) => (
             <label key={k as string} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#fff', fontSize: 13, fontFamily: 'Space Grotesk, sans-serif' }}>
               <input type="checkbox" checked={!!form[k]} onChange={e => set(k, e.target.checked)} style={{ accentColor: NEON, width: 16, height: 16 }} />
               {lbl}

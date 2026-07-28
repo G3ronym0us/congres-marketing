@@ -21,7 +21,8 @@ const toFormState = (e: Edition): EditionFormState => ({
   iso: toLocalInput(e.display?.iso ?? e.eventStartDate),
   endDate: toDateInput(e.eventEndDate),
   display: e.display ?? undefined,
-  status: e.status, salesOpen: e.salesOpen, visible: e.visible, sortOrder: e.sortOrder,
+  status: e.status, salesOpen: e.salesOpen, visible: e.visible,
+  certificatesEnabled: e.certificatesEnabled, sortOrder: e.sortOrder,
 });
 
 export default function EditionOverviewPage() {

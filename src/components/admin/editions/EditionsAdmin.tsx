@@ -18,7 +18,8 @@ const MUTE2  = 'rgba(255,255,255,.28)';
 
 const EMPTY: EditionFormState = {
   slug: '', name: '', year: new Date().getFullYear(), country: '',
-  city: '', venue: '', status: 'DRAFT', salesOpen: false, visible: false, sortOrder: 0,
+  city: '', venue: '', status: 'DRAFT', salesOpen: false, visible: false,
+  certificatesEnabled: false, sortOrder: 0,
   discountStages: [],
 };
 

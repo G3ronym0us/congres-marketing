@@ -39,10 +39,11 @@ const toCityView = (e: Edition, lang: Lang): CityView => {
     country: e.country,
     flag: d.flag ?? '',
     venue: e.venue ?? '',
-    // Textos derivados de las fechas del evento (fuente única); si no hay fechas,
-    // se cae al texto de presentación legacy (display.dateShort/dateLong).
-    dateShort: formatEditionDateShort(e, lang) || d.dateShort || '',
-    dateLong: formatEditionDateLong(e, lang) || d.dateLong || '',
+    // Textos derivados de las fechas del evento (fuente única). Nunca se cae a
+    // los textos legacy de display.dateShort/dateLong: son strings congelados
+    // en la BD que mostraban la fecha vieja.
+    dateShort: formatEditionDateShort(e, lang),
+    dateLong: formatEditionDateLong(e, lang),
     year: String(e.year),
     iso: d.iso ?? e.eventStartDate ?? '',
     status: d.status ?? '',
@@ -582,7 +583,11 @@ export default function LandingPage() {
                 : lecturers.map((l) => (
                     <article key={l.id} className="spk reveal"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => router.push(`/lecturer/${l.alt}`)}>
+                      // El alt se repite entre ediciones: se lleva la edición
+                      // para que la ficha sirva la fila correcta y no otra.
+                      onClick={() => router.push(
+                        l.edition ? `/lecturer/${l.alt}?edition=${l.edition}` : `/lecturer/${l.alt}`,
+                      )}>
                       <div className="spk-photo">
                         <span className={`badge-st ${l.type === 'INTERNATIONAL' ? 'ok' : 'tba'}`}>
                           {l.type === 'INTERNATIONAL' ? t('landing.speakers.international') : t('landing.speakers.national')}

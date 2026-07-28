@@ -110,3 +110,10 @@ export interface UpdateLecturerData {
   createdMethodologies?: string[];
   show: boolean;
 }
+
+/** Edición posterior donde existe la misma persona (diálogo de propagación). */
+export interface PropagationTarget {
+  uuid: string;
+  name: string;
+  year: number;
+}

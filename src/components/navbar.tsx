@@ -1,7 +1,6 @@
-import Image from 'next/image'; 
-import React, { useEffect, useState } from 'react'; 
-import logo from '../../public/images/2025/logo.png'; 
-import Link from 'next/link'; 
+import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Box,
   Drawer,
@@ -91,10 +90,10 @@ export default function Navbar(props: any) {
           <div className="flex justify-between items-center">
             <Link href="/" className="flex items-center">
             <Image
-              src={logo}
-              alt="CNMP 2025"
+              src="/logo-principal.png"
+              alt="CNMP 2026"
               width={240}
-              height={100}
+              height={77}
               className={`w-auto transition-all duration-300 ${
                 scrolled ? 'h-8 md:h-10' : 'h-10 md:h-12'
               }`}
@@ -142,10 +141,10 @@ export default function Navbar(props: any) {
         <DrawerContent bg="#0a0b14" color="white" className="min-h-screen">
           <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700">
             <Image
-              src={logo}
-              alt="CNMP 2025"
+              src="/logo-principal.png"
+              alt="CNMP 2026"
               width={180}
-              height={60}
+              height={58}
               className="w-auto h-9"
             />
             {/* Botón de cierre más grande y con mejor posición */}

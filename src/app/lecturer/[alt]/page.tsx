@@ -1,9 +1,11 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { getLecturerByAlt } from '@/services/user';
+import { getPublicEditions } from '@/services/editions';
 import { Lecturer } from '@/types/lecturer';
+import { Edition } from '@/types/edition';
 import { WHATSAPP_URL } from '@/data/contactData';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -33,13 +35,22 @@ const IconYT = () => (
 
 export default function LecturerDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { t } = useLanguage();
 
   const [lecturer, setLecturer] = useState<Lecturer | null>(null);
+  const [editions, setEditions] = useState<Edition[]>([]);
   const [loading, setLoading] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const ioRef = useRef<IntersectionObserver | null>(null);
+
+  // La gira del footer sale de las ediciones visibles, igual que en la landing.
+  useEffect(() => {
+    getPublicEditions()
+      .then(setEditions)
+      .catch(() => setEditions([]));
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -52,11 +63,15 @@ export default function LecturerDetailPage() {
     const slug = params?.alt as string;
     if (!slug) return;
     setLoading(true);
-    getLecturerByAlt(slug)
+    // ?edition= lo pone la landing: el alt no es único entre ediciones, y sin
+    // él el backend devuelve la más reciente.
+    const editionParam = searchParams?.get('edition');
+    const edition = editionParam ? parseInt(editionParam, 10) : undefined;
+    getLecturerByAlt(slug, Number.isNaN(edition as number) ? undefined : edition)
       .then(setLecturer)
       .catch(() => setLecturer(null))
       .finally(() => setLoading(false));
-  }, [params?.alt]);
+  }, [params?.alt, searchParams]);
 
   // Reveal animations
   useEffect(() => {
@@ -352,9 +367,12 @@ export default function LecturerDetailPage() {
               </div>
               <div className="foot-col">
                 <h4>{t('landing.footer.tour')}</h4>
-                <a href="/#tour">Colombia 2026</a>
-                <a href="/#tour">Santo Domingo 2026</a>
-                <a href="/#tour">Cd. de México 2027</a>
+                {editions.map(e => (
+                  <a key={e.slug} href={`/boleteria?ed=${e.slug}`}>
+                    {e.city || e.country} {e.year}
+                    {!e.salesOpen && <span className="soon-pill">{t('landing.footer.soonPill')}</span>}
+                  </a>
+                ))}
               </div>
               <div className="foot-col">
                 <h4>{t('landing.footer.event')}</h4>
@@ -370,7 +388,7 @@ export default function LecturerDetailPage() {
             </div>
             <div className="foot-bottom">
               <span>{t('landing.footer.rights', { year: new Date().getFullYear() })}</span>
-              <span className="mono">3 {t('landing.footer.cities')} · 3 {t('landing.footer.countryPlural')} · {t('landing.footer.community')}</span>
+              <span className="mono">{editions.length} {editions.length === 1 ? t('landing.footer.city') : t('landing.footer.cities')} · {new Set(editions.map(e => e.country)).size} {new Set(editions.map(e => e.country)).size === 1 ? t('landing.footer.countrySingular') : t('landing.footer.countryPlural')} · {t('landing.footer.community')}</span>
             </div>
           </div>
         </footer>
