@@ -151,11 +151,26 @@
     }
   },
   "waBanner": {
-    "message": "Hi, I'd like to complete my CNMP 2026 ticket purchase over WhatsApp.",
+    "message": "Hola, no pude completar mi compra en la página web. Quiero comprar mis entradas para el CNMP 2026 por WhatsApp.",
+    "buyMessage": "Hola, quiero comprar mis entradas para el CNMP 2026. ¿Me pueden ayudar?",
     "barAria": "Complete your purchase on WhatsApp",
     "cardAria": "Guided purchase on WhatsApp",
+    "payAria": "Guided purchase on WhatsApp: we'll help you complete the payment",
     "close": "Dismiss notice",
-    "payAria": "Guided purchase on WhatsApp: we'll help you complete the payment"
+    "fabLabel": "Buy here",
+    "fabAria": "Buy tickets on WhatsApp",
+    "welcome": {
+      "eyebrow": "Personal assistance",
+      "titleA": "Would you rather buy",
+      "titleEm": "on WhatsApp",
+      "titleB": "? We can help right now.",
+      "lead": "Someone from the CNMP team walks you through it on chat, answers your questions and secures your spot in minutes.",
+      "step1": "We help you pick your ticket and apply the current discount",
+      "step2": "You choose how to pay and we send everything ready",
+      "step3": "You get your confirmed tickets right away",
+      "cta": "Buy here",
+      "alt": "I'd rather buy on the website"
+    }
   },
   "boleteria": {
     "register": "Register",
