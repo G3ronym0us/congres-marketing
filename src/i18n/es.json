@@ -150,6 +150,13 @@
       "thisCity": "esta ciudad"
     }
   },
+  "waBanner": {
+    "message": "Hola, quiero completar mi compra de entradas del CNMP 2026 por WhatsApp.",
+    "barAria": "Completar la compra por WhatsApp",
+    "cardAria": "Compra asistida por WhatsApp",
+    "close": "Cerrar aviso",
+    "payAria": "Compra asistida por WhatsApp: te ayudamos a completar el pago"
+  },
   "boleteria": {
     "register": "Inscríbete",
     "buyingFor": "Estás comprando para {name}",

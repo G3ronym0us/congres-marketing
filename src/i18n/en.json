@@ -150,6 +150,13 @@
       "thisCity": "this city"
     }
   },
+  "waBanner": {
+    "message": "Hi, I'd like to complete my CNMP 2026 ticket purchase over WhatsApp.",
+    "barAria": "Complete your purchase on WhatsApp",
+    "cardAria": "Guided purchase on WhatsApp",
+    "close": "Dismiss notice",
+    "payAria": "Guided purchase on WhatsApp: we'll help you complete the payment"
+  },
   "boleteria": {
     "register": "Register",
     "buyingFor": "You are buying for {name}",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -33,6 +33,11 @@ import Cookies from 'js-cookie';
 import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { generateReference } from '@/utils/utils';
 import { useLanguage } from '@/context/LanguageContext';
+import {
+  WhatsAppTopBar,
+  WhatsAppWideCard,
+  WhatsAppPayCard,
+} from '@/components/WhatsAppBanners';
 import '../landing.css';
 
 // Estructura para las etapas de descuento
@@ -77,6 +82,10 @@ export default function Carrito() {
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
+  // La barra de WhatsApp es fixed: mientras esté visible el contenido se baja
+  // con --wa-h (ver .cnmp-root.has-wa-bar en landing.css).
+  const [waBarVisible, setWaBarVisible] = useState(true);
+  const hideWaBar = useCallback(() => setWaBarVisible(false), []);
 
   // Estados para descuentos
   const [activeStage, setActiveStage] = useState<DiscountStageView | null>(
@@ -590,8 +599,11 @@ export default function Carrito() {
   };
 
   return (
-    <div className="cnmp-root">
+    <div className={`cnmp-root${waBarVisible ? ' has-wa-bar' : ''}`}>
       <div className="bg-field" />
+
+      {/* A · BANNER WHATSAPP — barra fija, la misma de la landing */}
+      <WhatsAppTopBar onHide={hideWaBar} />
 
       {/* Cargar el script de Wompi */}
       <Script
@@ -653,6 +665,9 @@ export default function Carrito() {
                     <span className="pct">{activeStage.percentage}% OFF</span>
                   </div>
                 )}
+
+                {/* B · BANNER WHATSAPP — encima de la lista de entradas */}
+                <WhatsAppWideCard />
 
                 {!isHydrated ? (
                   <div className="cart-list" aria-hidden="true">
@@ -1095,6 +1110,9 @@ export default function Carrito() {
                       </div>
                     </div>
                     )}
+
+                    {/* C · BANNER WHATSAPP — rescate encima del botón de pago */}
+                    <WhatsAppPayCard />
 
                     {/* Botones de acción */}
                     <div className="cart-actions">

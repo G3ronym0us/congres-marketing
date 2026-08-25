@@ -17,6 +17,7 @@ import { formatEditionDateLong, formatEditionDateShort, Lang } from '@/utils/edi
 import { useLanguage } from '@/context/LanguageContext';
 import { useCart } from '@/context/CartContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { WhatsAppTopBar, WhatsAppWideCard } from '@/components/WhatsAppBanners';
 import './landing.css';
 
 interface CityView {
@@ -78,6 +79,9 @@ export default function LandingPage() {
   const [activeDay, setActiveDay] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // La barra de WhatsApp corre el navbar y el hero hacia abajo (--wa-h).
+  const [waBarVisible, setWaBarVisible] = useState(true);
+  const hideWaBar = useCallback(() => setWaBarVisible(false), []);
   const [swapOut, setSwapOut] = useState(false);
   const [cd, setCd] = useState({ d: '00', h: '00', m: '00', s: '00' });
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
@@ -301,8 +305,11 @@ export default function LandingPage() {
   const delayClass = (i: number) => ['', ' d1', ' d2', ' d3'][i % 4];
 
   return (
-    <div className={`cnmp-root${menuOpen ? ' menu-open' : ''}`}>
+    <div className={`cnmp-root${menuOpen ? ' menu-open' : ''}${waBarVisible ? ' has-wa-bar' : ''}`}>
       <div className="bg-field" />
+
+      {/* A · BANNER WHATSAPP — barra fija sobre el navbar */}
+      <WhatsAppTopBar onHide={hideWaBar} />
 
       {/* NAVBAR */}
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
@@ -721,6 +728,9 @@ export default function LandingPage() {
                 {t('landing.tickets.noteSuffix')}
               </p>
             </div>
+
+            {/* B · BANNER WHATSAPP — antes de las tarjetas de precio */}
+            <WhatsAppWideCard reveal />
 
             {ventasAbiertas ? (
               <div className={`tk-grid ${sw}`}>

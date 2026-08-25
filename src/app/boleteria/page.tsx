@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatoPrecio } from '@/data/ticketsData';
 import { WHATSAPP_URL } from '@/data/contactData';
@@ -12,6 +12,7 @@ import { getPublicEditions, getEditionBySlug } from '@/services/editions';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatEditionDateShort } from '@/utils/editionFormat';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { WhatsAppTopBar } from '@/components/WhatsAppBanners';
 import '../landing.css';
 
 const MAX_CANTIDAD = 10;
@@ -29,6 +30,9 @@ export default function BoleteriaPage() {
   const { t, lang } = useLanguage();
   const { addItem, setEdition, state: cartState } = useCart();
   const [scrolled, setScrolled] = useState(false);
+  // La barra de WhatsApp baja el navbar y el contenido (ver --wa-h).
+  const [waBarVisible, setWaBarVisible] = useState(true);
+  const hideWaBar = useCallback(() => setWaBarVisible(false), []);
   const [edition, setEditionData] = useState<Edition | null>(null);
   const [allEditions, setAllEditions] = useState<Edition[]>([]);
   const [editionLoading, setEditionLoading] = useState(true);
@@ -134,8 +138,11 @@ export default function BoleteriaPage() {
   };
 
   return (
-    <div className="cnmp-root">
+    <div className={`cnmp-root${waBarVisible ? ' has-wa-bar' : ''}`}>
       <div className="bg-field" />
+
+      {/* A · BANNER WHATSAPP — barra fija, la misma de la landing */}
+      <WhatsAppTopBar onHide={hideWaBar} />
 
       {/* NAVBAR */}
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
