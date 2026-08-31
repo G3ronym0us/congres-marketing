@@ -39,7 +39,7 @@ npm run lint
 - **Database**: MySQL (serverless connection)
 - **Authentication**: JWT with middleware protection
 - **State Management**: React Context (Auth + Cart)
-- **Payment Integration**: Wompi payment gateway
+- **Payment Integration**: gateway chosen by the backend (`GET /payments/gateway`) — Efipay (active, redirect checkout) or Wompi (paused, widget)
 - **PDF Generation**: pdf-lib for ticket generation
 - **QR Codes**: qrcode library for ticket verification
 
@@ -65,7 +65,7 @@ npm run lint
 - **Database**: `db.js` - MySQL connection utility
 - **Auth**: Login/register endpoints
 - **Tickets**: CRUD operations for ticket management
-- **Wompi**: Payment webhook integration
+- **Payments**: gateway selected by the backend; Efipay redirect checkout, Wompi widget as fallback
 
 #### Types (`src/types/`)
 - **tickets.tsx**: Core ticket, cart, and seat management types
@@ -82,8 +82,9 @@ npm run lint
 - PDF ticket generation with QR codes
 
 #### Payment Processing
-- Wompi payment gateway integration
-- Webhook handling for payment confirmations
+- Gateway-agnostic: `POST /payments` returns `gateway` plus `checkoutUrl` (Efipay) or `signature` (Wompi)
+- Efipay redirects the buyer; Wompi opens its widget (its script loads only when Wompi is active)
+- Backend handles the webhooks; the frontend confirms with `GET /payments/verify/:reference`
 - Reference-based transaction tracking
 
 #### Admin Dashboard
@@ -109,8 +110,10 @@ MySQL connection requires environment variables:
 - `JWT_SECRET`
 
 ### Payment Integration
-Wompi webhook endpoint: `/api/wompi/events.ts`
-Requires proper webhook signature validation for production.
+Webhooks are handled entirely by the backend (Efipay: `POST /payments/webhook/efipay`;
+Wompi: `POST /payments/webhook`), including signature validation. The frontend only
+starts the payment and confirms the result with `GET /payments/verify/:reference` —
+it never trusts the `status` query param on the return URL.
 
 ### Ticket Types Enum
 ```typescript

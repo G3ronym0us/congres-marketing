@@ -24,6 +24,7 @@ import { discountUtils } from '@/services/discountCode';
 import { AppliedDiscount } from '@/types/discountCode';
 import { Edition } from '@/types/edition';
 import { getEditionBySlug } from '@/services/editions';
+import { getActiveGateway, PaymentGatewayName } from '@/services/payments';
 import DiscountCodeInput from '@/components/tickets/DiscountCodeInput';
 import EditionBanner from '@/components/tickets/EditionBanner';
 import ConfirmPurchaseModal from '@/components/tickets/ConfirmPurchaseModal';
@@ -76,6 +77,10 @@ export default function Carrito() {
   // ya se limpió y el objeto `edition` queda en null)
   const [purchasedEditionName, setPurchasedEditionName] = useState<string | null>(null);
 
+  // Pasarela de pago activa. La decide el backend (GET /payments/gateway):
+  // Efipay redirige a su checkout, Wompi abre su widget. Hasta que responda no
+  // se carga ningún script de terceros.
+  const [gateway, setGateway] = useState<PaymentGatewayName | null>(null);
   // Estados adicionales para Wompi
   const [wompiReady, setWompiReady] = useState(false);
   const [reference, setReference] = useState('');
@@ -151,6 +156,17 @@ export default function Carrito() {
     setReference(reference);
   }, []);
 
+  // Consultar qué pasarela está activa en el backend
+  useEffect(() => {
+    let cancelled = false;
+    getActiveGateway().then((g) => {
+      if (!cancelled) setGateway(g);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Verificar inicialmente si Wompi ya está disponible
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -176,7 +192,11 @@ export default function Carrito() {
       // Obtener parámetros de la URL
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
-        const refParam = urlParams.get('ref');
+        // `reference` lo manda el endpoint de confirmación del backend (es el
+        // camino de vuelta de Efipay); `ref` es el que usaba el widget de
+        // Wompi y se mantiene por compatibilidad.
+        const refParam =
+          urlParams.get('reference') || urlParams.get('ref');
         const statusParam = urlParams.get('status');
 
         // Si tenemos una referencia en la URL
@@ -205,10 +225,10 @@ export default function Carrito() {
     const statusUpper = status.toUpperCase();
     switch (statusUpper) {
       case 'APPROVED':
-        setPurchasedEditionName(edition?.name ?? null);
-        clearCart();
-        setEnviado(true);
-        setErrorMessage(undefined);
+        // El estado viene en la URL, así que no basta con creerle: se confirma
+        // contra el backend, que además devuelve el nombre de la edición para
+        // la pantalla de éxito (el carrito ya está vacío a esa altura).
+        verifyTransaction(ref);
         break;
       case 'DECLINED':
         setErrorMessage(
@@ -243,6 +263,10 @@ export default function Carrito() {
   const handleWompiLoad = () => {
     setWompiReady(true);
   };
+
+  // El pago solo puede abrirse cuando ya se sabe qué pasarela está activa; con
+  // Wompi además hay que esperar a que su widget cargue (Efipay no lo necesita).
+  const payReady = gateway === 'efipay' || (gateway === 'wompi' && wompiReady);
 
   // Verificar si todos los datos de asistentes están completos
   useEffect(() => {
@@ -455,9 +479,28 @@ export default function Carrito() {
         },
       );
 
-      const { signature, transaction } = response.data;
+      const { signature, checkoutUrl } = response.data;
+      // El backend manda con qué pasarela creó el cobro; se prefiere ese dato
+      // al estado local por si la pasarela cambió mientras el carrito estaba
+      // abierto.
+      const activeGateway: PaymentGatewayName =
+        response.data.gateway ?? gateway ?? 'efipay';
 
-      // 2. Iniciar el proceso de pago con Wompi
+      // 2a. Efipay: el cobro ya está creado, se redirige al comprador a su
+      // checkout. Al terminar, Efipay lo devuelve al endpoint de confirmación
+      // del backend, que verifica el estado y regresa a /carrito.
+      if (activeGateway === 'efipay') {
+        if (!checkoutUrl) {
+          setLoading(false);
+          alert(t('carrito.alert.processError'));
+          return;
+        }
+        // No se quita el loading: la página se va a reemplazar.
+        window.location.href = checkoutUrl;
+        return;
+      }
+
+      // 2b. Wompi: el cobro se abre en su widget con la firma de integridad.
       if (wompiReady && (window as any).WidgetCheckout) {
         try {
           // Crear configuración para el Widget
@@ -605,12 +648,15 @@ export default function Carrito() {
       {/* A · BANNER WHATSAPP — barra fija, la misma de la landing */}
       <WhatsAppTopBar onHide={hideWaBar} />
 
-      {/* Cargar el script de Wompi */}
-      <Script
-        src="https://checkout.wompi.co/widget.js"
-        onLoad={handleWompiLoad}
-        strategy="afterInteractive"
-      />
+      {/* El widget de Wompi solo se carga si es la pasarela activa: con Efipay
+          el pago es por redirección y no hace falta ningún script de terceros. */}
+      {gateway === 'wompi' && (
+        <Script
+          src="https://checkout.wompi.co/widget.js"
+          onLoad={handleWompiLoad}
+          strategy="afterInteractive"
+        />
+      )}
 
       {/* Recordatorio persistente de la edición que se está comprando */}
       {!enviado && (!isHydrated || state.items.length > 0) && (
@@ -1125,9 +1171,9 @@ export default function Carrito() {
 
                       <button
                         onClick={handleSolicitarPago}
-                        disabled={!isAllDataComplete || loading}
-                        className={`btn btn-neon cart-pay-cta${isAllDataComplete && !loading ? ' ready' : ''}`}
-                        style={{ opacity: !isAllDataComplete || loading ? .5 : 1, cursor: !isAllDataComplete || loading ? 'not-allowed' : 'pointer' }}
+                        disabled={!isAllDataComplete || loading || !payReady}
+                        className={`btn btn-neon cart-pay-cta${isAllDataComplete && !loading && payReady ? ' ready' : ''}`}
+                        style={{ opacity: !isAllDataComplete || loading || !payReady ? .5 : 1, cursor: !isAllDataComplete || loading || !payReady ? 'not-allowed' : 'pointer' }}
                       >
                         {loading ? (
                           <span>{t('carrito.processing')}</span>

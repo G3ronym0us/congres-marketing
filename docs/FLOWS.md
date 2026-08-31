@@ -9,9 +9,14 @@
 - **Frontend**: Next.js 13+ App Router (este repo). Deploy en Vercel.
 - **Backend**: API REST separada (repo aparte, deploy en EC2 con GitHub Actions, Postgres).
   El front la consume vía `apiClient` (axios) con `baseURL = NEXT_PUBLIC_API_URL`.
-- **Pagos**: Wompi WidgetCheckout (script `https://checkout.wompi.co/widget.js`) con firma
-  de integridad generada por el backend. La confirmación final llega por webhook al backend;
-  el front además verifica por referencia (`payments/verify/:reference`).
+- **Pagos**: la pasarela activa la decide el backend (`GET /payments/gateway`).
+  **Efipay** (actual): `POST /payments` devuelve `checkoutUrl` y el front redirige al
+  comprador; al terminar vuelve por el endpoint de confirmación del backend a
+  `/carrito?reference=<ref>&status=<estado>`. **Wompi** (pausada): WidgetCheckout
+  (script `https://checkout.wompi.co/widget.js`) con la firma de integridad que
+  devuelve el mismo `POST /payments`; su script solo se carga si es la pasarela activa.
+  La confirmación final llega por webhook al backend; el front además verifica por
+  referencia (`payments/verify/:reference`).
 - **Auth admin**: JWT en cookie (`js-cookie` + `AuthContext`), validado por
   `src/middleware.ts` para todo `/admin/*` (excepto `/admin/auth`).
 - **Ediciones**: el sistema es multi-edición (2025, 2026, …). El backend mantiene una
@@ -24,7 +29,7 @@
 |---|---|
 | `NEXT_PUBLIC_API_URL` | Base del backend (dev: `http://localhost:3000/`) |
 | `NEXT_PUBLIC_URL` | Base del propio front (dev: `http://localhost:3001/`) |
-| `NEXT_PUBLIC_WOMPI_PUBLIC_KEY` | Llave pública del widget Wompi |
+| `NEXT_PUBLIC_WOMPI_PUBLIC_KEY` | Llave pública del widget Wompi (solo si se reactiva Wompi) |
 | `JWT_SECRET` | Verificación del token en `src/middleware.ts` |
 
 ### Mapa de rutas del front
@@ -36,7 +41,7 @@
 | `/organizacion` | pública | Página institucional |
 | `/boleteria` | pública | Selección de localidad + cantidad + memorias |
 | `/quantity-select` | redirect | Legacy → redirige a `/boleteria` |
-| `/carrito` | pública | Datos de asistentes, descuento, pago Wompi, verificación |
+| `/carrito` | pública | Datos de asistentes, descuento, pago (Efipay/Wompi), verificación |
 | `/tickets/purchase/[reference]` | pública | Pantalla de éxito post-compra |
 | `/ticket/[document]` | pública | Consulta de ticket y descarga de certificado (el param es el **uuid** del ticket) |
 | `/admin/auth` | pública | Login del panel |
@@ -92,11 +97,16 @@ servicios capturan el error y devuelven `[]`); la página no debe romperse.
 3. "Pagar": se genera una referencia única, se guardan los tickets en estado pendiente
    (`POST /tickets/save` con `reference` y `discountCode`), y se pide la firma de
    integridad (`POST /tickets/generate-integrity-hash` con `amountInCents`).
-4. Se abre el **WidgetCheckout de Wompi** (`currency: COP`, `publicKey`, `reference`,
-   `signature.integrity`, `redirectUrl: /carrito?ref=<reference>`).
-5. Al cerrar el widget (o al volver por `redirectUrl`), el front verifica:
+4. Según la pasarela que devuelva `POST /payments`:
+   - **Efipay**: se redirige a `checkoutUrl`. Al terminar, Efipay envía al comprador al
+     endpoint de confirmación del backend, que verifica el estado y lo devuelve a
+     `/carrito?reference=<reference>&status=<estado>`.
+   - **Wompi**: se abre el **WidgetCheckout** (`currency: COP`, `publicKey`, `reference`,
+     `signature.integrity`, `redirectUrl: /carrito?ref=<reference>`).
+5. Al volver (por cualquiera de los dos caminos), el front verifica contra el backend:
    `GET payments/verify/:reference`. Si está aprobada → éxito (los tickets pasan a PAID y
-   el backend envía los PDFs con QR por email).
+   el backend envía los PDFs con QR por email). El `status` de la URL no se toma como
+   verdad: siempre se confirma con el backend antes de mostrar la pantalla de éxito.
 
 **Casos borde**:
 - Pago rechazado/abandonado → tickets quedan pendientes, no se debe mostrar éxito.
@@ -104,7 +114,7 @@ servicios capturan el error y devuelven `[]`); la página no debe romperse.
 - Carrito vacío → `/carrito` redirige a `/boleteria`.
 - Doble verificación de la misma referencia → debe ser idempotente (responsabilidad backend).
 
-**Prueba**: requiere backend + llaves Wompi sandbox. Verificar: totales correctos con y sin
+**Prueba**: requiere backend + credenciales de prueba de la pasarela activa. Verificar: totales correctos con y sin
 descuento y con/sin memorias, persistencia del carrito tras recargar, y que la verificación
 solo confirme con transacción aprobada.
 
