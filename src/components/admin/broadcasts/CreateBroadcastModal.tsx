@@ -51,6 +51,19 @@ const CheckRow = ({
   </label>
 );
 
+/* ── remitente ──
+   Se deriva de la edición elegida ("Equipo Organizador CNMP Colombia 2026") en
+   vez de quemar el año, para que el correo nunca salga firmado con una edición
+   vieja. Sin edición ("Todas las ediciones") queda el nombre genérico, que no
+   envejece. */
+const SENDER_PREFIX  = 'Equipo Organizador';
+const DEFAULT_SENDER = `${SENDER_PREFIX} CNMP`;
+
+const senderFor = (editions: Edition[], editionId?: number): string => {
+  const name = editions.find(e => e.id === editionId)?.name;
+  return name ? `${SENDER_PREFIX} ${name}` : DEFAULT_SENDER;
+};
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -62,10 +75,12 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
   const [loading, setLoading]         = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  // Mientras el admin no escriba su propio remitente, el campo sigue a la edición.
+  const [senderTouched, setSenderTouched] = useState(false);
 
   const [formData, setFormData] = useState<CreateEmailBroadcastRequest>({
     title: '',
-    sender_name: 'Equipo Organizador CNMP 2025',
+    sender_name: DEFAULT_SENDER,
     content: '',
     type: 'ALL_USERS',
     specific_email: '',
@@ -79,6 +94,8 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
   const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = 'checked' in e.target ? e.target.checked : false;
+    // Si lo vacía, vuelve a seguir a la edición; si escribe algo, manda él.
+    if (name === 'sender_name') setSenderTouched(value.trim() !== '');
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
@@ -103,6 +120,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
     setFormData(prev => ({
       ...prev,
       target_edition,
+      ...(senderTouched ? {} : { sender_name: senderFor(editions, target_edition) }),
       ...(target_edition == null ? {
         include_ticket: false, force_regenerate_ticket: false,
         include_certificate: false, force_regenerate_certificate: false,
@@ -138,11 +156,12 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
       }
       Swal.fire({ icon: 'success', title: 'Broadcast creado', timer: 1500, showConfirmButton: false });
       setFormData({
-        title: '', sender_name: 'Equipo Organizador CNMP 2025', content: '', type: 'ALL_USERS',
+        title: '', sender_name: DEFAULT_SENDER, content: '', type: 'ALL_USERS',
         specific_email: '', include_ticket: false, force_regenerate_ticket: false,
         include_certificate: false, force_regenerate_certificate: false,
         target_edition: undefined,
       });
+      setSenderTouched(false);
       setSelectedFiles([]);
       onSuccess();
     } catch (error) {
