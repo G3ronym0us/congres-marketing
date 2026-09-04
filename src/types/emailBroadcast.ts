@@ -7,7 +7,7 @@ export interface EmailBroadcast {
   type: 'ALL_USERS' | 'SPECIFIC_EMAIL';
   specific_email?: string;
   attachments: string[];
-  status: 'PENDING' | 'SENDING' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'SENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   total_recipients: number;
   sent_count: number;
   failed_count: number;

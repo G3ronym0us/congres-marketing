@@ -26,9 +26,14 @@ const iS: React.CSSProperties = {
 const STATUS: Record<string, { color: string; bg: string; label: string }> = {
   PENDING:   { color: '#f59e0b', bg: 'rgba(245,158,11,.12)',  label: 'Pendiente'  },
   SENDING:   { color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'Enviando'   },
+  PROCESSING:{ color: '#60a5fa', bg: 'rgba(96,165,250,.12)',  label: 'Enviando'   },
   COMPLETED: { color: NEON,      bg: 'rgba(4,238,98,.1)',     label: 'Completado' },
   FAILED:    { color: '#ff6b6b', bg: 'rgba(255,80,80,.1)',    label: 'Fallido'    },
+  CANCELLED: { color: '#9ca3af', bg: 'rgba(156,163,175,.14)', label: 'Cancelado'  },
 };
+
+// Estados en los que el envío sigue en marcha y por tanto se puede detener.
+const EN_CURSO = ['PENDING', 'SENDING', 'PROCESSING'];
 
 const StatusBadge = ({ status }: { status: string }) => {
   const s = STATUS[status] ?? STATUS.PENDING;
@@ -95,6 +100,32 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
       load();
     } catch {
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo reenviar el broadcast' });
+    }
+  };
+
+  const handleCancel = async (b: EmailBroadcast) => {
+    const pendientes = Math.max(b.total_recipients - b.sent_count, 0);
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Detener este envío?',
+      html:
+        `Se cancelan los <b>${pendientes}</b> correos que faltan de "${b.title}".<br/><br/>` +
+        `Los <b>${b.sent_count}</b> ya enviados no se pueden recuperar.<br/>` +
+        `Los correos de boletos no se ven afectados.`,
+      icon: 'warning', showCancelButton: true,
+      confirmButtonColor: '#ff6b6b', cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, detener', cancelButtonText: 'No',
+    });
+    if (!isConfirmed) return;
+    try {
+      const { cancelledEmails } = await emailBroadcastService.cancelBroadcast(b.uuid);
+      Swal.fire({
+        icon: 'success',
+        title: 'Envío detenido',
+        text: `${cancelledEmails} correos pendientes cancelados`,
+      });
+      load();
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo detener el envío' });
     }
   };
 
@@ -183,6 +214,12 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
                 <button onClick={() => { setSelected(b); setIsDetailOpen(true); }} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                   Ver detalle
                 </button>
+                {EN_CURSO.includes(b.status) && (
+                  <button onClick={() => handleCancel(b)} className="adm-btn"
+                    style={{ fontSize: 11, padding: '6px 12px', color: '#ff6b6b', borderColor: '#ff6b6b' }}>
+                    Detener
+                  </button>
+                )}
                 {b.status === 'COMPLETED' && (
                   <button onClick={() => handleResend(b)} className="adm-btn" style={{ fontSize: 11, padding: '6px 12px' }}>
                     Reenviar
