@@ -53,6 +53,20 @@ class EmailBroadcastService {
     }
   }
 
+  /**
+   * Cancela un broadcast en curso: el backend elimina de la cola sus correos
+   * pendientes. No detiene los correos de boletos, que comparten la cola.
+   * Devuelve cuántos pendientes se eliminaron.
+   */
+  async cancelBroadcast(uuid: string): Promise<{ cancelledEmails: number }> {
+    try {
+      const response = await apiClient.post(`/email-broadcasts/${uuid}/cancel`);
+      return response.data;
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   async createBroadcastWithAttachments(
     broadcastData: Omit<CreateEmailBroadcastRequest, 'attachments'>,
     files: File[]
