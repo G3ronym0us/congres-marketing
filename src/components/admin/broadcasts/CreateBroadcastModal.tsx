@@ -35,10 +35,10 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 const CheckRow = ({
-  emoji, label, hint, checked, name, onChange
-}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-    <input type="checkbox" name={name} checked={checked} onChange={onChange} style={{ display: 'none' }} />
+  emoji, label, hint, checked, name, onChange, disabled = false
+}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; disabled?: boolean }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .4 : 1 }}>
+    <input type="checkbox" name={name} checked={checked} onChange={onChange} disabled={disabled} style={{ display: 'none' }} />
     <span
       style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${checked ? NEON : LINE2}`, background: checked ? 'rgba(4,238,98,.15)' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
     >
@@ -96,10 +96,31 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
     setFormData(prev => ({ ...prev, type, specific_email: type === 'SPECIFIC_EMAIL' ? prev.specific_email : '' }));
   };
 
+  // El boleto/certificado "del usuario" sólo se puede resolver dentro de una
+  // edición: sin ella el backend adjuntaría uno de cualquier año.
+  const handleEdition = (value: string) => {
+    const target_edition = value ? parseInt(value, 10) : undefined;
+    setFormData(prev => ({
+      ...prev,
+      target_edition,
+      ...(target_edition == null ? {
+        include_ticket: false, force_regenerate_ticket: false,
+        include_certificate: false, force_regenerate_certificate: false,
+      } : {}),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.type === 'SPECIFIC_EMAIL' && !formData.specific_email) {
       Swal.fire({ icon: 'error', title: 'Error', text: 'El email específico es requerido' });
+      return;
+    }
+    if ((formData.include_ticket || formData.include_certificate) && formData.target_edition == null) {
+      Swal.fire({
+        icon: 'error', title: 'Falta la edición',
+        text: 'Para adjuntar el boleto o el certificado del usuario debes elegir una edición; de lo contrario se enviaría el de un año anterior.',
+      });
       return;
     }
     setLoading(true);
@@ -131,6 +152,9 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
     }
   };
 
+  const sinEdicion = formData.target_edition == null;
+  const edicionElegida = editions.find(e => e.id === formData.target_edition)?.name
+    ?? `edición ${formData.target_edition}`;
   const isDirty = !!(formData.title || formData.content || formData.specific_email) || selectedFiles.length > 0;
 
   const handleClose = async () => {
@@ -188,26 +212,23 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
                   <input type="email" name="specific_email" value={formData.specific_email} onChange={handleInput} required
                     style={{ ...iS, marginTop: 4 }} placeholder="usuario@example.com" />
                 )}
-                {formData.type === 'ALL_USERS' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: MUTE, whiteSpace: 'nowrap' }}>
-                      🗓 Edición:
-                    </span>
-                    <select
-                      value={formData.target_edition ?? ''}
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        target_edition: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      }))}
-                      style={{ ...iS, width: 'auto', cursor: 'pointer' }}
-                    >
-                      <option value="">Todas las ediciones</option>
-                      {editions.map(ed => (
-                        <option key={ed.id} value={ed.id}>{ed.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: MUTE, whiteSpace: 'nowrap' }}>
+                    🗓 Edición:
+                  </span>
+                  <select
+                    value={formData.target_edition ?? ''}
+                    onChange={e => handleEdition(e.target.value)}
+                    style={{ ...iS, width: 'auto', cursor: 'pointer' }}
+                  >
+                    <option value="">
+                      {formData.type === 'ALL_USERS' ? 'Todas las ediciones' : 'Sin edición'}
+                    </option>
+                    {editions.map(ed => (
+                      <option key={ed.id} value={ed.id}>{ed.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </Field>
 
@@ -229,11 +250,16 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
               <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: MUTE, marginBottom: 14 }}>
                 Adjuntos automáticos
               </div>
+              {sinEdicion && (
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#FFC24B', background: 'rgba(255,194,75,.1)', border: '1px solid rgba(255,194,75,.25)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, lineHeight: 1.5 }}>
+                  ⚠️ Elige una edición arriba para adjuntar el boleto o el certificado. Sin edición se enviaría el de un año anterior.
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Boletos</div>
                   <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario al email"
-                    checked={formData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} />
+                    checked={formData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} disabled={sinEdicion} />
                   {formData.include_ticket && (
                     <div style={{ paddingLeft: 28 }}>
                       <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR en lugar de usar los existentes"
@@ -244,7 +270,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 12, fontWeight: 700, color: MUTE }}>Certificados</div>
                   <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario al email"
-                    checked={formData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} />
+                    checked={formData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} disabled={sinEdicion} />
                   {formData.include_certificate && (
                     <div style={{ paddingLeft: 28 }}>
                       <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF del certificado"
@@ -290,7 +316,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
                 De: <span style={{ color: '#fff' }}>{formData.sender_name}</span>
               </div>
               <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (${editions.find(e => e.id === formData.target_edition)?.name ?? `edición ${formData.target_edition}`})` : ' (todas las ediciones)'}` : formData.specific_email}</span>
+                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (${edicionElegida})` : ' (todas las ediciones)'}` : `${formData.specific_email}${formData.target_edition ? ` (${edicionElegida})` : ''}`}</span>
               </div>
               <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
                 {formData.title}

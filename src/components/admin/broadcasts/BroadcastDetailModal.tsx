@@ -37,10 +37,10 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 );
 
 const CheckRow = ({
-  emoji, label, hint, checked, name, onChange
-}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-    <input type="checkbox" name={name} checked={checked} onChange={onChange} style={{ display: 'none' }} />
+  emoji, label, hint, checked, name, onChange, disabled = false
+}: { emoji: string; label: string; hint: string; checked: boolean; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; disabled?: boolean }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .4 : 1 }}>
+    <input type="checkbox" name={name} checked={checked} onChange={onChange} disabled={disabled} style={{ display: 'none' }} />
     <span
       style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${checked ? NEON : LINE2}`, background: checked ? 'rgba(4,238,98,.15)' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
     >
@@ -71,6 +71,11 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
     include_ticket: false, force_regenerate_ticket: false,
     include_certificate: false, force_regenerate_certificate: false,
   });
+
+  // El reenvío hereda la edición del broadcast original; si aquél no apuntaba a
+  // ninguna, el boleto/certificado se resolvería a un año arbitrario y el
+  // backend lo rechaza.
+  const sinEdicion = broadcast.target_edition == null;
 
   const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
@@ -216,11 +221,16 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
                   <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
                     Adjuntos automáticos
                   </div>
+                  {sinEdicion && (
+                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: '#FFC24B', background: 'rgba(255,194,75,.1)', border: '1px solid rgba(255,194,75,.25)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, lineHeight: 1.5 }}>
+                      ⚠️ Este broadcast no apunta a ninguna edición, así que no se le pueden adjuntar boletos ni certificados. Crea uno nuevo eligiendo la edición.
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Boletos</div>
                       <CheckRow emoji="🎫" label="Incluir Boleto" hint="Adjuntar el boleto del usuario"
-                        checked={resendData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} />
+                        checked={resendData.include_ticket ?? false} name="include_ticket" onChange={handleCheckbox} disabled={sinEdicion} />
                       {resendData.include_ticket && (
                         <div style={{ paddingLeft: 28 }}>
                           <CheckRow emoji="🔄" label="Regenerar Boleto" hint="Generar nuevos PDF y QR"
@@ -231,7 +241,7 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE }}>Certificados</div>
                       <CheckRow emoji="🏆" label="Incluir Certificado" hint="Adjuntar el certificado del usuario"
-                        checked={resendData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} />
+                        checked={resendData.include_certificate ?? false} name="include_certificate" onChange={handleCheckbox} disabled={sinEdicion} />
                       {resendData.include_certificate && (
                         <div style={{ paddingLeft: 28 }}>
                           <CheckRow emoji="🔄" label="Regenerar Certificado" hint="Generar nuevo PDF"
