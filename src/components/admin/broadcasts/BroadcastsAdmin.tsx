@@ -190,7 +190,7 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
                 </div>
                 <div style={{ color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
                   {b.type === 'ALL_USERS'
-                    ? `👥 Todos los usuarios${b.target_edition ? ` · 🗓 Edición ${b.target_edition}` : ''}`
+                    ? `👥 Todos los usuarios${b.target_edition ? ` · 🗓 ${editions.find(e => e.id === b.target_edition)?.name ?? `Edición ${b.target_edition}`}` : ''}${b.target_ticket_types?.length ? ` · 🎟 ${b.target_ticket_types.join(', ')}` : ''}`
                     : `✉️ ${b.specific_email}`}
                   {' · '}Por: {b.sender_name}
                   {' · '}{formatDate(b.createdAt)}

@@ -15,6 +15,8 @@ export interface EmailBroadcast {
   include_certificate?: boolean;
   force_regenerate_certificate?: boolean;
   target_edition?: number | null;
+  // Slugs de localidad a los que se limitó el envío; null = todas.
+  target_ticket_types?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,7 @@ export interface CreateEmailBroadcastRequest {
   include_certificate?: boolean;
   force_regenerate_certificate?: boolean;
   target_edition?: number;
+  target_ticket_types?: string[];
 }
 
 export interface ResendEmailBroadcastRequest {

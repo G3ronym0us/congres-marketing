@@ -2,10 +2,12 @@
 
 import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreateEmailBroadcastRequest, EmailBroadcastType } from '../../../types/emailBroadcast';
 import { Edition } from '../../../types/edition';
+import { LocalidadType } from '../../../types/localidadTypes';
 import { emailBroadcastService } from '../../../services/emailBroadcast';
+import { getLocalidadTypes } from '../../../services/localidadTypes';
 import FileUploader from './FileUploader';
 import Swal from 'sweetalert2';
 
@@ -89,7 +91,43 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
     include_certificate: false,
     force_regenerate_certificate: false,
     target_edition: undefined,
+    target_ticket_types: [],
   });
+
+  // Localidades disponibles para filtrar (las de la edición elegida; sin
+  // edición, las de todas, deduplicadas por slug).
+  const [localidades, setLocalidades] = useState<LocalidadType[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let vigente = true;
+    getLocalidadTypes(formData.target_edition)
+      .then(lista => {
+        if (!vigente) return;
+        const vistos = new Set<string>();
+        setLocalidades(lista.filter(l => {
+          if (vistos.has(l.slug)) return false;
+          vistos.add(l.slug);
+          return true;
+        }));
+      })
+      .catch(() => { if (vigente) setLocalidades([]); });
+    return () => { vigente = false; };
+  }, [isOpen, formData.target_edition]);
+
+  const tiposElegidos = formData.target_ticket_types ?? [];
+
+  const toggleTipo = (slug: string) => {
+    setFormData(prev => {
+      const actuales = prev.target_ticket_types ?? [];
+      return {
+        ...prev,
+        target_ticket_types: actuales.includes(slug)
+          ? actuales.filter(s => s !== slug)
+          : [...actuales, slug],
+      };
+    });
+  };
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -110,7 +148,13 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
   };
 
   const handleType = (type: EmailBroadcastType) => {
-    setFormData(prev => ({ ...prev, type, specific_email: type === 'SPECIFIC_EMAIL' ? prev.specific_email : '' }));
+    setFormData(prev => ({
+      ...prev,
+      type,
+      specific_email: type === 'SPECIFIC_EMAIL' ? prev.specific_email : '',
+      // Filtrar por localidad sólo tiene sentido en un envío masivo.
+      ...(type === 'SPECIFIC_EMAIL' ? { target_ticket_types: [] } : {}),
+    }));
   };
 
   // El boleto/certificado "del usuario" sólo se puede resolver dentro de una
@@ -120,6 +164,8 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
     setFormData(prev => ({
       ...prev,
       target_edition,
+      // Los slugs son por edición: una selección de otra edición no aplica aquí.
+      target_ticket_types: [],
       ...(senderTouched ? {} : { sender_name: senderFor(editions, target_edition) }),
       ...(target_edition == null ? {
         include_ticket: false, force_regenerate_ticket: false,
@@ -150,6 +196,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
           include_ticket: formData.include_ticket, force_regenerate_ticket: formData.force_regenerate_ticket,
           include_certificate: formData.include_certificate, force_regenerate_certificate: formData.force_regenerate_certificate,
           target_edition: formData.target_edition,
+          target_ticket_types: formData.target_ticket_types,
         }, selectedFiles);
       } else {
         await emailBroadcastService.createBroadcast(formData);
@@ -159,7 +206,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
         title: '', sender_name: DEFAULT_SENDER, content: '', type: 'ALL_USERS',
         specific_email: '', include_ticket: false, force_regenerate_ticket: false,
         include_certificate: false, force_regenerate_certificate: false,
-        target_edition: undefined,
+        target_edition: undefined, target_ticket_types: [],
       });
       setSenderTouched(false);
       setSelectedFiles([]);
@@ -248,6 +295,39 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
                     ))}
                   </select>
                 </div>
+
+                {/* Localidades: sin ninguna marcada el envío va a todas. */}
+                {formData.type === 'ALL_USERS' && localidades.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: MUTE }}>
+                      🎟 Tipo de entrada:
+                    </span>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {localidades.map(l => {
+                        const activa = tiposElegidos.includes(l.slug);
+                        return (
+                          <button
+                            key={l.slug} type="button" onClick={() => toggleTipo(l.slug)}
+                            style={{
+                              padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
+                              border: `1px solid ${activa ? NEON : LINE2}`,
+                              background: activa ? 'rgba(4,238,98,.15)' : 'transparent',
+                              color: activa ? '#fff' : MUTE,
+                              fontFamily: 'Space Grotesk, sans-serif', fontSize: 12,
+                            }}
+                          >
+                            {l.icon} {l.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.35)' }}>
+                      {tiposElegidos.length === 0
+                        ? 'Sin marcar ninguna, el envío alcanza todas las localidades.'
+                        : `Solo a quienes tengan boleto de: ${tiposElegidos.join(', ')}.`}
+                    </span>
+                  </div>
+                )}
               </div>
             </Field>
 
@@ -335,7 +415,7 @@ export default function CreateBroadcastModal({ isOpen, onClose, onSuccess, editi
                 De: <span style={{ color: '#fff' }}>{formData.sender_name}</span>
               </div>
               <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (${edicionElegida})` : ' (todas las ediciones)'}` : `${formData.specific_email}${formData.target_edition ? ` (${edicionElegida})` : ''}`}</span>
+                Para: <span style={{ color: '#fff' }}>{formData.type === 'ALL_USERS' ? `Todos los usuarios${formData.target_edition ? ` (${edicionElegida})` : ' (todas las ediciones)'}${tiposElegidos.length > 0 ? ` · solo ${tiposElegidos.join(', ')}` : ''}` : `${formData.specific_email}${formData.target_edition ? ` (${edicionElegida})` : ''}`}</span>
               </div>
               <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff', borderTop: `1px solid ${LINE}`, paddingTop: 12 }}>
                 {formData.title}

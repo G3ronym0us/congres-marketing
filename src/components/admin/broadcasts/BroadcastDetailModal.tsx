@@ -145,6 +145,10 @@ export default function BroadcastDetailModal({ isOpen, onClose, broadcast, onRes
                 <div style={{ fontFamily: 'Oxanium, sans-serif', fontSize: 11, fontWeight: 700, color: MUTE, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>Tipo</div>
                 <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: '#fff' }}>
                   {broadcast.type === 'ALL_USERS' ? '👥 Todos los usuarios' : `✉️ ${broadcast.specific_email}`}
+                  {/* Localidades a las que se limitó el envío (el reenvío las hereda). */}
+                  {!!broadcast.target_ticket_types?.length && (
+                    <span style={{ color: MUTE }}> · 🎟 {broadcast.target_ticket_types.join(', ')}</span>
+                  )}
                 </div>
               </div>
               <div>
