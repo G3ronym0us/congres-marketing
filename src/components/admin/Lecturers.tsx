@@ -22,6 +22,7 @@ import {
 import { Edition } from '@/types/edition';
 import EditionSelect from '@/components/admin/EditionSelect';
 import ModalShell from '@/components/admin/ModalShell';
+import { IMAGE_ACCEPT, lecturerImageError } from '@/utils/lecturerImage';
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -33,9 +34,6 @@ const LINE2  = 'rgba(255,255,255,.14)';
 const MUTE   = 'rgba(255,255,255,.45)';
 const MUTE2  = 'rgba(255,255,255,.28)';
 
-/* ── subida de imagen: mismos límites que el ParseFilePipe del backend ── */
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // Nest manda el detalle en response.data.message, como string o como array de
 // errores de validación. Sin esto el panel solo decía "Error" y no por qué.
@@ -250,10 +248,53 @@ const LecturersTable = ({
     }
   };
 
-  const handleCreate = async (lecturer: CreateLecturerData): Promise<{ success: boolean; message: string }> => {
+  const handleCreate = async (
+    lecturer: CreateLecturerData,
+    imageFile: File | null,
+  ): Promise<{ success: boolean; message: string }> => {
+    // El backend no impide slugs repetidos: el segundo quedaba inalcanzable
+    // en /lecturer/<slug> porque la búsqueda devuelve solo uno.
+    if (data.some(l => l.alt === lecturer.alt)) {
+      const message = `Ya hay un conferencista con el slug "${lecturer.alt}" en esta edición. Cámbialo para continuar.`;
+      Swal.fire({ icon: 'error', title: 'Slug repetido', text: message });
+      return { success: false, message };
+    }
+    if (imageFile) {
+      const problem = lecturerImageError(imageFile);
+      if (problem) {
+        Swal.fire({ icon: 'error', ...problem });
+        return { success: false, message: problem.text };
+      }
+    }
+
     setIsLoading(true);
     try {
-      await create({ ...lecturer, edition: editionId });
+      // Con archivo, la foto solo se puede subir cuando el conferencista ya
+      // existe (el endpoint va por uuid). Se crea oculto y sin imagen, se sube
+      // la foto y recién ahí se publica, para que el sitio nunca lo muestre
+      // con la foto rota.
+      const created = await create({
+        ...lecturer,
+        show: imageFile ? false : lecturer.show,
+        edition: editionId,
+      });
+
+      if (imageFile) {
+        try {
+          await uploadImage(created.uuid, imageFile);
+          if (lecturer.show) await toggleShow(created.uuid);
+        } catch (err) {
+          setIsOpen(false);
+          getLecturers();
+          Swal.fire({
+            icon: 'warning',
+            title: 'Creado, pero sin foto',
+            text: `${apiErrorMessage(err, 'No se pudo subir la imagen.')} El conferencista quedó oculto: súbele la foto con el botón “Imagen” del listado y luego actívalo.`,
+          });
+          return { success: true, message: 'Conferencista creado sin foto' };
+        }
+      }
+
       Swal.fire({ position: 'top-end', icon: 'success', title: 'Conferencista creado', showConfirmButton: false, timer: 1500 });
       setIsOpen(false);
       getLecturers();
@@ -292,22 +333,9 @@ const LecturersTable = ({
   };
 
   const handleImageUpload = async (lecturer: Lecturer, file: File) => {
-    // Se valida en cliente porque el backend rechaza con un 400 cuyo mensaje de
-    // Nest no le dice nada al usuario. Los límites son los del ParseFilePipe.
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Formato no admitido',
-        text: 'La imagen debe ser JPG, PNG o WEBP. Las fotos de iPhone (HEIC) hay que convertirlas antes de subirlas.',
-      });
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Imagen demasiado pesada',
-        text: `Pesa ${(file.size / 1024 / 1024).toFixed(1)} MB y el máximo son 5 MB.`,
-      });
+    const problem = lecturerImageError(file);
+    if (problem) {
+      Swal.fire({ icon: 'error', ...problem });
       return;
     }
     // Si la persona existe en ediciones posteriores se pregunta antes de
@@ -450,11 +478,18 @@ const LecturersTable = ({
               transition: 'opacity .2s',
             }}>
               {/* Imagen */}
-              <img
-                src={item.image}
-                alt={`${item.firstName} ${item.lastName}`}
-                style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0, border: `2px solid ${LINE2}` }}
-              />
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={`${item.firstName} ${item.lastName}`}
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0, border: `2px solid ${LINE2}` }}
+                />
+              ) : (
+                // Quedó sin foto (falló la subida al crearlo): se marca en vez de una imagen rota.
+                <div title="Sin foto: súbela con el botón Imagen" style={{ width: 48, height: 48, borderRadius: '50%', flexShrink: 0, border: '2px dashed #ff6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#ff6b6b', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, textAlign: 'center', lineHeight: 1.1 }}>
+                  SIN<br />FOTO
+                </div>
+              )}
 
               {/* Info */}
               <div style={{ flex: '1 1 180px', minWidth: 0 }}>
@@ -499,7 +534,7 @@ const LecturersTable = ({
                   Imagen
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept={IMAGE_ACCEPT}
                     onChange={e => {
                       const f = e.target.files?.[0];
                       // Se limpia el input para que reintentar con el mismo
