@@ -55,10 +55,14 @@ export default function CertificateTemplateModal({ edition, onClose, onSaved }: 
         edition.uuid, toCertificateTemplate(template),
       );
       onSaved({ outdated: r.outdated, recipients: r.recipients });
-    } catch (error) {
+    } catch (error: any) {
+      const apiMsg = error?.response?.data?.message;
+      const detail = Array.isArray(apiMsg) ? apiMsg.join(', ') : apiMsg;
       Swal.fire({
         icon: 'error', title: 'Error', background: '#2A2228', color: '#fff',
-        text: error instanceof Error ? error.message : 'No se pudo guardar el formato del certificado',
+        text: typeof detail === 'string' && detail
+          ? detail
+          : 'No se pudo guardar el formato del certificado',
       });
       setSaving(false);
     }

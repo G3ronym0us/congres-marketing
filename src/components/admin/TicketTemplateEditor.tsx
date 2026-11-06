@@ -273,10 +273,14 @@ export default function TicketTemplateEditor({
         const { url } = await uploadTicketBackground(file);
         set({ background: url });
       }
-    } catch {
-      setErr(isCert
-        ? 'No se pudo subir el fondo (revisa tu sesión o el tamaño, máx. 10 MB).'
-        : 'No se pudo subir la imagen (revisa tu sesión o el tamaño).');
+    } catch (error: any) {
+      const apiMsg = error?.response?.data?.message;
+      const detail = Array.isArray(apiMsg) ? apiMsg.join(', ') : apiMsg;
+      setErr(typeof detail === 'string' && detail
+        ? detail
+        : isCert
+          ? 'No se pudo subir el fondo (revisa tu sesión o el tamaño, máx. 10 MB).'
+          : 'No se pudo subir la imagen (revisa tu sesión o el tamaño).');
     } finally {
       setUploading(false);
     }
@@ -372,9 +376,11 @@ export default function TicketTemplateEditor({
     <div style={{ background: PANEL2, border: `1px solid ${LINE2}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <span style={{ ...lbl, color: '#fff', fontSize: 12 }}>Plantilla del {noun}</span>
-        <button type="button" onClick={() => onChange(null)} style={btn('danger', { padding: '6px 12px' })}>
-          Quitar plantilla
-        </button>
+        {!isCert && (
+          <button type="button" onClick={() => onChange(null)} style={btn('danger', { padding: '6px 12px' })}>
+            Quitar plantilla
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
