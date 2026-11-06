@@ -6,7 +6,10 @@ export type EditionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export interface EditionDisplay {
   id?: string;
   leg?: string;
+  /** Código corto de la edición (p. ej. "SMR"); obligatorio en el admin. */
   flag?: string;
+  /** URL pública de una imagen 3:2 que reemplaza al código en la caja de la landing. */
+  flagImage?: string;
   /** @deprecated Legacy: texto congelado en la BD. Usa formatEditionDateShort(). */
   dateShort?: string;
   /** @deprecated Legacy: texto congelado en la BD. Usa formatEditionDateLong(). */

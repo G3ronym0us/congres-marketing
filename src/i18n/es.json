@@ -54,7 +54,10 @@
       "statAttendees": "Asistentes esperados",
       "statSpeakers": "Conferencistas",
       "statDays": "Días de contenido",
-      "statCountries": "Países representados"
+      "statCountries": "Países representados",
+      "leg": "Parada {n}",
+      "statusOnSale": "Boletería abierta",
+      "statusSoon": "Próximamente"
     },
     "speakers": {
       "eyebrow": "Conferencistas",
