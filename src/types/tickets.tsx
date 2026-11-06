@@ -173,6 +173,7 @@ export interface Ticket {
   email: string;
   phone: string;
   qrUrl: string;
+  certificateAvailable?: boolean; // el back indica si el certificado está disponible
   certificateUrl?: string; // URL del certificado (solo si está habilitado)
 }
 

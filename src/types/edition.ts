@@ -1,3 +1,5 @@
+import type { TicketTemplateImageEl, TicketTemplateTextEl } from './localidadTypes';
+
 export type EditionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 // Datos de presentación de la landing (reemplaza el objeto CITIES hardcodeado).
@@ -27,6 +29,19 @@ export interface DiscountStage {
   label: string;
 }
 
+// Formato del certificado de una edición (misma forma que en el back).
+export interface CertificateTemplate {
+  /** Key S3 del fondo. */
+  background: string;
+  backgroundUrl: string;
+  backgroundType: 'pdf' | 'image';
+  elements: {
+    qrCode: TicketTemplateImageEl;
+    name: TicketTemplateTextEl;
+    document: TicketTemplateTextEl;
+  };
+}
+
 export interface Edition {
   id: number;
   uuid: string;
@@ -48,6 +63,8 @@ export interface Edition {
   discountStages?: DiscountStage[] | null;
   purchaseEmailMessage?: PurchaseEmailMessage | null;
   hotelBrochureKey?: string | null;
+  certificateTemplate?: CertificateTemplate | null;
+  certificateTemplateVersion?: number;
   createdAt: string;
   updatedAt: string;
 }
