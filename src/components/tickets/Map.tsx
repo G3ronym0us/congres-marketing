@@ -16,7 +16,6 @@ import {
   SeatUsed,
   traductions,
 } from '@/types/tickets';
-import { numberToString } from 'pdf-lib';
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SeatProps {
