@@ -308,8 +308,24 @@ const LecturersTable = ({
     }
   };
 
-  const handleEdit = async (lecturer: UpdateLecturerData) => {
+  const handleEdit = async (lecturer: UpdateLecturerData, imageFile: File | null) => {
     if (!lecturerEdit) return;
+
+    // Con foto nueva se pregunta ANTES de guardar nada: si cierra el diálogo
+    // de propagación no se guarda ni la foto ni los datos, y el modal sigue
+    // abierto con sus cambios.
+    let propagate = false;
+    if (imageFile) {
+      const problem = lecturerImageError(imageFile);
+      if (problem) {
+        Swal.fire({ icon: 'error', ...problem });
+        return;
+      }
+      const choice = await askPropagation(lecturerEdit.uuid);
+      if (choice === null) return;
+      propagate = choice;
+    }
+
     setIsLoading(true);
     try {
       await update(lecturerEdit.uuid, {
@@ -317,6 +333,23 @@ const LecturersTable = ({
         academicFormations: lecturer.academicFormations?.map(f => ({ title: f.title, institution: f.institution, year: f.year, place: f.place })),
         publications: lecturer.publications?.map(p => ({ title: p.title, editorial: p.editorial, year: p.year, role: p.role, description: p.description })),
       });
+
+      if (imageFile) {
+        try {
+          await uploadImage(lecturerEdit.uuid, imageFile, propagate);
+        } catch (err) {
+          setIsOpenEdit(false);
+          setLecturerEdit(null);
+          getLecturers();
+          Swal.fire({
+            icon: 'warning',
+            title: 'Datos guardados, foto no',
+            text: `${apiErrorMessage(err, 'No se pudo subir la imagen.')} Intenta de nuevo con el botón “Imagen” del listado.`,
+          });
+          return;
+        }
+      }
+
       Swal.fire({ position: 'top-end', icon: 'success', title: 'Conferencista actualizado', showConfirmButton: false, timer: 1500 });
       setIsOpenEdit(false);
       setLecturerEdit(null);
@@ -332,17 +365,14 @@ const LecturersTable = ({
     }
   };
 
-  const handleImageUpload = async (lecturer: Lecturer, file: File) => {
-    const problem = lecturerImageError(file);
-    if (problem) {
-      Swal.fire({ icon: 'error', ...problem });
-      return;
-    }
-    // Si la persona existe en ediciones posteriores se pregunta antes de
-    // propagar. Las ediciones anteriores no se tocan nunca.
-    let propagate = false;
+  /**
+   * Si la persona existe en ediciones posteriores pregunta si la foto nueva
+   * también va allá. Las ediciones anteriores no se tocan nunca.
+   * Devuelve true/false (propagar o no) o null si cerró el diálogo (cancelar).
+   */
+  const askPropagation = async (uuid: string): Promise<boolean | null> => {
     try {
-      const targets = await getPropagationTargets(lecturer.uuid);
+      const targets = await getPropagationTargets(uuid);
       if (targets.length) {
         const lista = targets.map(t => `<li>${t.name}</li>`).join('');
         const result = await Swal.fire({
@@ -358,20 +388,26 @@ const LecturersTable = ({
           background: '#2A2228',
           color: '#fff',
         });
-        if (result.isConfirmed) {
-          propagate = true;
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-          // "Solo esta edición": sí se sube, pero sin propagar.
-          propagate = false;
-        } else {
-          // Cerró con la X, Esc o clic fuera: no se sube nada.
-          return;
-        }
+        if (result.isConfirmed) return true;
+        // "Solo esta edición": sí se sube, pero sin propagar.
+        if (result.dismiss === Swal.DismissReason.cancel) return false;
+        // Cerró con la X, Esc o clic fuera: no se sube nada.
+        return null;
       }
     } catch {
       // Si no se pudieron consultar las ediciones, se sube solo a la actual.
-      propagate = false;
     }
+    return false;
+  };
+
+  const handleImageUpload = async (lecturer: Lecturer, file: File) => {
+    const problem = lecturerImageError(file);
+    if (problem) {
+      Swal.fire({ icon: 'error', ...problem });
+      return;
+    }
+    const propagate = await askPropagation(lecturer.uuid);
+    if (propagate === null) return;
 
     try {
       await uploadImage(lecturer.uuid, file, propagate);

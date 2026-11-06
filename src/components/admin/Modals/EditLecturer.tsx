@@ -5,6 +5,7 @@ import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 import React from 'react';
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { UpdateLecturerData } from '@/types/lecturer';
+import { IMAGE_ACCEPT, lecturerImageError } from '@/utils/lecturerImage';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -49,12 +50,36 @@ const SectionTitle = ({ title, onAdd }: { title: string; onAdd?: () => void }) =
 interface EditLecturerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (lecturer: UpdateLecturerData) => Promise<void>;
+  /** imageFile: foto nueva elegida en el formulario; se sube al guardar. */
+  onSave: (lecturer: UpdateLecturerData, imageFile: File | null) => Promise<void>;
   lecturer: UpdateLecturerData;
 }
 
 const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, onSave, lecturer }) => {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [preview, setPreview]     = React.useState('');
+  const [imageError, setImageError] = React.useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Libera el object URL de la vista previa al cambiarla o al desmontar.
+  React.useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const pickFile = (file: File | undefined) => {
+    if (!file) return;
+    const problem = lecturerImageError(file);
+    if (problem) { setImageError(`${problem.title}: ${problem.text}`); return; }
+    setImageError('');
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const clearFile = () => {
+    setImageFile(null);
+    setPreview('');
+    setImageError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const getDefaults = (): UpdateLecturerData => ({
     firstName: lecturer.firstName || '',
@@ -107,12 +132,13 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
 
   const onSubmit = async (data: UpdateLecturerData) => {
     setIsLoading(true);
-    try { await onSave(data); } finally { setIsLoading(false); }
+    try { await onSave(data, imageFile); } finally { setIsLoading(false); }
   };
 
   const handleClose = async () => {
-    if (isDirty && !(await confirmDiscard())) return;
+    if ((isDirty || imageFile) && !(await confirmDiscard())) return;
     reset();
+    clearFile();
     onClose();
   };
 
@@ -133,20 +159,44 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
           <button onClick={handleClose} style={{ background: 'none', border: `1px solid ${LINE}`, borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: MUTE, fontSize: 14 }}>✕</button>
         </div>
 
-        {/* Preview imagen */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: PANEL2, border: `1px solid ${LINE}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24 }}>
-          <img
-            src={watchedImage || '/placeholder-avatar.png'}
-            alt={`${watchedFirstName} ${watchedLastName}`}
-            style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: `2px solid ${LINE2}` }}
-            onError={e => { (e.target as HTMLImageElement).src = '/placeholder-avatar.png'; }}
-          />
-          <div>
+        {/* Foto: vista previa + cambio. La subida va al guardar, por el mismo
+            camino que el botón “Imagen” del listado (pregunta si propagar a
+            ediciones posteriores). */}
+        <div
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]); }}
+          style={{ display: 'flex', alignItems: 'center', gap: 14, background: PANEL2, border: `1px ${imageFile ? 'solid' : 'dashed'} ${imageError ? '#ff6b6b' : imageFile ? NEON : LINE2}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24, flexWrap: 'wrap' }}
+        >
+          {(preview || watchedImage) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={preview || watchedImage}
+              alt={`${watchedFirstName} ${watchedLastName}`}
+              style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: `2px solid ${LINE2}`, flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: 64, height: 64, borderRadius: '50%', flexShrink: 0, border: '2px dashed #ff6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#ff6b6b', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, textAlign: 'center', lineHeight: 1.1 }}>
+              SIN<br />FOTO
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 14, color: '#fff' }}>
               {watchedFirstName} {watchedLastName}
             </div>
-            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-              Vista previa · se actualiza al cambiar la URL
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: imageError ? '#ff6b6b' : MUTE, wordBreak: 'break-all' }}>
+              {imageError
+                || (imageFile
+                  ? `Foto nueva: ${imageFile.name} · se sube al guardar`
+                  : 'JPG, PNG o WEBP, máximo 5 MB. También puedes arrastrarla aquí.')}
+            </div>
+            <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT} style={{ display: 'none' }} onChange={e => pickFile(e.target.files?.[0])} />
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="adm-btn" style={{ fontSize: 12 }}>
+                {imageFile || watchedImage ? 'Cambiar foto' : 'Subir foto'}
+              </button>
+              {imageFile && (
+                <button type="button" onClick={clearFile} className="adm-btn danger" style={{ fontSize: 12 }}>Descartar</button>
+              )}
             </div>
           </div>
         </div>
@@ -179,13 +229,6 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
                     <option value="NATIONAL">Nacional</option>
                   </select>
                 )} />
-            </Field>
-            {/* Solo lectura: la foto se cambia con el botón “Imagen” del
-                listado, que es el único camino que ofrece propagar a las
-                ediciones posteriores. Editar la URL aquí lo saltaría. */}
-            <Field label="URL de imagen (se cambia con el botón “Imagen” del listado)" error={errors.image?.message}>
-              <Controller name="image" control={control} rules={{ pattern: { value: /^https?:\/\/.+/, message: 'URL inválida' } }}
-                render={({ field }) => <input {...field} type="url" readOnly style={{ ...iS, borderColor: errors.image ? '#ff6b6b' : LINE2, opacity: .6, cursor: 'not-allowed' }} />} />
             </Field>
           </div>
 
@@ -340,7 +383,7 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
               Cancelar
             </button>
             <button type="submit" disabled={isLoading || !isValid} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isLoading || !isValid ? .5 : 1 }}>
-              {isLoading ? 'Guardando…' : 'Guardar cambios'}
+              {isLoading ? (imageFile ? 'Guardando y subiendo foto…' : 'Guardando…') : 'Guardar cambios'}
             </button>
           </div>
         </form>
