@@ -303,10 +303,17 @@ export default function TicketTemplateEditor({
   };
 
   // ── mover un elemento (compartido por drag y flechas) ──
+  // En certificados, 'center' con ancho máx centra dentro de la caja
+  // [x, x + maxWidth] (igual que el back); sin ancho máx centra en la página.
+  const centerInBox = (el: { align?: string; maxWidth?: number }) =>
+    isCert && el.align === 'center' && !!el.maxWidth;
+  const pageCenter = (el: { align?: string; maxWidth?: number }) =>
+    el.align === 'center' && !centerInBox(el);
+
   const moveEl = (key: ElKey, dxPdf: number, dyPdf: number) => {
-    const el = els[key] as { x: number; y: number; align?: string };
+    const el = els[key] as { x: number; y: number; align?: string; maxWidth?: number };
     const patch: Record<string, number> = { y: Math.round(clamp(el.y + dyPdf, 0, IMG_H)) };
-    if (!(key !== 'qrCode' && el.align === 'center')) {
+    if (!(key !== 'qrCode' && pageCenter(el))) {
       patch.x = Math.round(clamp(el.x + dxPdf, 0, IMG_W));
     }
     setEl(key, patch);
@@ -349,7 +356,8 @@ export default function TicketTemplateEditor({
   };
   const textBox = (key: 'name' | 'document'): React.CSSProperties => {
     const el = els[key];
-    const center = el.align === 'center';
+    const center = pageCenter(el);
+    const inBox = centerInBox(el);
     // El PDF dibuja la baseline en el.y; en CSS posicionamos por el borde
     // inferior, que está ~un descender (≈0.2·tamaño) debajo de la baseline.
     // Restamos ese descender para que la baseline del preview caiga en el.y.
@@ -357,7 +365,10 @@ export default function TicketTemplateEditor({
     return {
       position: 'absolute', bottom: el.y * SCALE - descent,
       left: center ? 0 : el.x * SCALE, right: center ? 0 : undefined,
-      textAlign: center ? 'center' : 'left',
+      // Caja de ancho fijo con flex: si el texto se desborda, lo hace
+      // por igual a ambos lados, como en el PDF.
+      ...(inBox ? { width: (el.maxWidth ?? 0) * SCALE, display: 'flex', justifyContent: 'center' } : {}),
+      textAlign: center || inBox ? 'center' : 'left',
       fontSize: Math.max(7, el.size * SCALE), lineHeight: 1,
       color: cssColor(el.color), fontFamily: 'Garet, Oxanium, sans-serif', fontWeight: 800,
       whiteSpace: 'nowrap', textShadow: '0 0 2px rgba(0,0,0,.4)',
@@ -433,7 +444,7 @@ export default function TicketTemplateEditor({
             {(['name', 'document'] as const).map(key => {
               const el = els[key];
               if (!el.maxWidth) return null;
-              const center = el.align === 'center';
+              const center = pageCenter(el);
               return (
                 <div key={`guide-${key}`} style={{
                   position: 'absolute', bottom: el.y * SCALE,
@@ -532,10 +543,15 @@ export default function TicketTemplateEditor({
                     <select style={{ ...inputStyle, cursor: 'pointer' }} value={el.align}
                       onChange={e => setEl(key, { align: e.target.value })}>
                       <option value="left">Izquierda</option>
-                      <option value="center">Centro</option>
+                      <option value="center">{isCert ? 'Centro de su caja' : 'Centro'}</option>
                     </select>
                   </div>
                 </div>
+                {isCert && el.align === 'center' && !el.maxWidth && (
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
+                    Sin «Ancho máx» se centra en la página. Pon un ancho para centrarlo en su caja.
+                  </span>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, alignItems: 'end' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <span style={lbl}>Color</span>
