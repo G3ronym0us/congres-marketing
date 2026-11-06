@@ -5,6 +5,7 @@ import { adminEditionService } from '@/services/editions';
 import { Edition } from '@/types/edition';
 import CertificateTemplateModal from './CertificateTemplateModal';
 import ResendCertificatesModal from './ResendCertificatesModal';
+import Swal from 'sweetalert2';
 import { editionHasEnded, formatEditionDateLong } from '@/utils/editionFormat';
 
 /* ── design tokens ── */
@@ -205,7 +206,16 @@ export default function CertificatesAdmin() {
             const ed = editing;
             setEditing(null);
             await load();
-            setResend({ edition: ed, recipients });
+            // Mismo criterio que "Disponibles"/"Bloqueados" de la lista.
+            if (editionHasEnded(ed) || ed.certificatesEnabled) {
+              setResend({ edition: ed, recipients });
+            } else {
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'success', timer: 5000,
+                showConfirmButton: false, background: '#2A2228', color: '#fff',
+                title: 'Formato guardado. Los certificados de esta edición aún están bloqueados; no se ofrece reenvío.',
+              });
+            }
           }}
         />
       )}
