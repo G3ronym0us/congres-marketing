@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TicketTemplate } from '@/types/localidadTypes';
+import { CertificateTemplate } from '@/types/edition';
 import { uploadTicketBackground, downloadTicketPreview } from '@/services/localidadTypes';
 
 /* ── design tokens ── */
@@ -12,13 +13,16 @@ const LINE   = 'rgba(255,255,255,.08)';
 const LINE2  = 'rgba(255,255,255,.14)';
 const MUTE   = 'rgba(255,255,255,.45)';
 
-// Geometría del PDF (coincide con pdf.service): carta 612x792, imagen a 612 de
-// ancho manteniendo proporción 1080:1350.
-const IMG_W = 612;
-const IMG_H = (1350 * IMG_W) / 1080; // 765
-const PREVIEW_W = 420; // más grande
-const SCALE = PREVIEW_W / IMG_W;
-const PREVIEW_H = IMG_H * SCALE; // ≈525
+// Geometría del boleto (coincide con pdf.service): carta 612x792, imagen a 612
+// de ancho manteniendo proporción 1080:1350. Es la hoja por defecto del editor.
+const TICKET_PAGE = { width: 612, height: (1350 * 612) / 1080, label: '1080×1350' }; // 612×765
+// Hoja del certificado: A4 horizontal en puntos PDF (el fondo se estira a toda la hoja).
+export const CERTIFICATE_PAGE = { width: 842, height: 595, label: 'A4 horizontal' };
+export const CERTIFICATE_ACCEPT = 'application/pdf,image/jpeg,image/png';
+
+/** Plantilla que edita el componente: la del boleto, más (opcional) los campos del certificado. */
+export type TemplateLike = TicketTemplate & Partial<Pick<CertificateTemplate, 'backgroundUrl' | 'backgroundType'>>;
+export type TemplateSample = { name: string; lastname: string; document: string };
 
 const DEFAULT_TEMPLATE: TicketTemplate = {
   background: '',
@@ -28,6 +32,76 @@ const DEFAULT_TEMPLATE: TicketTemplate = {
     document: { x: 60, y: 410, size: 26, align: 'left', color: [1, 1, 1] },
   },
 };
+
+// Punto de partida del certificado, medido sobre el provisional 842×595
+// (origen de pdf-lib abajo a la izquierda).
+export const CERTIFICATE_DEFAULT_TEMPLATE: TemplateLike = {
+  background: '',
+  elements: {
+    qrCode: { x: 22, y: 105, width: 95, height: 95 },
+    name: { x: 421, y: 340, size: 26, align: 'center', color: [0.07, 0.15, 0.13], maxWidth: 560 },
+    document: { x: 205, y: 316, size: 14, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 200 },
+  },
+};
+
+const PDF_UNAVAILABLE = 'Vista previa del PDF no disponible; usa «Probar» para ver el resultado';
+
+/**
+ * Rasteriza la página 1 de un PDF en un <canvas> que ocupa todo el escenario
+ * (estirado, igual que el backend estira el fondo a la hoja). pdfjs-dist se carga
+ * con import() dinámico solo cuando hay un fondo PDF. Si falla (p. ej. CORS del
+ * bucket S3), muestra un aviso neutro en lugar de romper el editor.
+ */
+function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadingTask: { destroy: () => Promise<void> } | null = null;
+    setFailed(false);
+    (async () => {
+      try {
+        const pdfjs = await import('pdfjs-dist');
+        if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+          pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
+        }
+        const task = pdfjs.getDocument(url);
+        loadingTask = task;
+        const doc = await task.promise;
+        if (cancelled) return;
+        const pdfPage = await doc.getPage(1);
+        if (cancelled) return;
+        const base = pdfPage.getViewport({ scale: 1 });
+        const dpr = window.devicePixelRatio || 1;
+        const viewport = pdfPage.getViewport({ scale: (renderWidth * dpr) / base.width });
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        canvas.width = Math.round(viewport.width);
+        canvas.height = Math.round(viewport.height);
+        await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      loadingTask?.destroy().catch(() => undefined);
+    };
+  }, [url, renderWidth]);
+
+  if (failed) {
+    return (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', pointerEvents: 'none' }}>
+        {PDF_UNAVAILABLE}
+      </div>
+    );
+  }
+  return (
+    <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+  );
+}
 
 // Casos límite anonimizados (longitudes, tildes, ñ y dígitos conservados).
 const TEST_EXAMPLES: { label: string; name: string; lastname: string; document: string }[] = [
@@ -101,16 +175,45 @@ const dpadBtn: React.CSSProperties = {
 type ElKey = 'qrCode' | 'name' | 'document';
 const EL_LABEL: Record<ElKey, string> = { qrCode: 'QR', name: 'Nombre', document: 'Documento' };
 
+const defaultPreview = (t: TemplateLike, s: TemplateSample) =>
+  downloadTicketPreview({ template: t, name: s.name, lastname: s.lastname || undefined, document: s.document });
+
 export default function TicketTemplateEditor({
   value,
   onChange,
+  page = TICKET_PAGE,
+  accept = 'image/png,image/jpeg',
+  defaultTemplate = DEFAULT_TEMPLATE,
+  upload,
+  preview = defaultPreview,
+  kind = 'ticket',
 }: {
-  value?: TicketTemplate | null;
-  onChange: (t: TicketTemplate | null) => void;
+  value?: TemplateLike | null;
+  onChange: (t: TemplateLike | null) => void;
+  /** Hoja en puntos PDF. Boleto (por defecto): 612×765 "1080×1350"; certificado: 842×595 "A4 horizontal". */
+  page?: { width: number; height: number; label: string };
+  accept?: string;
+  defaultTemplate?: TemplateLike;
+  /** Sube el fondo. Sin esta prop se usa uploadTicketBackground y se guarda la URL en `background`. */
+  upload?: (file: File) => Promise<{ url: string; key?: string; backgroundType?: 'pdf' | 'image' }>;
+  /** Genera/descarga la prueba. Sin esta prop se usa downloadTicketPreview. */
+  preview?: (t: TemplateLike, sample: TemplateSample) => Promise<void>;
+  /** Solo cambia los textos de la interfaz ("boleto" / "certificado"). */
+  kind?: 'ticket' | 'certificate';
 }) {
+  const isCert = kind === 'certificate';
+  const noun = isCert ? 'certificado' : 'boleto';
+  // Geometría derivada de la hoja.
+  const IMG_W = page.width;
+  const IMG_H = page.height;
+  const PREVIEW_W = page.width > page.height ? 560 : 420; // horizontal: más ancho para que se lea
+  const SCALE = PREVIEW_W / IMG_W;
+  const PREVIEW_H = IMG_H * SCALE; // boleto ≈525
+
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [localPreviewType, setLocalPreviewType] = useState<'pdf' | 'image'>('image');
   const [selected, setSelected] = useState<ElKey>('name');
   const [step, setStep] = useState(1); // paso de movimiento (pt) para el D-pad
   // Probar boleto
@@ -125,16 +228,19 @@ export default function TicketTemplateEditor({
   const drag = useRef<{ key: ElKey; lastX: number; lastY: number } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  const bgUrl = localPreview || value?.background || '';
+  const bgUrl = localPreview || value?.backgroundUrl || value?.background || '';
+  const bgType: 'pdf' | 'image' = localPreview ? localPreviewType : (value?.backgroundType ?? 'image');
 
   if (!value) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <span style={lbl}>Plantilla del boleto</span>
+        <span style={lbl}>Plantilla del {noun}</span>
         <p style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
-          Sin plantilla propia: esta localidad usa el diseño por defecto del sistema.
+          {isCert
+            ? 'Sin formato propio: esta edición usa el certificado por defecto del sistema.'
+            : 'Sin plantilla propia: esta localidad usa el diseño por defecto del sistema.'}
         </p>
-        <button type="button" onClick={() => onChange(DEFAULT_TEMPLATE)}
+        <button type="button" onClick={() => onChange(defaultTemplate)}
           style={btn('ghost', { alignSelf: 'flex-start', color: NEON, borderColor: 'rgba(4,238,98,.4)' })}>
           + Configurar plantilla
         </button>
@@ -143,35 +249,46 @@ export default function TicketTemplateEditor({
   }
 
   const els = value.elements;
-  const set = (patch: Partial<TicketTemplate>) => onChange({ ...value, ...patch });
+  const set = (patch: Partial<TemplateLike>) => onChange({ ...value, ...patch });
   const setEl = (key: ElKey, patch: Record<string, unknown>) =>
     onChange({ ...value, elements: { ...els, [key]: { ...els[key], ...patch } } });
 
   const handleUpload = async (file: File) => {
     const local = URL.createObjectURL(file);
+    const localType: 'pdf' | 'image' = file.type === 'application/pdf' ? 'pdf' : 'image';
     setLocalPreview(prev => { if (prev) URL.revokeObjectURL(prev); return local; });
+    setLocalPreviewType(localType);
     setUploading(true); setErr('');
     try {
-      const { url } = await uploadTicketBackground(file);
-      set({ background: url });
+      if (upload) {
+        // Fondo con key S3 + URL de lectura (certificado).
+        const r = await upload(file);
+        set({ background: r.key ?? r.url, backgroundUrl: r.url, backgroundType: r.backgroundType ?? localType });
+      } else {
+        // Boleto: comportamiento original, se guarda la URL en `background`.
+        const { url } = await uploadTicketBackground(file);
+        set({ background: url });
+      }
     } catch {
-      setErr('No se pudo subir la imagen (revisa tu sesión o el tamaño).');
+      setErr(isCert
+        ? 'No se pudo subir el fondo (revisa tu sesión o el tamaño, máx. 10 MB).'
+        : 'No se pudo subir la imagen (revisa tu sesión o el tamaño).');
     } finally {
       setUploading(false);
     }
   };
 
   const handleDownloadTest = async () => {
-    if (!value.background) { setDlErr('Sube primero una imagen de fondo.'); return; }
+    if (!value.background) { setDlErr(isCert ? 'Sube primero un fondo.' : 'Sube primero una imagen de fondo.'); return; }
     const data = testMode === 'example'
       ? TEST_EXAMPLES[exampleIdx]
       : { name: testName.trim(), lastname: testLast.trim(), document: testDoc.trim() };
     if (!data.name || !data.document) { setDlErr('Faltan nombre y documento.'); return; }
     setDownloading(true); setDlErr('');
     try {
-      await downloadTicketPreview({ template: value, name: data.name, lastname: data.lastname || undefined, document: data.document });
+      await preview(value, { name: data.name, lastname: data.lastname, document: data.document });
     } catch {
-      setDlErr('No se pudo generar el boleto (revisa tu sesión).');
+      setDlErr(`No se pudo generar el ${noun} (revisa tu sesión).`);
     } finally {
       setDownloading(false);
     }
@@ -250,7 +367,7 @@ export default function TicketTemplateEditor({
   return (
     <div style={{ background: PANEL2, border: `1px solid ${LINE2}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ ...lbl, color: '#fff', fontSize: 12 }}>Plantilla del boleto</span>
+        <span style={{ ...lbl, color: '#fff', fontSize: 12 }}>Plantilla del {noun}</span>
         <button type="button" onClick={() => onChange(null)} style={btn('danger', { padding: '6px 12px' })}>
           Quitar plantilla
         </button>
@@ -284,11 +401,15 @@ export default function TicketTemplateEditor({
             }}
           >
             {bgUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={bgUrl} alt="fondo boleto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+              bgType === 'pdf' ? (
+                <PdfBackground url={bgUrl} renderWidth={PREVIEW_W} />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={bgUrl} alt={`fondo ${noun}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: isCert ? 'fill' : 'cover', pointerEvents: 'none' }} />
+              )
             ) : (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
-                Sube una imagen de fondo
+                {isCert ? 'Sube un fondo (PDF o imagen)' : 'Sube una imagen de fondo'}
               </div>
             )}
 
@@ -363,16 +484,19 @@ export default function TicketTemplateEditor({
 
           {/* Fondo */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={lbl}>Imagen de fondo (1080×1350)</span>
+            <span style={lbl}>{isCert ? `Fondo: PDF o imagen (${page.label})` : `Imagen de fondo (${page.label})`}</span>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <label style={{ ...btn('ghost', { color: '#fff' }), cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                {uploading ? 'Subiendo…' : '⬆ Subir imagen'}
-                <input type="file" accept="image/png,image/jpeg" hidden disabled={uploading}
+                {uploading ? 'Subiendo…' : (isCert ? '⬆ Subir fondo' : '⬆ Subir imagen')}
+                <input type="file" accept={accept} hidden disabled={uploading}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }} />
               </label>
             </div>
-            <input style={inputStyle} value={value.background} placeholder="o pega una URL de imagen"
-              onChange={e => set({ background: e.target.value })} />
+            {/* Con `upload` propio, `background` es una key S3: no se edita a mano. */}
+            {!upload && (
+              <input style={inputStyle} value={value.background} placeholder="o pega una URL de imagen"
+                onChange={e => set({ background: e.target.value })} />
+            )}
             {err && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{err}</span>}
           </div>
 
@@ -418,7 +542,7 @@ export default function TicketTemplateEditor({
 
       {/* ── Probar boleto ── */}
       <div style={{ background: INK, border: `1px solid ${LINE2}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <span style={{ ...lbl, color: '#fff', fontSize: 11 }}>Probar boleto</span>
+        <span style={{ ...lbl, color: '#fff', fontSize: 11 }}>Probar {noun}</span>
 
         {/* toggle segmentado */}
         <div style={{ display: 'inline-flex', gap: 4, background: PANEL2, borderRadius: 10, padding: 4, border: `1px solid ${LINE2}`, alignSelf: 'flex-start' }}>
@@ -457,14 +581,14 @@ export default function TicketTemplateEditor({
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <button type="button" onClick={handleDownloadTest} disabled={downloading || !value.background}
             style={btn('primary', { opacity: (downloading || !value.background) ? .55 : 1, cursor: (downloading || !value.background) ? 'not-allowed' : 'pointer', fontSize: 13, padding: '11px 20px' })}>
-            {downloading ? 'Generando…' : '⬇ Descargar boleto de prueba'}
+            {downloading ? 'Generando…' : `⬇ Descargar ${noun} de prueba`}
           </button>
           {dlErr && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{dlErr}</span>}
         </div>
       </div>
 
       <p style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
-        La posición se ajusta visualmente (arrastre/flechas); tamaños y demás, con los campos. El preview es una guía: genera un boleto de prueba para confirmar.
+        La posición se ajusta visualmente (arrastre/flechas); tamaños y demás, con los campos. El preview es una guía: genera un {noun} de prueba para confirmar.
       </p>
     </div>
   );
