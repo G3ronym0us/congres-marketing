@@ -38,9 +38,12 @@ const DEFAULT_TEMPLATE: TicketTemplate = {
 export const CERTIFICATE_DEFAULT_TEMPLATE: TemplateLike = {
   background: '',
   elements: {
-    qrCode: { x: 22, y: 105, width: 95, height: 95 },
-    name: { x: 421, y: 340, size: 26, align: 'center', color: [0.07, 0.15, 0.13], maxWidth: 560 },
-    document: { x: 205, y: 316, size: 14, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 200 },
+    // Medido sobre "CERTIFICADO CNMP 2026 - fromato.pdf": el QR llena el recuadro
+    // blanco de la izquierda, el nombre va sobre la línea alineado con
+    // "CERTIFICA QUE" y el documento a la derecha de "C.C".
+    qrCode: { x: 24, y: 109, width: 77, height: 77 },
+    name: { x: 184, y: 309, size: 22, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 580 },
+    document: { x: 217, y: 281, size: 16, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 200 },
   },
 };
 
