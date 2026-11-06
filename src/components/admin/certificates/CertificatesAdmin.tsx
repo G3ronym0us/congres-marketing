@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { adminEditionService } from '@/services/editions';
 import { Edition } from '@/types/edition';
+import CertificateTemplateModal from './CertificateTemplateModal';
+import ResendCertificatesModal from './ResendCertificatesModal';
 import { editionHasEnded, formatEditionDateLong } from '@/utils/editionFormat';
 
 /* ── design tokens ── */
@@ -20,6 +22,8 @@ export default function CertificatesAdmin() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [error, setError]       = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [editing, setEditing]   = useState<Edition | null>(null);
+  const [resend, setResend]     = useState<{ edition: Edition; recipients: number } | null>(null);
 
   const load = async () => {
     try {
@@ -117,6 +121,10 @@ export default function CertificatesAdmin() {
                     </div>
                   </div>
 
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <button onClick={() => setEditing(e)} className="adm-btn" style={{ fontSize: 12 }}>
+                    🎨 Formato del certificado{e.certificateTemplate ? ' (formato propio)' : ''}
+                  </button>
                   {/* Cuando la edición ya pasó el flag es irrelevante: no se ofrece. */}
                   {pasado ? (
                     <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
@@ -138,6 +146,7 @@ export default function CertificatesAdmin() {
                       {busy ? 'Cambiando…' : e.certificatesEnabled ? 'Bloquear' : 'Liberar ahora'}
                     </button>
                   )}
+                  </div>
                 </div>
               );
             })}
@@ -187,6 +196,26 @@ export default function CertificatesAdmin() {
           </>
         )}
       </div>
+
+      {editing && (
+        <CertificateTemplateModal
+          edition={editing}
+          onClose={() => setEditing(null)}
+          onSaved={async ({ recipients }) => {
+            const ed = editing;
+            setEditing(null);
+            await load();
+            setResend({ edition: ed, recipients });
+          }}
+        />
+      )}
+      {resend && (
+        <ResendCertificatesModal
+          edition={resend.edition}
+          recipients={resend.recipients}
+          onClose={() => setResend(null)}
+        />
+      )}
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>

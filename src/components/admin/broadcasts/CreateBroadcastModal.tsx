@@ -10,6 +10,7 @@ import { emailBroadcastService } from '../../../services/emailBroadcast';
 import { getLocalidadTypes } from '../../../services/localidadTypes';
 import FileUploader from './FileUploader';
 import Swal from 'sweetalert2';
+import { DEFAULT_SENDER, senderFor } from '@/utils/broadcastSender';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -52,19 +53,6 @@ const CheckRow = ({
     <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: 'rgba(255,255,255,.28)', cursor: 'help' }} title={hint}>ℹ️</span>
   </label>
 );
-
-/* ── remitente ──
-   Se deriva de la edición elegida ("Equipo Organizador CNMP Colombia 2026") en
-   vez de quemar el año, para que el correo nunca salga firmado con una edición
-   vieja. Sin edición ("Todas las ediciones") queda el nombre genérico, que no
-   envejece. */
-const SENDER_PREFIX  = 'Equipo Organizador';
-const DEFAULT_SENDER = `${SENDER_PREFIX} CNMP`;
-
-const senderFor = (editions: Edition[], editionId?: number): string => {
-  const name = editions.find(e => e.id === editionId)?.name;
-  return name ? `${SENDER_PREFIX} ${name}` : DEFAULT_SENDER;
-};
 
 interface Props {
   isOpen: boolean;
