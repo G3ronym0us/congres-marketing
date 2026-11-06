@@ -23,7 +23,7 @@ import WhatsAppWelcome, { WhatsAppGlyph } from '@/components/WhatsAppWelcome';
 import './landing.css';
 
 interface CityView {
-  slug: string; leg: string; city: string; country: string; flag: string;
+  slug: string; leg: string; city: string; country: string; flag: string; flagImage: string;
   venue: string; dateShort: string; dateLong: string; year: string;
   iso: string; status: string; statusType: string;
   stat: { a: string; b: string; c: string; d: string };
@@ -33,14 +33,20 @@ interface CityView {
 
 // Construye la vista de la landing a partir de una edición del backend (todo dinámico,
 // sin datos quemados: los campos de presentación viven en edition.display).
-const toCityView = (e: Edition, lang: Lang): CityView => {
+// Textos de respaldo para ediciones creadas desde el admin, que no tiene campos
+// para leg/status: sin ellos la landing pintaba cajas y óvalos vacíos.
+interface CityFallbacks { leg: (n: string) => string; onSale: string; soon: string }
+
+const toCityView = (e: Edition, lang: Lang, index: number, fb: CityFallbacks): CityView => {
   const d = e.display ?? {};
+  const hasStatus = !!d.status?.trim();
   return {
     slug: e.slug,
-    leg: d.leg ?? '',
+    leg: d.leg?.trim() || fb.leg(String(index + 1).padStart(2, '0')),
     city: e.city || e.country,
     country: e.country,
-    flag: d.flag ?? '',
+    flag: d.flag?.trim() ?? '',
+    flagImage: d.flagImage?.trim() ?? '',
     venue: e.venue ?? '',
     // Textos derivados de las fechas del evento (fuente única). Nunca se cae a
     // los textos legacy de display.dateShort/dateLong: son strings congelados
@@ -49,8 +55,9 @@ const toCityView = (e: Edition, lang: Lang): CityView => {
     dateLong: formatEditionDateLong(e, lang),
     year: String(e.year),
     iso: d.iso ?? e.eventStartDate ?? '',
-    status: d.status ?? '',
-    statusType: d.statusType ?? 'soon',
+    // Sin estado cargado, se deriva de si la boletería está abierta.
+    status: hasStatus ? d.status! : (e.salesOpen ? fb.onSale : fb.soon),
+    statusType: hasStatus ? (d.statusType ?? 'soon') : (e.salesOpen ? 'next' : 'soon'),
     stat: d.stat ?? { a: '', b: '', c: '', d: '' },
     speakers: d.speakers ?? [],
     days: d.days ?? [],
@@ -58,7 +65,7 @@ const toCityView = (e: Edition, lang: Lang): CityView => {
 };
 
 const EMPTY_VIEW: CityView = {
-  slug: '', leg: '', city: '', country: '', flag: '', venue: '',
+  slug: '', leg: '', city: '', country: '', flag: '', flagImage: '', venue: '',
   dateShort: '', dateLong: '', year: '', iso: '', status: '', statusType: 'soon',
   stat: { a: '', b: '', c: '', d: '' }, speakers: [], days: [],
 };
@@ -103,8 +110,15 @@ export default function LandingPage() {
   const ioRef = useRef<IntersectionObserver | null>(null);
 
   // Vistas derivadas de las ediciones (nada hardcodeado)
-  const cityViews = editions.map((e) => toCityView(e, lang));
-  const city = activeEdition ? toCityView(activeEdition, lang) : EMPTY_VIEW;
+  const cityFallbacks: CityFallbacks = {
+    leg: (n) => t('landing.tour.leg', { n }),
+    onSale: t('landing.tour.statusOnSale'),
+    soon: t('landing.tour.statusSoon'),
+  };
+  const cityViews = editions.map((e, i) => toCityView(e, lang, i, cityFallbacks));
+  const city = activeEdition
+    ? toCityView(activeEdition, lang, editions.indexOf(activeEdition), cityFallbacks)
+    : EMPTY_VIEW;
   const ventasAbiertas = !!activeEdition?.salesOpen;
   // Localidad destacada: la de mayor precio entre las comprables (dinámico)
   const featuredSlug = Object.entries(localidades)
@@ -387,9 +401,14 @@ export default function LandingPage() {
                     ))
                   : cityViews.map((c, i) => (
                   <button key={c.slug} className={`city-tab${activeSlug === c.slug ? ' active' : ''}`}
-                    data-city={c.slug} role="tab" onClick={() => switchCity(c.slug)}>
+                    data-city={c.slug} role="tab" aria-selected={activeSlug === c.slug}
+                    onClick={(ev) => {
+                      // En el teléfono la tira se desliza: centra la fecha tocada.
+                      ev.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                      switchCity(c.slug);
+                    }}>
                     <span className="ct-dot" />
-                    <div className="ct-idx">{String(i + 1).padStart(2, '0')} · {c.flag}</div>
+                    <div className="ct-idx">{String(i + 1).padStart(2, '0')}{c.flag && ` · ${c.flag}`}</div>
                     <div className="ct-name">{c.city}</div>
                     <div className="ct-date">{c.dateShort}</div>
                   </button>
@@ -430,7 +449,10 @@ export default function LandingPage() {
                   <span className={`cd-city ${sw}`}>
                     {editionsLoading ? <span className="sk-line" style={{ width: 84, height: 16 }} /> : city.city}
                   </span>
-                  <span className={`cd-code ${sw}`}>{editionsLoading ? '' : city.flag}</span>
+                  {!editionsLoading && (city.flagImage
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img className={`cd-code-img ${sw}`} src={city.flagImage} alt={city.flag || city.city} />
+                    : city.flag && <span className={`cd-code ${sw}`}>{city.flag}</span>)}
                 </div>
                 <div className="cd-label">{t('landing.hero.countdownLabel')}</div>
                 <div className="cd-grid">
@@ -505,7 +527,12 @@ export default function LandingPage() {
                       <div className="node" />
                       <div className="stop-card">
                         <div className="leg">{c.leg}</div>
-                        <div className="code">{c.flag}</div>
+                        {c.flagImage ? (
+                          <div className="code has-img">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={c.flagImage} alt={c.flag || c.city} loading="lazy" />
+                          </div>
+                        ) : c.flag && <div className="code">{c.flag}</div>}
                         <div className="city">{c.city}</div>
                         <div className="country">{c.country}</div>
                         <div className="when">{c.dateLong}</div>

@@ -258,6 +258,8 @@ section { position: relative; }
   display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center;
 }
 @media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+/* sin esto la tira de fechas deslizable estira la columna al ancho de todas las pestañas */
+.hero-grid > * { min-width: 0; }
 
 .hero-status {
   display: inline-flex; align-items: center; gap: 10px;
@@ -405,11 +407,19 @@ section { position: relative; }
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: .06em;
   color: var(--neon); margin: 14px auto 8px;
-  width: 70px; height: 52px; border: 1px solid var(--neon-line); border-radius: 12px;
+  width: 78px; aspect-ratio: 3 / 2; border: 1px solid var(--neon-line); border-radius: 12px;
   background: var(--neon-soft);
+}
+/* imagen subida en el admin en lugar del código: llena la caja 3:2 */
+.stop-card .code.has-img { overflow: hidden; }
+.stop-card .code.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cd-top .cd-code-img {
+  height: 30px; aspect-ratio: 3 / 2; object-fit: cover;
+  border: 1px solid var(--neon-line); border-radius: 8px;
 }
 .stop.is-next .stop-card .code { box-shadow: 0 0 24px -4px rgba(4,238,98,.5); }
 .stop-card .city { font-family: var(--display); font-weight: 700; font-size: 24px; }
+.stop-card .leg + .city { margin-top: 12px; } /* edición sin código: no hay caja verde en medio */
 .stop-card .country { color: var(--mute); font-size: 14px; margin-top: 2px; }
 .stop-card .when { font-family: var(--display); font-weight: 600; color: var(--neon); margin-top: 14px; font-size: 18px; }
 .stop-card .badge {
@@ -658,8 +668,24 @@ section { position: relative; }
   .hero h1 .outline { -webkit-text-stroke-width: 1px; }
   .hero-sub { font-size: 15.5px; margin-top: 20px; }
 
-  .city-tabs { gap: 7px; margin-top: 26px; }
-  .city-tab { min-width: 0; flex: 1 1 0; padding: 11px 9px; border-radius: 10px; }
+  /* Tira deslizable: escala a cualquier número de fechas sin aplastar las
+     pestañas. Sangra hasta el borde de la pantalla para que la pestaña
+     cortada a la derecha avise que hay más. */
+  .city-tabs {
+    gap: 7px; margin-top: 26px;
+    flex-wrap: nowrap; overflow-x: auto;
+    margin-inline: calc(-1 * var(--gut)); padding-inline: var(--gut);
+    padding-block: 4px; /* deja ver el translateY del hover */
+    scroll-snap-type: x mandatory; scroll-padding-inline: var(--gut);
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .city-tabs::-webkit-scrollbar { display: none; }
+  .city-tab {
+    min-width: 0; flex: 0 0 auto; width: 118px;
+    padding: 11px 10px; border-radius: 10px;
+    scroll-snap-align: start;
+  }
+  .city-tab .ct-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
   .city-tab .ct-idx { font-size: 10px; }
   .city-tab .ct-name { font-size: 13px; margin-top: 5px; line-height: 1.1; }
   .city-tab .ct-date { font-size: 10.5px; }
@@ -683,7 +709,18 @@ section { position: relative; }
   .lead { font-size: 15px; margin-top: 14px; }
   .eyebrow { font-size: 12px; }
 
-  .stop-card { padding: 22px; }
+  /* Gira compacta: dos tarjetas por fila para que 6–8 fechas no ocupen
+     varias pantallas. Los nodos de la ruta sobran cuando no hay línea. */
+  .route-stops { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stop .node { display: none; }
+  .stop-card { padding: 16px 12px; border-radius: 14px; }
+  .stop-card .leg { font-size: 10px; letter-spacing: .18em; }
+  .stop-card .code { width: 54px; font-size: 17px; margin: 10px auto 6px; border-radius: 10px; }
+  .stop-card .city { font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
+  .stop-card .leg + .city { margin-top: 8px; }
+  .stop-card .country { font-size: 12.5px; }
+  .stop-card .when { font-size: 13.5px; margin-top: 8px; }
+  .stop-card .badge { margin-top: 10px; font-size: 9.5px; letter-spacing: .1em; padding: 5px 9px; }
   .stats { gap: 26px 16px; margin-top: 44px !important; }
 
   .spk-grid { gap: 12px; }

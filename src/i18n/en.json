@@ -54,7 +54,10 @@
       "statAttendees": "Expected attendees",
       "statSpeakers": "Speakers",
       "statDays": "Days of content",
-      "statCountries": "Countries represented"
+      "statCountries": "Countries represented",
+      "leg": "Stop {n}",
+      "statusOnSale": "Tickets on sale",
+      "statusSoon": "Coming soon"
     },
     "speakers": {
       "eyebrow": "Speakers",

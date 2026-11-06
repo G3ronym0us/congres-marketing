@@ -135,6 +135,20 @@ export const adminEditionService = {
     }
   },
 
+  // Sube la imagen 3:2 que reemplaza al código de la edición en la landing.
+  // Devuelve la URL pública; se guarda en display.flagImage al guardar el form.
+  async uploadFlagImage(file: File): Promise<{ key: string; url: string }> {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await apiClient.post('/admin/editions/flag-image', form);
+      return res.data;
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
   // Sube el fondo del certificado (pdf/jpg/png). Sin Content-Type manual: el
   // navegador debe poner el boundary del multipart.
   async uploadCertificateBackground(

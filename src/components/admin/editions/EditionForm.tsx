@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreateEditionInput } from '@/types/edition';
+import React, { useRef, useState } from 'react';
+import { CreateEditionInput, EditionDisplay } from '@/types/edition';
 import { confirmDiscard } from '@/components/admin/ModalShell';
+import { adminEditionService } from '@/services/editions';
+
+const FLAG_MAX_BYTES = 1024 * 1024; // igual que el límite del backend
+const FLAG_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 /* ── design tokens ── */
 const INK    = '#1A1418';
@@ -94,9 +98,34 @@ export default function EditionForm({
   const [err, setErr] = useState('');
 
   const set = (k: keyof EditionFormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const setDisplay = (k: keyof EditionDisplay, v: string | undefined) =>
+    setForm(f => ({ ...f, display: { ...(f.display ?? {}), [k]: v } }));
+
+  const flagInput = useRef<HTMLInputElement>(null);
+  const [uploadingFlag, setUploadingFlag] = useState(false);
+  const [flagErr, setFlagErr] = useState('');
+
+  const handleFlagImage = async (file?: File) => {
+    if (!file) return;
+    setFlagErr('');
+    if (!FLAG_TYPES.includes(file.type)) { setFlagErr('Usa una imagen PNG, JPG o WebP.'); return; }
+    if (file.size > FLAG_MAX_BYTES) { setFlagErr('La imagen pesa más de 1 MB.'); return; }
+    setUploadingFlag(true);
+    try {
+      const { url } = await adminEditionService.uploadFlagImage(file);
+      setDisplay('flagImage', url);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      setFlagErr(Array.isArray(msg) ? msg.join(', ') : msg ?? 'No se pudo subir la imagen');
+    } finally {
+      setUploadingFlag(false);
+      if (flagInput.current) flagInput.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploadingFlag) return;
     setSaving(true); setErr('');
     try {
       await onSave(form);
@@ -173,6 +202,50 @@ export default function EditionForm({
           <input style={inputStyle} value={form.venue ?? ''}
             onChange={e => set('venue', e.target.value)} placeholder="Sede por confirmar" />
         )}
+
+        {/* Código de la edición: la caja verde 3:2 de La Gira y del countdown. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {field('Código *',
+              <input style={{ ...inputStyle, textTransform: 'uppercase', letterSpacing: '.08em' }} required
+                maxLength={4} pattern="[A-Za-z0-9]{2,4}"
+                title="De 2 a 4 letras o números, por ejemplo SMR o CLO"
+                value={form.display?.flag ?? ''}
+                onChange={e => setDisplay('flag', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                placeholder="SMR" />
+            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input ref={flagInput} type="file" accept={FLAG_TYPES.join(',')} hidden
+                onChange={e => handleFlagImage(e.target.files?.[0])} />
+              <button type="button" disabled={uploadingFlag} onClick={() => flagInput.current?.click()}
+                style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: '#fff', cursor: uploadingFlag ? 'wait' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 12 }}>
+                {uploadingFlag ? 'Subiendo…' : form.display?.flagImage ? 'Cambiar imagen' : 'Subir imagen (opcional)'}
+              </button>
+              {form.display?.flagImage && !uploadingFlag && (
+                <button type="button" onClick={() => setDisplay('flagImage', undefined)}
+                  style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${LINE}`, background: 'none', color: MUTE, cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 12 }}>
+                  Quitar imagen
+                </button>
+              )}
+            </div>
+            <p style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+              El código se muestra en la caja verde de La Gira y del countdown, y junto al número
+              en las pestañas de ciudad. Si subes una imagen (proporción 3:2, por ejemplo 300×200 px,
+              máx. 1 MB), la imagen ocupa la caja en lugar del código.
+            </p>
+            {flagErr && <p style={{ color: '#ff6b6b', fontSize: 12, margin: 0 }}>{flagErr}</p>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, paddingTop: 22 }}>
+            <div aria-label="Vista previa del código"
+              style={{ width: 78, height: 52, borderRadius: 12, border: '1px solid rgba(4,238,98,.35)', background: 'rgba(4,238,98,.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, letterSpacing: '.06em', color: NEON }}>
+              {form.display?.flagImage
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={form.display.flagImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (form.display?.flag || '—')}
+            </div>
+            <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>Vista previa</span>
+          </div>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {field('Fecha y hora de inicio *',
