@@ -184,7 +184,7 @@ const EditLecturerModal: React.FC<EditLecturerModalProps> = ({ isOpen, onClose, 
                 listado, que es el único camino que ofrece propagar a las
                 ediciones posteriores. Editar la URL aquí lo saltaría. */}
             <Field label="URL de imagen (se cambia con el botón “Imagen” del listado)" error={errors.image?.message}>
-              <Controller name="image" control={control} rules={{ required: 'Requerido', pattern: { value: /^https?:\/\/.+/, message: 'URL inválida' } }}
+              <Controller name="image" control={control} rules={{ pattern: { value: /^https?:\/\/.+/, message: 'URL inválida' } }}
                 render={({ field }) => <input {...field} type="url" readOnly style={{ ...iS, borderColor: errors.image ? '#ff6b6b' : LINE2, opacity: .6, cursor: 'not-allowed' }} />} />
             </Field>
           </div>

@@ -8,6 +8,7 @@ import {
   CreateAcademicFormation,
   CreatePublication,
 } from '@/types/lecturer';
+import { IMAGE_ACCEPT, lecturerImageError, slugify } from '@/utils/lecturerImage';
 
 /* ── design tokens ── */
 const INK   = '#1A1418';
@@ -51,7 +52,8 @@ const SectionTitle = ({ title, onAdd }: { title: string; onAdd?: () => void }) =
 interface CreateLecturerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (lecturer: CreateLecturerData) => Promise<{ success: boolean; message: string }>;
+  /** imageFile: foto elegida en el formulario; se sube después de crear. */
+  onSave: (lecturer: CreateLecturerData, imageFile: File | null) => Promise<{ success: boolean; message: string }>;
 }
 
 const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClose, onSave }) => {
@@ -64,8 +66,13 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
   const [position, setPosition]     = React.useState('');
   const [nickname, setNickname]     = React.useState('');
   const [biography, setBiography]   = React.useState('');
-  const [image, setImage]           = React.useState('');
-  const [show, setShow]             = React.useState(true);
+  const [image, setImage]           = React.useState('');           // URL alternativa
+  const [imageFile, setImageFile]   = React.useState<File | null>(null);
+  const [preview, setPreview]       = React.useState('');
+  const [useUrl, setUseUrl]         = React.useState(false);
+  const [imageError, setImageError] = React.useState('');
+  const fileInputRef                = React.useRef<HTMLInputElement>(null);
+  const [show, setShow]           = React.useState(true);
   const [instagram, setInstagram]   = React.useState('');
   const [facebook, setFacebook]     = React.useState('');
   const [x, setX]                   = React.useState('');
@@ -77,18 +84,40 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
   const [publications, setPublications]                 = React.useState<CreatePublication[]>([{ title: '', editorial: '', year: undefined, role: '', description: '' }]);
   const [isLoading, setIsLoading]   = React.useState(false);
 
+  // Antes "María José" quedaba "mara" (se borraban acentos y espacios en vez
+  // de convertirlos), lo que daba slugs truncados o repetidos.
   React.useEffect(() => {
-    if (firstName && lastName) {
-      setAlt(`${firstName}-${lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/--+/g, '-'));
-    } else if (firstName) {
-      setAlt(firstName.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/--+/g, '-'));
-    }
+    setAlt(slugify(`${firstName} ${lastName}`));
   }, [firstName, lastName]);
+
+  // Libera el object URL de la vista previa al cambiarla o al desmontar.
+  React.useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const pickFile = (file: File | undefined) => {
+    if (!file) return;
+    const problem = lecturerImageError(file);
+    if (problem) {
+      setImageError(`${problem.title}: ${problem.text}`);
+      return;
+    }
+    setImageError('');
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const clearFile = () => {
+    setImageFile(null);
+    setPreview('');
+    setImageError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const hasImage = useUrl ? /^https?:\/\/.+/.test(image.trim()) : !!imageFile;
 
   const resetForm = () => {
     setFirstName(''); setLastName(''); setAlt(''); setTitle(''); setCountry('');
     setType('INTERNATIONAL'); setPosition(''); setNickname(''); setBiography('');
-    setImage(''); setShow(true); setInstagram(''); setFacebook(''); setX(''); setYoutube('');
+    setImage(''); clearFile(); setUseUrl(false); setShow(true); setInstagram(''); setFacebook(''); setX(''); setYoutube('');
     setExperienceAreas(['']); setAwards(['']); setCreatedMethodologies(['']);
     setAcademicFormations([{ title: '', institution: '', year: undefined, place: '' }]);
     setPublications([{ title: '', editorial: '', year: undefined, role: '', description: '' }]);
@@ -102,7 +131,8 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
         firstName, lastName: lastName || undefined, alt,
         title: title || undefined, country, type,
         position: position || undefined, nickname: nickname || undefined,
-        biography: biography || undefined, image, show,
+        biography: biography || undefined,
+        image: useUrl ? image.trim() : '', show,
         socialMedia: {
           instagram: instagram || undefined, facebook: facebook || undefined,
           x: x || undefined, youtube: youtube || undefined,
@@ -112,7 +142,7 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
         createdMethodologies: createdMethodologies.filter(m => m.trim()),
         academicFormations: academicFormations.filter(f => f.title.trim()),
         publications: publications.filter(p => p.title.trim()),
-      });
+      }, useUrl ? null : imageFile);
       if (response.success) resetForm();
     } finally {
       setIsLoading(false);
@@ -121,7 +151,7 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
 
   const isDirty =
     !!(firstName || lastName || title || country || position || nickname || biography ||
-       image || instagram || facebook || x || youtube) ||
+       image || imageFile || instagram || facebook || x || youtube) ||
     experienceAreas.some(a => a.trim()) ||
     awards.some(a => a.trim()) ||
     createdMethodologies.some(m => m.trim()) ||
@@ -178,10 +208,58 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
                 <option value="NATIONAL">Nacional</option>
               </select>
             </Field>
-            <Field label="URL de imagen *">
-              <input style={iS} type="url" required value={image} onChange={e => setImage(e.target.value)} placeholder="https://…" />
-            </Field>
           </div>
+
+          {/* ── Foto ── */}
+          <Field label="Foto *">
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div
+                onClick={() => !useUrl && fileInputRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); if (!useUrl) pickFile(e.dataTransfer.files?.[0]); }}
+                style={{
+                  width: 96, height: 96, borderRadius: 14, flexShrink: 0, overflow: 'hidden',
+                  border: `1px dashed ${imageError ? '#ff6b6b' : LINE2}`, background: INK,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: useUrl ? 'default' : 'pointer', color: MUTE2, fontSize: 11, textAlign: 'center',
+                  fontFamily: 'Space Grotesk, sans-serif',
+                }}
+              >
+                {(useUrl ? hasImage && image : preview)
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={useUrl ? image : preview} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : 'Sin foto'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 200 }}>
+                {useUrl ? (
+                  <input style={iS} type="url" value={image} onChange={e => setImage(e.target.value)} placeholder="https://…" />
+                ) : (
+                  <>
+                    <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT} style={{ display: 'none' }} onChange={e => pickFile(e.target.files?.[0])} />
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="adm-btn" style={{ fontSize: 12 }}>
+                        {imageFile ? 'Cambiar foto' : 'Subir foto'}
+                      </button>
+                      {imageFile && (
+                        <button type="button" onClick={clearFile} className="adm-btn danger" style={{ fontSize: 12 }}>Quitar</button>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 12, color: MUTE, fontFamily: 'Space Grotesk, sans-serif', wordBreak: 'break-all' }}>
+                      {imageFile ? `${imageFile.name} · ${(imageFile.size / 1024 / 1024).toFixed(1)} MB` : 'JPG, PNG o WEBP, máximo 5 MB. También puedes arrastrarla al recuadro.'}
+                    </span>
+                  </>
+                )}
+                {imageError && <span style={{ fontSize: 12, color: '#ff6b6b', fontFamily: 'Space Grotesk, sans-serif' }}>{imageError}</span>}
+                <button
+                  type="button"
+                  onClick={() => { setUseUrl(!useUrl); setImageError(''); }}
+                  style={{ background: 'none', border: 'none', padding: 0, color: MUTE, fontSize: 12, cursor: 'pointer', textDecoration: 'underline', alignSelf: 'flex-start', fontFamily: 'Space Grotesk, sans-serif' }}
+                >
+                  {useUrl ? 'Mejor subir un archivo' : 'Usar una URL en su lugar'}
+                </button>
+              </div>
+            </div>
+          </Field>
 
           {/* ── Info adicional ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -309,8 +387,8 @@ const CreateLecturerModal: React.FC<CreateLecturerModalProps> = ({ isOpen, onClo
             <button type="button" onClick={handleClose} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
               Cancelar
             </button>
-            <button type="submit" disabled={isLoading || !firstName || !country || !image} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isLoading || !firstName || !country || !image ? .5 : 1 }}>
-              {isLoading ? 'Creando…' : 'Crear conferencista'}
+            <button type="submit" disabled={isLoading || !firstName || !alt || !country || !hasImage} style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: isLoading || !firstName || !alt || !country || !hasImage ? .5 : 1 }}>
+              {isLoading ? (imageFile && !useUrl ? 'Creando y subiendo foto…' : 'Creando…') : 'Crear conferencista'}
             </button>
           </div>
         </form>
