@@ -66,7 +66,8 @@ function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number 
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
           pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
         }
-        const task = pdfjs.getDocument(url);
+        // isEvalSupported: false mitiga CVE-2024-4367 (fuente PDF manipulada → JS arbitrario).
+        const task = pdfjs.getDocument({ url, isEvalSupported: false });
         loadingTask = task;
         const doc = await task.promise;
         if (cancelled) return;
