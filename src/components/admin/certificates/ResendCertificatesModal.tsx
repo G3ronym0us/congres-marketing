@@ -29,13 +29,15 @@ const labelStyle: React.CSSProperties = {
 interface Props {
   edition: Edition;
   recipients: number;
+  /** Cuántos ya tienen un certificado emitido con un formato anterior. */
+  outdated?: number;
   onClose: () => void;
 }
 
-export default function ResendCertificatesModal({ edition, recipients, onClose }: Props) {
+export default function ResendCertificatesModal({ edition, recipients, outdated = 0, onClose }: Props) {
   const [title, setTitle] = useState(`Tu certificado del ${edition.name}`);
   const [content, setContent] = useState(
-    `Hola,\n\nActualizamos el certificado del ${edition.name} y lo adjuntamos a este correo con el nuevo formato.\n\nGracias por acompañarnos.`,
+    `Hola,\n\nTe compartimos tu certificado de participación en el ${edition.name}; lo encuentras adjunto a este correo.\n\nGracias por acompañarnos.`,
   );
   const [sending, setSending] = useState(false);
 
@@ -55,14 +57,15 @@ export default function ResendCertificatesModal({ edition, recipients, onClose }
         force_regenerate_certificate: false,
       });
       await Swal.fire({
-        icon: 'success', title: 'Reenvío creado', timer: 1500, showConfirmButton: false,
-        background: '#2A2228', color: '#fff',
+        icon: 'success', title: 'Envío creado',
+        html: 'Puedes seguir su avance en <a href="/admin/broadcasts" style="color:#04EE62">Broadcasts</a>.',
+        background: '#2A2228', color: '#fff', confirmButtonColor: NEON,
       });
       onClose();
     } catch (error) {
       Swal.fire({
         icon: 'error', title: 'Error', background: '#2A2228', color: '#fff',
-        text: error instanceof Error ? error.message : 'No se pudo crear el reenvío',
+        text: error instanceof Error ? error.message : 'No se pudo crear el envío',
       });
       setSending(false);
     }
@@ -71,12 +74,17 @@ export default function ResendCertificatesModal({ edition, recipients, onClose }
   return (
     <ModalShell onClose={() => { if (!sending) onClose(); }} maxWidth={560}>
       <h3 style={{ fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 20, color: '#fff', margin: '0 0 8px' }}>
-        ¿Reenviar los certificados?
+        ¿Enviar los certificados?
       </h3>
       <p style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 13, color: recipients > 0 ? NEON : MUTE, margin: '0 0 18px' }}>
         {recipients > 0
-          ? `Se reenviará a ${recipients} asistentes de ${edition.name}`
-          : `Se reenviará a 0 asistentes de ${edition.name}: no hay nada que reenviar.`}
+          ? `Se enviará a ${recipients} asistentes de ${edition.name} con el formato actual.`
+          : `No hay asistentes de ${edition.name} a quienes enviar.`}
+        {recipients > 0 && outdated > 0 && (
+          <span style={{ display: 'block', color: MUTE, marginTop: 4 }}>
+            {outdated} ya tenían uno con un formato anterior; recibirán el actualizado.
+          </span>
+        )}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -94,7 +102,7 @@ export default function ResendCertificatesModal({ edition, recipients, onClose }
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>
         <button type="button" onClick={onClose} disabled={sending}
           style={{ padding: '9px 20px', borderRadius: 10, border: `1px solid ${LINE2}`, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
-          No reenviar
+          Ahora no
         </button>
         <button type="button" onClick={handleSend} disabled={!canSend}
           style={{ padding: '9px 24px', borderRadius: 10, border: 'none', background: NEON, color: INK, cursor: canSend ? 'pointer' : 'not-allowed', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, opacity: canSend ? 1 : .5 }}>

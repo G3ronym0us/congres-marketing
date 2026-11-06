@@ -183,7 +183,7 @@ regenera cuando ya existe.
 
 - Correr la migración `EditionCertificateTemplate1767200000000` antes de desplegar el backend.
 - En el `.env` de producción dejar vacíos `S3_KEY_PREFIX`, `AWS_S3_ENDPOINT` y `MAIL_REDIRECT_TO` (solo desarrollo).
-- Bucket S3: regla CORS que permita `GET` desde el origen del panel sobre `certificate-templates/*`; sin ella, al reabrir un formato guardado el editor no muestra el PDF de fondo (aviso y sigue funcionando; "Probar" muestra el resultado real). Confirmar lectura pública de ese prefijo.
+- Bucket S3: ya no hace falta CORS para el editor; al reabrir un formato guardado el fondo se pide al back (`GET admin/editions/:uuid/certificate-template/background`). Solo si ese pedido falla se intenta la URL directa del bucket.
 - IAM: confirmar `s3:ListBucket`. Con ese permiso un 403 nunca significa "falta el QR"; sin él, un 403 se trata como QR faltante y se genera (bytes deterministas desde `FRONTEND_URL`).
 - Fusionar `fix/remove-zone-identifier` antes de la rama del frontend.
 - Prueba local aislada: `yarn e2e:cert:seed`, `yarn e2e:cert:check --stage <n> <uuid...>`, `yarn e2e:cert:check --cleanup` (abortan fuera de un entorno local con `S3_KEY_PREFIX=dev/...`, `MAIL_REDIRECT_TO` y `DB_HOST` local).
