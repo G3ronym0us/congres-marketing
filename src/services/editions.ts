@@ -4,6 +4,7 @@ import {
   CreateEditionInput,
   UpdateEditionInput,
   CloneEditionInput,
+  CertificateTemplate,
   SetEditionFlagsInput,
 } from '@/types/edition';
 
@@ -127,6 +128,64 @@ export const adminEditionService = {
   async setFlags(uuid: string, input: SetEditionFlagsInput): Promise<Edition> {
     try {
       const res = await apiClient.patch(`/admin/editions/${uuid}/flags`, input);
+      return res.data;
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
+  // Sube el fondo del certificado (pdf/jpg/png). Sin Content-Type manual: el
+  // navegador debe poner el boundary del multipart.
+  async uploadCertificateBackground(
+    editionUuid: string,
+    file: File,
+  ): Promise<{ key: string; url: string; backgroundType: 'pdf' | 'image' }> {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await apiClient.post(
+        `/admin/editions/${editionUuid}/certificate-template/background`,
+        form,
+      );
+      return res.data;
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
+  // Descarga un certificado de prueba con el formato indicado.
+  async downloadCertificatePreview(
+    editionUuid: string,
+    template: CertificateTemplate,
+  ): Promise<void> {
+    const res = await apiClient.post(
+      `/admin/editions/${editionUuid}/certificate-template/preview`,
+      template,
+      { responseType: 'blob' },
+    );
+    const url = window.URL.createObjectURL(
+      new Blob([res.data], { type: 'application/pdf' }),
+    );
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'certificado-prueba.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  async saveCertificateTemplate(
+    editionUuid: string,
+    template: CertificateTemplate,
+  ): Promise<{ edition: Edition; outdated: number; recipients: number }> {
+    try {
+      const res = await apiClient.put(
+        `/admin/editions/${editionUuid}/certificate-template`,
+        template,
+      );
       return res.data;
     } catch (error) {
       handleError(error);

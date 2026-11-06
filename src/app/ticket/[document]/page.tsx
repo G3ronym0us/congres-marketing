@@ -185,7 +185,7 @@ export default function TicketDetailPage() {
                       <div className="lp-sidebar-name">{t('ticketView.accessCode')}</div>
                       <p style={{ color: 'var(--mute)', fontSize: 13, marginTop: 8 }}>{t('ticketView.qrHint')}</p>
 
-                      {ticket.certificateUrl ? (
+                      {(ticket.certificateAvailable ?? !!ticket.certificateUrl) ? (
                         <button
                           onClick={handleDownloadCertificate}
                           disabled={downloading}
@@ -222,7 +222,7 @@ export default function TicketDetailPage() {
                   <div className="lp-card reveal">
                     <span className="eyebrow">{t('ticketView.certificate')}</span>
                     <p className="lp-bio" style={{ marginTop: 12 }}>
-                      {ticket.certificateUrl ? t('ticketView.certAvailable', { event: eventName }) : t('ticketView.certPending')}
+                      {(ticket.certificateAvailable ?? !!ticket.certificateUrl) ? t('ticketView.certAvailable', { event: eventName }) : t('ticketView.certPending')}
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { numberToString } from 'pdf-lib';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 
