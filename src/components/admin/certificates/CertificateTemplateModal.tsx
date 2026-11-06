@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import ModalShell, { confirmDiscard } from '@/components/admin/ModalShell';
 import TicketTemplateEditor, {
@@ -36,6 +36,14 @@ const toCertificateTemplate = (t: TemplateLike): CertificateTemplate => ({
 export default function CertificateTemplateModal({ edition, onClose, onSaved }: Props) {
   const initial = (edition.certificateTemplate ?? null) as TemplateLike | null;
   const [template, setTemplate] = useState<TemplateLike | null>(initial);
+  // Solo hay fondo guardado que traer si la edición ya tenía formato propio.
+  const savedKey = initial?.background;
+  const loadBackground = useMemo(
+    () => (savedKey
+      ? () => adminEditionService.getCertificateBackground(edition.uuid)
+      : undefined),
+    [edition.uuid, savedKey],
+  );
   const [saving, setSaving] = useState(false);
 
   const isDirty = JSON.stringify(template) !== JSON.stringify(initial);
@@ -100,6 +108,7 @@ export default function CertificateTemplateModal({ edition, onClose, onSaved }: 
         defaultTemplate={CERTIFICATE_DEFAULT_TEMPLATE}
         upload={upload}
         preview={preview}
+        loadBackground={loadBackground}
       />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>

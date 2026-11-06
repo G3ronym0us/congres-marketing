@@ -24,7 +24,21 @@ export default function CertificatesAdmin() {
   const [error, setError]       = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [editing, setEditing]   = useState<Edition | null>(null);
-  const [resend, setResend]     = useState<{ edition: Edition; recipients: number } | null>(null);
+  const [resend, setResend]     = useState<{ edition: Edition; recipients: number; outdated: number } | null>(null);
+  const [opening, setOpening]   = useState<string | null>(null);
+
+  // Enviar sin volver a editar el formato: se piden los números al back.
+  const openSend = async (e: Edition) => {
+    try {
+      setOpening(e.uuid); setError(null);
+      const { recipients, outdated } = await adminEditionService.getCertificateRecipients(e.uuid);
+      setResend({ edition: e, recipients, outdated });
+    } catch {
+      setError('No se pudo consultar a quién enviar los certificados');
+    } finally {
+      setOpening(null);
+    }
+  };
 
   const load = async () => {
     try {
@@ -126,6 +140,13 @@ export default function CertificatesAdmin() {
                   <button onClick={() => setEditing(e)} className="adm-btn" style={{ fontSize: 12 }}>
                     🎨 Formato del certificado{e.certificateTemplate ? ' (formato propio)' : ''}
                   </button>
+                  {/* Solo cuando los certificados se pueden descargar (mismo criterio que tras guardar). */}
+                  {disponible && (
+                    <button onClick={() => openSend(e)} disabled={opening === e.uuid} className="adm-btn"
+                      style={{ fontSize: 12, opacity: opening === e.uuid ? .5 : 1, cursor: opening === e.uuid ? 'not-allowed' : 'pointer' }}>
+                      {opening === e.uuid ? 'Consultando…' : '✉️ Enviar certificados'}
+                    </button>
+                  )}
                   {/* Cuando la edición ya pasó el flag es irrelevante: no se ofrece. */}
                   {pasado ? (
                     <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
@@ -202,18 +223,18 @@ export default function CertificatesAdmin() {
         <CertificateTemplateModal
           edition={editing}
           onClose={() => setEditing(null)}
-          onSaved={async ({ recipients }) => {
+          onSaved={async ({ recipients, outdated }) => {
             const ed = editing;
             setEditing(null);
             await load();
             // Mismo criterio que "Disponibles"/"Bloqueados" de la lista.
             if (editionHasEnded(ed) || ed.certificatesEnabled) {
-              setResend({ edition: ed, recipients });
+              setResend({ edition: ed, recipients, outdated });
             } else {
               Swal.fire({
                 toast: true, position: 'top-end', icon: 'success', timer: 5000,
                 showConfirmButton: false, background: '#2A2228', color: '#fff',
-                title: 'Formato guardado. Los certificados de esta edición aún están bloqueados; no se ofrece reenvío.',
+                title: 'Formato guardado. Los certificados de esta edición aún están bloqueados; podrás enviarlos cuando se liberen.',
               });
             }
           }}
@@ -223,6 +244,7 @@ export default function CertificatesAdmin() {
         <ResendCertificatesModal
           edition={resend.edition}
           recipients={resend.recipients}
+          outdated={resend.outdated}
           onClose={() => setResend(null)}
         />
       )}

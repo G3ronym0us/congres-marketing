@@ -193,6 +193,28 @@ export const adminEditionService = {
     }
   },
 
+  /** Fondo del formato guardado, servido por el back (no depende del CORS del bucket). */
+  async getCertificateBackground(editionUuid: string): Promise<Blob> {
+    const res = await apiClient.get(
+      `/admin/editions/${editionUuid}/certificate-template/background`,
+      { responseType: 'blob' },
+    );
+    return res.data;
+  },
+
+  /** A quién llegaría el envío de certificados y cuántos tienen uno de otro formato. */
+  async getCertificateRecipients(
+    editionUuid: string,
+  ): Promise<{ outdated: number; recipients: number }> {
+    try {
+      const res = await apiClient.get(`/admin/editions/${editionUuid}/certificate-recipients`);
+      return res.data;
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
+  },
+
   async remove(uuid: string): Promise<void> {
     try {
       await apiClient.delete(`/admin/editions/${uuid}`);

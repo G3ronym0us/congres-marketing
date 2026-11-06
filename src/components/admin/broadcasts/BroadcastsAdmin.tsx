@@ -71,8 +71,26 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
           b.content.toLowerCase().includes(q) ||
           (b.specific_email?.toLowerCase().includes(q) ?? false))
       : broadcasts);
-    setCurrentPage(1);
   }, [broadcasts, searchTerm]);
+  // La página vuelve a 1 solo al buscar, no en cada actualización automática.
+  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
+  // Mientras haya un envío en curso, la lista (y el detalle abierto) se
+  // actualizan solos cada 5 s, sin el indicador de carga.
+  const hayEnCurso = broadcasts.some(b => EN_CURSO.includes(b.status));
+  useEffect(() => {
+    if (!hayEnCurso) return;
+    const id = window.setInterval(async () => {
+      try {
+        const fresh = await emailBroadcastService.getAllBroadcasts();
+        setBroadcasts(fresh);
+        setSelected(prev => (prev ? fresh.find(b => b.id === prev.id) ?? prev : prev));
+      } catch {
+        // Silencioso: el siguiente intento vuelve a probar.
+      }
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [hayEnCurso]);
 
   const load = async () => {
     try {
@@ -142,6 +160,7 @@ const BroadcastsAdmin = ({ editions = [] }: { editions?: Edition[] }) => {
           </h2>
           <p style={{ color: MUTE, fontSize: 13, margin: '4px 0 0', fontFamily: 'Space Grotesk, sans-serif' }}>
             {broadcasts.length} en total · {broadcasts.filter(b => b.status === 'COMPLETED').length} completados
+            {hayEnCurso && ' · envío en curso, se actualiza cada 5 s'}
           </p>
         </div>
         <button onClick={() => setIsCreateOpen(true)} className="adm-btn neon">

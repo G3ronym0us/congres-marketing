@@ -191,6 +191,7 @@ export default function TicketTemplateEditor({
   upload,
   preview = defaultPreview,
   kind = 'ticket',
+  loadBackground,
 }: {
   value?: TemplateLike | null;
   onChange: (t: TemplateLike | null) => void;
@@ -204,6 +205,11 @@ export default function TicketTemplateEditor({
   preview?: (t: TemplateLike, sample: TemplateSample) => Promise<void>;
   /** Solo cambia los textos de la interfaz ("boleto" / "certificado"). */
   kind?: 'ticket' | 'certificate';
+  /**
+   * Descarga el fondo ya guardado a través del back. Sin esta prop el fondo se
+   * lee directo de su URL (depende del CORS del bucket). Debe ser estable.
+   */
+  loadBackground?: () => Promise<Blob>;
 }) {
   const isCert = kind === 'certificate';
   const noun = isCert ? 'certificado' : 'boleto';
@@ -232,7 +238,32 @@ export default function TicketTemplateEditor({
   const drag = useRef<{ key: ElKey; lastX: number; lastY: number } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  const bgUrl = localPreview || value?.backgroundUrl || value?.background || '';
+  // Fondo guardado servido por el back: mientras carga no se dibuja nada; si
+  // falla se intenta con la URL directa (comportamiento anterior).
+  const [savedBg, setSavedBg] = useState<{ state: 'loading' | 'done' | 'failed'; url?: string }>(
+    { state: loadBackground ? 'loading' : 'failed' },
+  );
+  useEffect(() => {
+    if (!loadBackground) return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    setSavedBg({ state: 'loading' });
+    loadBackground()
+      .then(blob => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setSavedBg({ state: 'done', url: objectUrl });
+      })
+      .catch(() => { if (!cancelled) setSavedBg({ state: 'failed' }); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [loadBackground]);
+
+  const directUrl = value?.backgroundUrl || value?.background || '';
+  const bgUrl = localPreview
+    || (savedBg.state === 'done' ? savedBg.url! : savedBg.state === 'loading' ? '' : directUrl);
   const bgType: 'pdf' | 'image' = localPreview ? localPreviewType : (value?.backgroundType ?? 'image');
 
   if (!value) {
