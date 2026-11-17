@@ -104,6 +104,7 @@ export interface FilterGetTicketsInput {
 }
 
 export interface AdminCreateTicketInput {
+  edition?: number;
   reference: string;
   type: TicketType;
   name?: string;

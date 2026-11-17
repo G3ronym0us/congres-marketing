@@ -15,7 +15,7 @@ interface Props {
 }
 
 const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, editionId }) => {
-  const { localidades } = useLocalidades(editionId);
+  const { localidades, loading } = useLocalidades(editionId);
   const localidadSlugs = Object.keys(localidades).filter(s => s !== 'memorias');
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<AdminCreateTicketInput>({
     defaultValues: { reference: '', name: '', lastname: '', email: '', document: '', phone: '', type: '' as TicketType, withMemories: false },
@@ -23,22 +23,22 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, editionId }) =>
   });
 
   const selectedType = watch('type');
+  const firstLocalidad = localidadSlugs[0];
 
   useEffect(() => { setValue('reference', generateReference()); }, []);
 
   // Selecciona por defecto la primera localidad disponible de la edición
   useEffect(() => {
-    if ((!selectedType || !localidades[selectedType]) && localidadSlugs.length) {
-      setValue('type', localidadSlugs[0] as TicketType);
+    if ((!selectedType || !localidades[selectedType]) && firstLocalidad) {
+      setValue('type', firstLocalidad as TicketType);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localidades]);
+  }, [firstLocalidad, localidades, selectedType, setValue]);
 
   useEffect(() => {
     if (selectedType && localidades[selectedType]) {
       setValue('withMemories', localidades[selectedType].withMemories || false);
     }
-  }, [selectedType, setValue]);
+  }, [localidades, selectedType, setValue]);
 
   const toggleMemories = () => {
     const t = watch('type');
@@ -50,7 +50,9 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, editionId }) =>
 
   return (
     <DarkModal title="Nuevo ticket" onClose={onClose}>
-      <form onSubmit={handleSubmit(onSave)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <form onSubmit={handleSubmit(ticket => {
+        if (!loading) onSave({ ...ticket, edition: editionId });
+      })} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         <DarkField label="Nombres *" error={errors.name?.message}>
           <Controller name="name" control={control}
@@ -114,7 +116,7 @@ const TicketModal: React.FC<Props> = ({ isOpen, onClose, onSave, editionId }) =>
             style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 600, fontSize: 13 }}>
             Cancelar
           </button>
-          <button type="submit"
+          <button type="submit" disabled={loading}
             style={{ flex: 2, padding: '11px 0', borderRadius: 10, border: 'none', background: '#04EE62', color: '#1A1418', cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 800, fontSize: 13, letterSpacing: '.04em' }}>
             Agregar ticket
           </button>
