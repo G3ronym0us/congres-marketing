@@ -3,26 +3,42 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TicketTemplate } from '@/types/localidadTypes';
 import { CertificateTemplate } from '@/types/edition';
-import { uploadTicketBackground, downloadTicketPreview } from '@/services/localidadTypes';
+import {
+  uploadTicketBackground,
+  downloadTicketPreview,
+} from '@/services/localidadTypes';
 
 /* ── design tokens ── */
-const INK    = '#1A1418';
+const INK = '#1A1418';
 const PANEL2 = '#332A30';
-const NEON   = '#04EE62';
-const LINE   = 'rgba(255,255,255,.08)';
-const LINE2  = 'rgba(255,255,255,.14)';
-const MUTE   = 'rgba(255,255,255,.45)';
+const NEON = '#04EE62';
+const LINE = 'rgba(255,255,255,.08)';
+const LINE2 = 'rgba(255,255,255,.14)';
+const MUTE = 'rgba(255,255,255,.45)';
 
 // Geometría del boleto (coincide con pdf.service): carta 612x792, imagen a 612
 // de ancho manteniendo proporción 1080:1350. Es la hoja por defecto del editor.
-const TICKET_PAGE = { width: 612, height: (1350 * 612) / 1080, label: '1080×1350' }; // 612×765
+const TICKET_PAGE = {
+  width: 612,
+  height: (1350 * 612) / 1080,
+  label: '1080×1350',
+}; // 612×765
 // Hoja del certificado: A4 horizontal en puntos PDF (el fondo se estira a toda la hoja).
-export const CERTIFICATE_PAGE = { width: 842, height: 595, label: 'A4 horizontal' };
+export const CERTIFICATE_PAGE = {
+  width: 842,
+  height: 595,
+  label: 'A4 horizontal',
+};
 export const CERTIFICATE_ACCEPT = 'application/pdf,image/jpeg,image/png';
 
 /** Plantilla que edita el componente: la del boleto, más (opcional) los campos del certificado. */
-export type TemplateLike = TicketTemplate & Partial<Pick<CertificateTemplate, 'backgroundUrl' | 'backgroundType'>>;
-export type TemplateSample = { name: string; lastname: string; document: string };
+export type TemplateLike = TicketTemplate &
+  Partial<Pick<CertificateTemplate, 'backgroundUrl' | 'backgroundType'>>;
+export type TemplateSample = {
+  name: string;
+  lastname: string;
+  document: string;
+};
 
 const DEFAULT_TEMPLATE: TicketTemplate = {
   background: '',
@@ -42,12 +58,27 @@ export const CERTIFICATE_DEFAULT_TEMPLATE: TemplateLike = {
     // blanco de la izquierda, el nombre va sobre la línea alineado con
     // "CERTIFICA QUE" y el documento a la derecha de "C.C".
     qrCode: { x: 24, y: 109, width: 77, height: 77 },
-    name: { x: 184, y: 309, size: 22, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 580 },
-    document: { x: 217, y: 281, size: 16, align: 'left', color: [0.07, 0.15, 0.13], maxWidth: 200 },
+    name: {
+      x: 184,
+      y: 309,
+      size: 22,
+      align: 'left',
+      color: [0.07, 0.15, 0.13],
+      maxWidth: 580,
+    },
+    document: {
+      x: 217,
+      y: 281,
+      size: 16,
+      align: 'left',
+      color: [0.07, 0.15, 0.13],
+      maxWidth: 200,
+    },
   },
 };
 
-const PDF_UNAVAILABLE = 'Vista previa del PDF no disponible; usa «Probar» para ver el resultado';
+const PDF_UNAVAILABLE =
+  'Vista previa del PDF no disponible; usa «Probar» para ver el resultado';
 
 /**
  * Rasteriza la página 1 de un PDF en un <canvas> que ocupa todo el escenario
@@ -55,7 +86,13 @@ const PDF_UNAVAILABLE = 'Vista previa del PDF no disponible; usa «Probar» para
  * con import() dinámico solo cuando hay un fondo PDF. Si falla (p. ej. CORS del
  * bucket S3), muestra un aviso neutro en lugar de romper el editor.
  */
-function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number }) {
+function PdfBackground({
+  url,
+  renderWidth,
+}: {
+  url: string;
+  renderWidth: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -67,7 +104,10 @@ function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number 
       try {
         const pdfjs = await import('pdfjs-dist');
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-          pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
+          pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+            'pdfjs-dist/build/pdf.worker.min.js',
+            import.meta.url,
+          ).toString();
         }
         // isEvalSupported: false mitiga CVE-2024-4367 (fuente PDF manipulada → JS arbitrario).
         const task = pdfjs.getDocument({ url, isEvalSupported: false });
@@ -78,7 +118,9 @@ function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number 
         if (cancelled) return;
         const base = pdfPage.getViewport({ scale: 1 });
         const dpr = window.devicePixelRatio || 1;
-        const viewport = pdfPage.getViewport({ scale: (renderWidth * dpr) / base.width });
+        const viewport = pdfPage.getViewport({
+          scale: (renderWidth * dpr) / base.width,
+        });
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
@@ -97,90 +139,239 @@ function PdfBackground({ url, renderWidth }: { url: string; renderWidth: number 
 
   if (failed) {
     return (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif', pointerEvents: 'none' }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          textAlign: 'center',
+          color: MUTE,
+          fontSize: 12,
+          fontFamily: 'Space Grotesk, sans-serif',
+          pointerEvents: 'none',
+        }}
+      >
         {PDF_UNAVAILABLE}
       </div>
     );
   }
   return (
-    <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+      }}
+    />
   );
 }
 
 // Casos límite anonimizados (longitudes, tildes, ñ y dígitos conservados).
-const TEST_EXAMPLES: { label: string; name: string; lastname: string; document: string }[] = [
-  { label: 'Nombre largo (2 nombres + 2 apellidos)', name: 'Diego Fernanto', lastname: 'Maldorano Valbedrama', document: '1142903765' },
-  { label: 'Con tildes y ñ', name: 'Eber Alexánder', lastname: 'Ballesnero Peñaroda', document: '17582640' },
-  { label: 'Tildes (María / Hernández)', name: 'María Alejandra', lastname: 'Aristibal Hernárdez', document: '1009742318' },
-  { label: '3 nombres', name: 'Juan José María', lastname: 'Restrepo Ángel', document: '71234509' },
-  { label: 'Apellido compuesto largo', name: 'Pablo Santino', lastname: 'Rondríguez Bentacurte', document: '1136802597' },
-  { label: 'Documento corto (6 dígitos)', name: 'Ana Ruiz', lastname: 'Soto', document: '904512' },
-  { label: 'Nombre corto', name: 'Ana', lastname: 'Ríos', document: '80123456' },
+const TEST_EXAMPLES: {
+  label: string;
+  name: string;
+  lastname: string;
+  document: string;
+}[] = [
+  {
+    label: 'Nombre largo (2 nombres + 2 apellidos)',
+    name: 'Diego Fernanto',
+    lastname: 'Maldorano Valbedrama',
+    document: '1142903765',
+  },
+  {
+    label: 'Con tildes y ñ',
+    name: 'Eber Alexánder',
+    lastname: 'Ballesnero Peñaroda',
+    document: '17582640',
+  },
+  {
+    label: 'Tildes (María / Hernández)',
+    name: 'María Alejandra',
+    lastname: 'Aristibal Hernárdez',
+    document: '1009742318',
+  },
+  {
+    label: '3 nombres',
+    name: 'Juan José María',
+    lastname: 'Restrepo Ángel',
+    document: '71234509',
+  },
+  {
+    label: 'Apellido compuesto largo',
+    name: 'Pablo Santino',
+    lastname: 'Rondríguez Bentacurte',
+    document: '1136802597',
+  },
+  {
+    label: 'Documento corto (6 dígitos)',
+    name: 'Ana Ruiz',
+    lastname: 'Soto',
+    document: '904512',
+  },
+  {
+    label: 'Nombre corto',
+    name: 'Ana',
+    lastname: 'Ríos',
+    document: '80123456',
+  },
 ];
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, n));
 const rgb01ToHex = (c: number[]): string => {
-  const h = (v: number) => clamp(Math.round((v ?? 0) * 255), 0, 255).toString(16).padStart(2, '0');
+  const h = (v: number) =>
+    clamp(Math.round((v ?? 0) * 255), 0, 255)
+      .toString(16)
+      .padStart(2, '0');
   return `#${h(c?.[0])}${h(c?.[1])}${h(c?.[2])}`;
 };
 const hexToRgb01 = (hex: string): number[] => {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return [1, 1, 1];
   const int = parseInt(m[1], 16);
-  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
+  return [
+    ((int >> 16) & 255) / 255,
+    ((int >> 8) & 255) / 255,
+    (int & 255) / 255,
+  ];
 };
 const cssColor = (c: number[]) =>
   `rgb(${Math.round((c?.[0] ?? 0) * 255)}, ${Math.round((c?.[1] ?? 0) * 255)}, ${Math.round((c?.[2] ?? 0) * 255)})`;
 
 const inputStyle: React.CSSProperties = {
-  background: INK, color: '#fff', border: `1px solid ${LINE2}`,
-  borderRadius: 8, padding: '8px 10px',
-  fontFamily: 'Space Grotesk, sans-serif', fontSize: 13,
-  outline: 'none', width: '100%', boxSizing: 'border-box',
+  background: INK,
+  color: '#fff',
+  border: `1px solid ${LINE2}`,
+  borderRadius: 8,
+  padding: '8px 10px',
+  fontFamily: 'Space Grotesk, sans-serif',
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
 };
 const lbl: React.CSSProperties = {
-  fontFamily: 'Oxanium, sans-serif', fontSize: 10, fontWeight: 700,
-  letterSpacing: '.08em', textTransform: 'uppercase', color: MUTE,
+  fontFamily: 'Oxanium, sans-serif',
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '.08em',
+  textTransform: 'uppercase',
+  color: MUTE,
 };
 
 /* ── botones reutilizables ── */
-const btn = (variant: 'primary' | 'ghost' | 'danger', extra: React.CSSProperties = {}): React.CSSProperties => {
+const btn = (
+  variant: 'primary' | 'ghost' | 'danger',
+  extra: React.CSSProperties = {},
+): React.CSSProperties => {
   const base: React.CSSProperties = {
-    border: 'none', borderRadius: 10, cursor: 'pointer',
-    fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 12,
-    padding: '9px 16px', display: 'inline-flex', alignItems: 'center', gap: 8,
+    border: 'none',
+    borderRadius: 10,
+    cursor: 'pointer',
+    fontFamily: 'Oxanium, sans-serif',
+    fontWeight: 700,
+    fontSize: 12,
+    padding: '9px 16px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
     transition: 'transform .12s ease, opacity .12s ease, background .12s ease',
   };
-  if (variant === 'primary') return { ...base, background: NEON, color: INK, ...extra };
-  if (variant === 'danger') return { ...base, background: 'rgba(255,80,80,.1)', color: '#ff8a8a', border: `1px solid rgba(255,80,80,.3)`, ...extra };
-  return { ...base, background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.8)', border: `1px solid ${LINE2}`, ...extra };
+  if (variant === 'primary')
+    return { ...base, background: NEON, color: INK, ...extra };
+  if (variant === 'danger')
+    return {
+      ...base,
+      background: 'rgba(255,80,80,.1)',
+      color: '#ff8a8a',
+      border: `1px solid rgba(255,80,80,.3)`,
+      ...extra,
+    };
+  return {
+    ...base,
+    background: 'rgba(255,255,255,.05)',
+    color: 'rgba(255,255,255,.8)',
+    border: `1px solid ${LINE2}`,
+    ...extra,
+  };
 };
 
-function NumField({ label, value, onChange, suffix }: { label: string; value: number; onChange: (n: number) => void; suffix?: string }) {
+function NumField({
+  label,
+  value,
+  onChange,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  suffix?: string;
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={lbl}>{label}</span>
       <div style={{ position: 'relative' }}>
-        <input style={inputStyle} type="number" value={value ?? 0}
-          onChange={e => onChange(Number(e.target.value))} />
-        {suffix && <span style={{ position: 'absolute', right: 10, top: 8, fontSize: 11, color: MUTE, pointerEvents: 'none' }}>{suffix}</span>}
+        <input
+          style={inputStyle}
+          type="number"
+          value={value ?? 0}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {suffix && (
+          <span
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 8,
+              fontSize: 11,
+              color: MUTE,
+              pointerEvents: 'none',
+            }}
+          >
+            {suffix}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
 const dpadBtn: React.CSSProperties = {
-  background: 'rgba(4,238,98,.1)', color: NEON, border: `1px solid rgba(4,238,98,.35)`,
-  borderRadius: 8, cursor: 'pointer', fontSize: 18, fontWeight: 700,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  userSelect: 'none', transition: 'background .12s ease',
+  background: 'rgba(4,238,98,.1)',
+  color: NEON,
+  border: `1px solid rgba(4,238,98,.35)`,
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontSize: 18,
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  userSelect: 'none',
+  transition: 'background .12s ease',
 };
 
 type ElKey = 'qrCode' | 'name' | 'document';
-const EL_LABEL: Record<ElKey, string> = { qrCode: 'QR', name: 'Nombre', document: 'Documento' };
+const EL_LABEL: Record<ElKey, string> = {
+  qrCode: 'QR',
+  name: 'Nombre',
+  document: 'Documento',
+};
 
 const defaultPreview = (t: TemplateLike, s: TemplateSample) =>
-  downloadTicketPreview({ template: t, name: s.name, lastname: s.lastname || undefined, document: s.document });
+  downloadTicketPreview({
+    template: t,
+    name: s.name,
+    lastname: s.lastname || undefined,
+    document: s.document,
+  });
 
 export default function TicketTemplateEditor({
   value,
@@ -200,7 +391,9 @@ export default function TicketTemplateEditor({
   accept?: string;
   defaultTemplate?: TemplateLike;
   /** Sube el fondo. Sin esta prop se usa uploadTicketBackground y se guarda la URL en `background`. */
-  upload?: (file: File) => Promise<{ url: string; key?: string; backgroundType?: 'pdf' | 'image' }>;
+  upload?: (
+    file: File,
+  ) => Promise<{ url: string; key?: string; backgroundType?: 'pdf' | 'image' }>;
   /** Genera/descarga la prueba. Sin esta prop se usa downloadTicketPreview. */
   preview?: (t: TemplateLike, sample: TemplateSample) => Promise<void>;
   /** Solo cambia los textos de la interfaz ("boleto" / "certificado"). */
@@ -223,7 +416,9 @@ export default function TicketTemplateEditor({
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
   const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [localPreviewType, setLocalPreviewType] = useState<'pdf' | 'image'>('image');
+  const [localPreviewType, setLocalPreviewType] = useState<'pdf' | 'image'>(
+    'image',
+  );
   const [selected, setSelected] = useState<ElKey>('name');
   const [step, setStep] = useState(1); // paso de movimiento (pt) para el D-pad
   // Probar boleto
@@ -235,26 +430,31 @@ export default function TicketTemplateEditor({
   const [downloading, setDownloading] = useState(false);
   const [dlErr, setDlErr] = useState('');
 
-  const drag = useRef<{ key: ElKey; lastX: number; lastY: number } | null>(null);
+  const drag = useRef<{ key: ElKey; lastX: number; lastY: number } | null>(
+    null,
+  );
   const stageRef = useRef<HTMLDivElement>(null);
 
   // Fondo guardado servido por el back: mientras carga no se dibuja nada; si
   // falla se intenta con la URL directa (comportamiento anterior).
-  const [savedBg, setSavedBg] = useState<{ state: 'loading' | 'done' | 'failed'; url?: string }>(
-    { state: loadBackground ? 'loading' : 'failed' },
-  );
+  const [savedBg, setSavedBg] = useState<{
+    state: 'loading' | 'done' | 'failed';
+    url?: string;
+  }>({ state: loadBackground ? 'loading' : 'failed' });
   useEffect(() => {
     if (!loadBackground) return;
     let cancelled = false;
     let objectUrl: string | null = null;
     setSavedBg({ state: 'loading' });
     loadBackground()
-      .then(blob => {
+      .then((blob) => {
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setSavedBg({ state: 'done', url: objectUrl });
       })
-      .catch(() => { if (!cancelled) setSavedBg({ state: 'failed' }); });
+      .catch(() => {
+        if (!cancelled) setSavedBg({ state: 'failed' });
+      });
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -262,21 +462,42 @@ export default function TicketTemplateEditor({
   }, [loadBackground]);
 
   const directUrl = value?.backgroundUrl || value?.background || '';
-  const bgUrl = localPreview
-    || (savedBg.state === 'done' ? savedBg.url! : savedBg.state === 'loading' ? '' : directUrl);
-  const bgType: 'pdf' | 'image' = localPreview ? localPreviewType : (value?.backgroundType ?? 'image');
+  const bgUrl =
+    localPreview ||
+    (savedBg.state === 'done'
+      ? savedBg.url!
+      : savedBg.state === 'loading'
+        ? ''
+        : directUrl);
+  const bgType: 'pdf' | 'image' = localPreview
+    ? localPreviewType
+    : value?.backgroundType ?? 'image';
 
   if (!value) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <span style={lbl}>Plantilla del {noun}</span>
-        <p style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 12, color: MUTE }}>
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'Space Grotesk, sans-serif',
+            fontSize: 12,
+            color: MUTE,
+          }}
+        >
           {isCert
             ? 'Sin formato propio: esta edición usa el certificado por defecto del sistema.'
             : 'Sin plantilla propia: esta localidad usa el diseño por defecto del sistema.'}
         </p>
-        <button type="button" onClick={() => onChange(defaultTemplate)}
-          style={btn('ghost', { alignSelf: 'flex-start', color: NEON, borderColor: 'rgba(4,238,98,.4)' })}>
+        <button
+          type="button"
+          onClick={() => onChange(defaultTemplate)}
+          style={btn('ghost', {
+            alignSelf: 'flex-start',
+            color: NEON,
+            borderColor: 'rgba(4,238,98,.4)',
+          })}
+        >
           + Configurar plantilla
         </button>
       </div>
@@ -284,21 +505,34 @@ export default function TicketTemplateEditor({
   }
 
   const els = value.elements;
-  const set = (patch: Partial<TemplateLike>) => onChange({ ...value, ...patch });
+  const set = (patch: Partial<TemplateLike>) =>
+    onChange({ ...value, ...patch });
   const setEl = (key: ElKey, patch: Record<string, unknown>) =>
-    onChange({ ...value, elements: { ...els, [key]: { ...els[key], ...patch } } });
+    onChange({
+      ...value,
+      elements: { ...els, [key]: { ...els[key], ...patch } },
+    });
 
   const handleUpload = async (file: File) => {
     const local = URL.createObjectURL(file);
-    const localType: 'pdf' | 'image' = file.type === 'application/pdf' ? 'pdf' : 'image';
-    setLocalPreview(prev => { if (prev) URL.revokeObjectURL(prev); return local; });
+    const localType: 'pdf' | 'image' =
+      file.type === 'application/pdf' ? 'pdf' : 'image';
+    setLocalPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return local;
+    });
     setLocalPreviewType(localType);
-    setUploading(true); setErr('');
+    setUploading(true);
+    setErr('');
     try {
       if (upload) {
         // Fondo con key S3 + URL de lectura (certificado).
         const r = await upload(file);
-        set({ background: r.key ?? r.url, backgroundUrl: r.url, backgroundType: r.backgroundType ?? localType });
+        set({
+          background: r.key ?? r.url,
+          backgroundUrl: r.url,
+          backgroundType: r.backgroundType ?? localType,
+        });
       } else {
         // Boleto: comportamiento original, se guarda la URL en `background`.
         const { url } = await uploadTicketBackground(file);
@@ -307,25 +541,45 @@ export default function TicketTemplateEditor({
     } catch (error: any) {
       const apiMsg = error?.response?.data?.message;
       const detail = Array.isArray(apiMsg) ? apiMsg.join(', ') : apiMsg;
-      setErr(typeof detail === 'string' && detail
-        ? detail
-        : isCert
-          ? 'No se pudo subir el fondo (revisa tu sesión o el tamaño, máx. 10 MB).'
-          : 'No se pudo subir la imagen (revisa tu sesión o el tamaño).');
+      setErr(
+        typeof detail === 'string' && detail
+          ? detail
+          : isCert
+            ? 'No se pudo subir el fondo (revisa tu sesión o el tamaño, máx. 10 MB).'
+            : 'No se pudo subir la imagen (revisa tu sesión o el tamaño).',
+      );
     } finally {
       setUploading(false);
     }
   };
 
   const handleDownloadTest = async () => {
-    if (!value.background) { setDlErr(isCert ? 'Sube primero un fondo.' : 'Sube primero una imagen de fondo.'); return; }
-    const data = testMode === 'example'
-      ? TEST_EXAMPLES[exampleIdx]
-      : { name: testName.trim(), lastname: testLast.trim(), document: testDoc.trim() };
-    if (!data.name || !data.document) { setDlErr('Faltan nombre y documento.'); return; }
-    setDownloading(true); setDlErr('');
+    if (!value.background) {
+      setDlErr(
+        isCert ? 'Sube primero un fondo.' : 'Sube primero una imagen de fondo.',
+      );
+      return;
+    }
+    const data =
+      testMode === 'example'
+        ? TEST_EXAMPLES[exampleIdx]
+        : {
+            name: testName.trim(),
+            lastname: testLast.trim(),
+            document: testDoc.trim(),
+          };
+    if (!data.name || !data.document) {
+      setDlErr('Faltan nombre y documento.');
+      return;
+    }
+    setDownloading(true);
+    setDlErr('');
     try {
-      await preview(value, { name: data.name, lastname: data.lastname, document: data.document });
+      await preview(value, {
+        name: data.name,
+        lastname: data.lastname,
+        document: data.document,
+      });
     } catch {
       setDlErr(`No se pudo generar el ${noun} (revisa tu sesión).`);
     } finally {
@@ -333,17 +587,39 @@ export default function TicketTemplateEditor({
     }
   };
 
-  // ── mover un elemento (compartido por drag y flechas) ──
-  // En certificados, 'center' con ancho máx centra dentro de la caja
-  // [x, x + maxWidth] (igual que el back); sin ancho máx centra en la página.
+  // ── alineación (igual que el back, pdf.service.alignedX) ──
+  // 'center-box' centra en su caja [x, x + maxWidth]; 'center-page' en la hoja.
+  // 'center' es el valor heredado: en certificados con ancho máx era la caja,
+  // en boletos siempre la hoja. Se traduce al modo explícito equivalente.
+  const alignMode = (el: {
+    align?: string;
+  }): 'left' | 'center-box' | 'center-page' | 'right' => {
+    if (
+      el.align === 'center-box' ||
+      el.align === 'center-page' ||
+      el.align === 'right'
+    )
+      return el.align;
+    if (el.align === 'center') return isCert ? 'center-box' : 'center-page';
+    return 'left';
+  };
+  // Sin ancho máx no hay caja: 'center-box' cae al centro de la hoja.
   const centerInBox = (el: { align?: string; maxWidth?: number }) =>
-    isCert && el.align === 'center' && !!el.maxWidth;
+    alignMode(el) === 'center-box' && !!el.maxWidth;
   const pageCenter = (el: { align?: string; maxWidth?: number }) =>
-    el.align === 'center' && !centerInBox(el);
+    alignMode(el) === 'center-page' ||
+    (alignMode(el) === 'center-box' && !el.maxWidth);
 
   const moveEl = (key: ElKey, dxPdf: number, dyPdf: number) => {
-    const el = els[key] as { x: number; y: number; align?: string; maxWidth?: number };
-    const patch: Record<string, number> = { y: Math.round(clamp(el.y + dyPdf, 0, IMG_H)) };
+    const el = els[key] as {
+      x: number;
+      y: number;
+      align?: string;
+      maxWidth?: number;
+    };
+    const patch: Record<string, number> = {
+      y: Math.round(clamp(el.y + dyPdf, 0, IMG_H)),
+    };
     if (!(key !== 'qrCode' && pageCenter(el))) {
       patch.x = Math.round(clamp(el.x + dxPdf, 0, IMG_W));
     }
@@ -360,19 +636,27 @@ export default function TicketTemplateEditor({
   };
   const onDragMove = (key: ElKey) => (e: React.PointerEvent) => {
     if (drag.current?.key !== key) return;
-    moveEl(key, (e.clientX - drag.current.lastX) / SCALE, -(e.clientY - drag.current.lastY) / SCALE);
+    moveEl(
+      key,
+      (e.clientX - drag.current.lastX) / SCALE,
+      -(e.clientY - drag.current.lastY) / SCALE,
+    );
     drag.current.lastX = e.clientX;
     drag.current.lastY = e.clientY;
   };
-  const onDragEnd = () => { drag.current = null; };
+  const onDragEnd = () => {
+    drag.current = null;
+  };
 
   // ── Flechas ──
   const onStageKeyDown = (e: React.KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 1;
-    let dx = 0, dy = 0;
+    let dx = 0,
+      dy = 0;
     if (e.key === 'ArrowLeft') dx = -step;
     else if (e.key === 'ArrowRight') dx = step;
-    else if (e.key === 'ArrowUp') dy = step;      // PDF y hacia arriba
+    else if (e.key === 'ArrowUp')
+      dy = step; // PDF y hacia arriba
     else if (e.key === 'ArrowDown') dy = -step;
     else return;
     e.preventDefault();
@@ -382,8 +666,11 @@ export default function TicketTemplateEditor({
   // ── posiciones en pantalla ──
   const qr = els.qrCode;
   const qrBox: React.CSSProperties = {
-    position: 'absolute', left: qr.x * SCALE, top: PREVIEW_H - (qr.y + qr.height) * SCALE,
-    width: qr.width * SCALE, height: qr.height * SCALE,
+    position: 'absolute',
+    left: qr.x * SCALE,
+    top: PREVIEW_H - (qr.y + qr.height) * SCALE,
+    width: qr.width * SCALE,
+    height: qr.height * SCALE,
   };
   const textBox = (key: 'name' | 'document'): React.CSSProperties => {
     const el = els[key];
@@ -394,19 +681,32 @@ export default function TicketTemplateEditor({
     // Restamos ese descender para que la baseline del preview caiga en el.y.
     const descent = el.size * SCALE * 0.2;
     return {
-      position: 'absolute', bottom: el.y * SCALE - descent,
-      left: center ? 0 : el.x * SCALE, right: center ? 0 : undefined,
+      position: 'absolute',
+      bottom: el.y * SCALE - descent,
+      left: center ? 0 : el.x * SCALE,
+      right: center ? 0 : undefined,
       // Caja de ancho fijo con flex: si el texto se desborda, lo hace
       // por igual a ambos lados, como en el PDF.
-      ...(inBox ? { width: (el.maxWidth ?? 0) * SCALE, display: 'flex', justifyContent: 'center' } : {}),
+      ...(inBox
+        ? {
+            width: (el.maxWidth ?? 0) * SCALE,
+            display: 'flex',
+            justifyContent: 'center',
+          }
+        : {}),
       textAlign: center || inBox ? 'center' : 'left',
-      fontSize: Math.max(7, el.size * SCALE), lineHeight: 1,
-      color: cssColor(el.color), fontFamily: 'Garet, Oxanium, sans-serif', fontWeight: 800,
-      whiteSpace: 'nowrap', textShadow: '0 0 2px rgba(0,0,0,.4)',
+      fontSize: Math.max(7, el.size * SCALE),
+      lineHeight: 1,
+      color: cssColor(el.color),
+      fontFamily: 'Garet, Oxanium, sans-serif',
+      fontWeight: 800,
+      whiteSpace: 'nowrap',
+      textShadow: '0 0 2px rgba(0,0,0,.4)',
     };
   };
   const chrome = (key: ElKey): React.CSSProperties => ({
-    cursor: 'grab', touchAction: 'none',
+    cursor: 'grab',
+    touchAction: 'none',
     outline: `${selected === key ? 2 : 1}px ${selected === key ? 'solid' : 'dashed'} ${selected === key ? NEON : 'rgba(4,238,98,.5)'}`,
     outlineOffset: 2,
     boxShadow: selected === key ? `0 0 0 3px rgba(4,238,98,.18)` : 'none',
@@ -415,11 +715,35 @@ export default function TicketTemplateEditor({
   const sample = { name: 'NOMBRE APELLIDO', document: '1.234.567.890' };
 
   return (
-    <div style={{ background: PANEL2, border: `1px solid ${LINE2}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ ...lbl, color: '#fff', fontSize: 12 }}>Plantilla del {noun}</span>
+    <div
+      style={{
+        background: PANEL2,
+        border: `1px solid ${LINE2}`,
+        borderRadius: 12,
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        <span style={{ ...lbl, color: '#fff', fontSize: 12 }}>
+          Plantilla del {noun}
+        </span>
         {!isCert && (
-          <button type="button" onClick={() => onChange(null)} style={btn('danger', { padding: '6px 12px' })}>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            style={btn('danger', { padding: '6px 12px' })}
+          >
             Quitar plantilla
           </button>
         )}
@@ -428,14 +752,46 @@ export default function TicketTemplateEditor({
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
         {/* ── Preview ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+            }}
+          >
             <span style={lbl}>Vista previa</span>
             {/* selector de elemento */}
-            <div style={{ display: 'flex', gap: 4, background: INK, borderRadius: 8, padding: 3, border: `1px solid ${LINE2}` }}>
-              {(['qrCode', 'name', 'document'] as ElKey[]).map(k => (
-                <button key={k} type="button" onClick={() => { setSelected(k); stageRef.current?.focus(); }}
-                  style={{ border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 11, padding: '4px 9px',
-                    background: selected === k ? NEON : 'transparent', color: selected === k ? INK : MUTE }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 4,
+                background: INK,
+                borderRadius: 8,
+                padding: 3,
+                border: `1px solid ${LINE2}`,
+              }}
+            >
+              {(['qrCode', 'name', 'document'] as ElKey[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => {
+                    setSelected(k);
+                    stageRef.current?.focus();
+                  }}
+                  style={{
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontFamily: 'Oxanium, sans-serif',
+                    fontWeight: 700,
+                    fontSize: 11,
+                    padding: '4px 9px',
+                    background: selected === k ? NEON : 'transparent',
+                    color: selected === k ? INK : MUTE,
+                  }}
+                >
                   {EL_LABEL[k]}
                 </button>
               ))}
@@ -447,9 +803,14 @@ export default function TicketTemplateEditor({
             tabIndex={0}
             onKeyDown={onStageKeyDown}
             style={{
-              position: 'relative', width: PREVIEW_W, height: PREVIEW_H,
-              borderRadius: 10, overflow: 'hidden', border: `1px solid ${LINE2}`,
-              background: INK, outline: 'none',
+              position: 'relative',
+              width: PREVIEW_W,
+              height: PREVIEW_H,
+              borderRadius: 10,
+              overflow: 'hidden',
+              border: `1px solid ${LINE2}`,
+              background: INK,
+              outline: 'none',
             }}
           >
             {bgUrl ? (
@@ -457,139 +818,430 @@ export default function TicketTemplateEditor({
                 <PdfBackground url={bgUrl} renderWidth={PREVIEW_W} />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={bgUrl} alt={`fondo ${noun}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: isCert ? 'fill' : 'cover', pointerEvents: 'none' }} />
+                <img
+                  src={bgUrl}
+                  alt={`fondo ${noun}`}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: isCert ? 'fill' : 'cover',
+                    pointerEvents: 'none',
+                  }}
+                />
               )
             ) : (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTE, fontSize: 12, fontFamily: 'Space Grotesk, sans-serif' }}>
-                {isCert ? 'Sube un fondo (PDF o imagen)' : 'Sube una imagen de fondo'}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: MUTE,
+                  fontSize: 12,
+                  fontFamily: 'Space Grotesk, sans-serif',
+                }}
+              >
+                {isCert
+                  ? 'Sube un fondo (PDF o imagen)'
+                  : 'Sube una imagen de fondo'}
               </div>
             )}
 
             {/* QR */}
-            <div onPointerDown={onDragStart('qrCode')} onPointerMove={onDragMove('qrCode')} onPointerUp={onDragEnd}
-              style={{ ...qrBox, ...chrome('qrCode'), background: 'rgba(4,238,98,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontFamily: 'Oxanium, sans-serif', fontWeight: 700 }}>
+            <div
+              onPointerDown={onDragStart('qrCode')}
+              onPointerMove={onDragMove('qrCode')}
+              onPointerUp={onDragEnd}
+              style={{
+                ...qrBox,
+                ...chrome('qrCode'),
+                background: 'rgba(4,238,98,.18)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: 11,
+                fontFamily: 'Oxanium, sans-serif',
+                fontWeight: 700,
+              }}
+            >
               QR
             </div>
 
             {/* guías de maxWidth */}
-            {(['name', 'document'] as const).map(key => {
+            {(['name', 'document'] as const).map((key) => {
               const el = els[key];
               if (!el.maxWidth) return null;
               const center = pageCenter(el);
               return (
-                <div key={`guide-${key}`} style={{
-                  position: 'absolute', bottom: el.y * SCALE,
-                  left: center ? (IMG_W / 2 - el.maxWidth / 2) * SCALE : el.x * SCALE,
-                  width: el.maxWidth * SCALE, height: 0,
-                  borderTop: '1px dashed rgba(255,176,32,.85)', pointerEvents: 'none',
-                }} />
+                <div
+                  key={`guide-${key}`}
+                  style={{
+                    position: 'absolute',
+                    bottom: el.y * SCALE,
+                    left: center
+                      ? (IMG_W / 2 - el.maxWidth / 2) * SCALE
+                      : el.x * SCALE,
+                    width: el.maxWidth * SCALE,
+                    height: 0,
+                    borderTop: '1px dashed rgba(255,176,32,.85)',
+                    pointerEvents: 'none',
+                  }}
+                />
               );
             })}
 
             {/* Nombre */}
-            <div onPointerDown={onDragStart('name')} onPointerMove={onDragMove('name')} onPointerUp={onDragEnd}
-              style={{ ...textBox('name'), ...chrome('name') }}>
+            <div
+              onPointerDown={onDragStart('name')}
+              onPointerMove={onDragMove('name')}
+              onPointerUp={onDragEnd}
+              style={{ ...textBox('name'), ...chrome('name') }}
+            >
               {sample.name}
             </div>
             {/* Documento */}
-            <div onPointerDown={onDragStart('document')} onPointerMove={onDragMove('document')} onPointerUp={onDragEnd}
-              style={{ ...textBox('document'), ...chrome('document') }}>
+            <div
+              onPointerDown={onDragStart('document')}
+              onPointerMove={onDragMove('document')}
+              onPointerUp={onDragEnd}
+              style={{ ...textBox('document'), ...chrome('document') }}
+            >
               {sample.document}
             </div>
           </div>
 
-          <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE, maxWidth: PREVIEW_W }}>
-            Clic para seleccionar · <b style={{ color: '#fff' }}>arrastra</b> o usa las <b style={{ color: '#fff' }}>flechas</b> para mover (Shift = 10px). Fuente aproximada (real: Garet).
+          <span
+            style={{
+              fontFamily: 'Space Grotesk, sans-serif',
+              fontSize: 11,
+              color: MUTE,
+              maxWidth: PREVIEW_W,
+            }}
+          >
+            Clic para seleccionar · <b style={{ color: '#fff' }}>arrastra</b> o
+            usa las <b style={{ color: '#fff' }}>flechas</b> para mover (Shift =
+            10px). Fuente aproximada (real: Garet).
           </span>
         </div>
 
         {/* ── Controles ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minWidth: 240 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+            flex: 1,
+            minWidth: 240,
+          }}
+        >
           {/* Posición del elemento seleccionado (D-pad) */}
-          <div style={{ background: INK, border: `1px solid rgba(4,238,98,.4)`, borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ ...lbl, color: '#fff' }}>Mover · {EL_LABEL[selected]}</span>
-              <div style={{ display: 'inline-flex', gap: 3, background: PANEL2, borderRadius: 8, padding: 3, border: `1px solid ${LINE2}` }}>
-                {[1, 10].map(s => (
-                  <button key={s} type="button" onClick={() => setStep(s)}
-                    style={{ border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 11, padding: '3px 9px', background: step === s ? NEON : 'transparent', color: step === s ? INK : MUTE }}>
+          <div
+            style={{
+              background: INK,
+              border: `1px solid rgba(4,238,98,.4)`,
+              borderRadius: 10,
+              padding: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 8,
+                flexWrap: 'wrap',
+              }}
+            >
+              <span style={{ ...lbl, color: '#fff' }}>
+                Mover · {EL_LABEL[selected]}
+              </span>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  gap: 3,
+                  background: PANEL2,
+                  borderRadius: 8,
+                  padding: 3,
+                  border: `1px solid ${LINE2}`,
+                }}
+              >
+                {[1, 10].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStep(s)}
+                    style={{
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontFamily: 'Oxanium, sans-serif',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      padding: '3px 9px',
+                      background: step === s ? NEON : 'transparent',
+                      color: step === s ? INK : MUTE,
+                    }}
+                  >
                     {s}pt
                   </button>
                 ))}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 42px)', gridTemplateRows: 'repeat(3, 42px)', gap: 6, justifyContent: 'center' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 42px)',
+                gridTemplateRows: 'repeat(3, 42px)',
+                gap: 6,
+                justifyContent: 'center',
+              }}
+            >
               <span />
-              <button type="button" style={dpadBtn} onClick={() => moveEl(selected, 0, step)}>↑</button>
+              <button
+                type="button"
+                style={dpadBtn}
+                onClick={() => moveEl(selected, 0, step)}
+              >
+                ↑
+              </button>
               <span />
-              <button type="button" style={dpadBtn} onClick={() => moveEl(selected, -step, 0)}>←</button>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTE, fontSize: 15 }}>✛</span>
-              <button type="button" style={dpadBtn} onClick={() => moveEl(selected, step, 0)}>→</button>
+              <button
+                type="button"
+                style={dpadBtn}
+                onClick={() => moveEl(selected, -step, 0)}
+              >
+                ←
+              </button>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: MUTE,
+                  fontSize: 15,
+                }}
+              >
+                ✛
+              </span>
+              <button
+                type="button"
+                style={dpadBtn}
+                onClick={() => moveEl(selected, step, 0)}
+              >
+                →
+              </button>
               <span />
-              <button type="button" style={dpadBtn} onClick={() => moveEl(selected, 0, -step)}>↓</button>
+              <button
+                type="button"
+                style={dpadBtn}
+                onClick={() => moveEl(selected, 0, -step)}
+              >
+                ↓
+              </button>
               <span />
             </div>
-            <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
-              Mueve el elemento seleccionado. También podés arrastrarlo en el preview o usar las flechas del teclado.
+            <span
+              style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: 11,
+                color: MUTE,
+              }}
+            >
+              Mueve el elemento seleccionado. También podés arrastrarlo en el
+              preview o usar las flechas del teclado.
             </span>
           </div>
 
           {/* Fondo */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={lbl}>{isCert ? `Fondo: PDF o imagen (${page.label})` : `Imagen de fondo (${page.label})`}</span>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <label style={{ ...btn('ghost', { color: '#fff' }), cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                {uploading ? 'Subiendo…' : (isCert ? '⬆ Subir fondo' : '⬆ Subir imagen')}
-                <input type="file" accept={accept} hidden disabled={uploading}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }} />
+            <span style={lbl}>
+              {isCert
+                ? `Fondo: PDF o imagen (${page.label})`
+                : `Imagen de fondo (${page.label})`}
+            </span>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}
+            >
+              <label
+                style={{
+                  ...btn('ghost', { color: '#fff' }),
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {uploading
+                  ? 'Subiendo…'
+                  : isCert
+                    ? '⬆ Subir fondo'
+                    : '⬆ Subir imagen'}
+                <input
+                  type="file"
+                  accept={accept}
+                  hidden
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleUpload(f);
+                    e.target.value = '';
+                  }}
+                />
               </label>
             </div>
             {/* Con `upload` propio, `background` es una key S3: no se edita a mano. */}
             {!upload && (
-              <input style={inputStyle} value={value.background} placeholder="o pega una URL de imagen"
-                onChange={e => set({ background: e.target.value })} />
+              <input
+                style={inputStyle}
+                value={value.background}
+                placeholder="o pega una URL de imagen"
+                onChange={(e) => set({ background: e.target.value })}
+              />
             )}
-            {err && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{err}</span>}
+            {err && (
+              <span style={{ color: '#ff6b6b', fontSize: 12 }}>{err}</span>
+            )}
           </div>
 
           {/* QR (solo tamaño; posición por arrastre/flechas) */}
-          <div style={{ background: INK, border: `1px solid ${selected === 'qrCode' ? 'rgba(4,238,98,.4)' : LINE}`, borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div
+            style={{
+              background: INK,
+              border: `1px solid ${selected === 'qrCode' ? 'rgba(4,238,98,.4)' : LINE}`,
+              borderRadius: 10,
+              padding: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
             <span style={{ ...lbl, color: '#fff' }}>Código QR — tamaño</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <NumField label="Ancho" value={qr.width} onChange={v => setEl('qrCode', { width: v })} suffix="pt" />
-              <NumField label="Alto" value={qr.height} onChange={v => setEl('qrCode', { height: v })} suffix="pt" />
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+              }}
+            >
+              <NumField
+                label="Ancho"
+                value={qr.width}
+                onChange={(v) => setEl('qrCode', { width: v })}
+                suffix="pt"
+              />
+              <NumField
+                label="Alto"
+                value={qr.height}
+                onChange={(v) => setEl('qrCode', { height: v })}
+                suffix="pt"
+              />
             </div>
           </div>
 
           {/* Nombre / Documento (tamaño, alineación, color, ancho máx; sin X/Y) */}
-          {(['name', 'document'] as const).map(key => {
+          {(['name', 'document'] as const).map((key) => {
             const el = els[key];
             return (
-              <div key={key} style={{ background: INK, border: `1px solid ${selected === key ? 'rgba(4,238,98,.4)' : LINE}`, borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <span style={{ ...lbl, color: '#fff' }}>{key === 'name' ? 'Nombre' : 'Documento'}</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, alignItems: 'end' }}>
-                  <NumField label="Tamaño" value={el.size} onChange={v => setEl(key, { size: v })} suffix="pt" />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div
+                key={key}
+                style={{
+                  background: INK,
+                  border: `1px solid ${selected === key ? 'rgba(4,238,98,.4)' : LINE}`,
+                  borderRadius: 10,
+                  padding: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <span style={{ ...lbl, color: '#fff' }}>
+                  {key === 'name' ? 'Nombre' : 'Documento'}
+                </span>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 8,
+                    alignItems: 'end',
+                  }}
+                >
+                  <NumField
+                    label="Tamaño"
+                    value={el.size}
+                    onChange={(v) => setEl(key, { size: v })}
+                    suffix="pt"
+                  />
+                  <div
+                    style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+                  >
                     <span style={lbl}>Alineación</span>
-                    <select style={{ ...inputStyle, cursor: 'pointer' }} value={el.align}
-                      onChange={e => setEl(key, { align: e.target.value })}>
+                    <select
+                      style={{ ...inputStyle, cursor: 'pointer' }}
+                      value={alignMode(el)}
+                      onChange={(e) => setEl(key, { align: e.target.value })}
+                    >
                       <option value="left">Izquierda</option>
-                      <option value="center">{isCert ? 'Centro de su caja' : 'Centro'}</option>
+                      <option value="center-box">Centro de su caja</option>
+                      <option value="center-page">Centro de la hoja</option>
+                      {alignMode(el) === 'right' && (
+                        <option value="right">Derecha</option>
+                      )}
                     </select>
                   </div>
                 </div>
-                {isCert && el.align === 'center' && !el.maxWidth && (
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
-                    Sin «Ancho máx» se centra en la página. Pon un ancho para centrarlo en su caja.
+                {alignMode(el) === 'center-box' && !el.maxWidth && (
+                  <span
+                    style={{
+                      fontFamily: 'Space Grotesk, sans-serif',
+                      fontSize: 11,
+                      color: MUTE,
+                    }}
+                  >
+                    Sin «Ancho máx» se centra en la hoja. Pon un ancho para
+                    centrarlo en su caja.
                   </span>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, alignItems: 'end' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 8,
+                    alignItems: 'end',
+                  }}
+                >
+                  <div
+                    style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+                  >
                     <span style={lbl}>Color</span>
-                    <input type="color" value={rgb01ToHex(el.color)} onChange={e => setEl(key, { color: hexToRgb01(e.target.value) })}
-                      style={{ ...inputStyle, padding: 2, height: 34, cursor: 'pointer' }} />
+                    <input
+                      type="color"
+                      value={rgb01ToHex(el.color)}
+                      onChange={(e) =>
+                        setEl(key, { color: hexToRgb01(e.target.value) })
+                      }
+                      style={{
+                        ...inputStyle,
+                        padding: 2,
+                        height: 34,
+                        cursor: 'pointer',
+                      }}
+                    />
                   </div>
-                  <NumField label="Ancho máx" value={el.maxWidth ?? 0} onChange={v => setEl(key, { maxWidth: v || undefined })} suffix="pt" />
+                  <NumField
+                    label="Ancho máx"
+                    value={el.maxWidth ?? 0}
+                    onChange={(v) => setEl(key, { maxWidth: v || undefined })}
+                    suffix="pt"
+                  />
                 </div>
               </div>
             );
@@ -598,54 +1250,147 @@ export default function TicketTemplateEditor({
       </div>
 
       {/* ── Probar boleto ── */}
-      <div style={{ background: INK, border: `1px solid ${LINE2}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <span style={{ ...lbl, color: '#fff', fontSize: 11 }}>Probar {noun}</span>
+      <div
+        style={{
+          background: INK,
+          border: `1px solid ${LINE2}`,
+          borderRadius: 12,
+          padding: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
+      >
+        <span style={{ ...lbl, color: '#fff', fontSize: 11 }}>
+          Probar {noun}
+        </span>
 
         {/* toggle segmentado */}
-        <div style={{ display: 'inline-flex', gap: 4, background: PANEL2, borderRadius: 10, padding: 4, border: `1px solid ${LINE2}`, alignSelf: 'flex-start' }}>
-          {(['example', 'manual'] as const).map(m => (
-            <button key={m} type="button" onClick={() => { setTestMode(m); setDlErr(''); }}
-              style={{ border: 'none', borderRadius: 7, cursor: 'pointer', fontFamily: 'Oxanium, sans-serif', fontWeight: 700, fontSize: 12, padding: '7px 16px',
-                background: testMode === m ? NEON : 'transparent', color: testMode === m ? INK : MUTE }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            gap: 4,
+            background: PANEL2,
+            borderRadius: 10,
+            padding: 4,
+            border: `1px solid ${LINE2}`,
+            alignSelf: 'flex-start',
+          }}
+        >
+          {(['example', 'manual'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setTestMode(m);
+                setDlErr('');
+              }}
+              style={{
+                border: 'none',
+                borderRadius: 7,
+                cursor: 'pointer',
+                fontFamily: 'Oxanium, sans-serif',
+                fontWeight: 700,
+                fontSize: 12,
+                padding: '7px 16px',
+                background: testMode === m ? NEON : 'transparent',
+                color: testMode === m ? INK : MUTE,
+              }}
+            >
               {m === 'example' ? 'Ejemplo' : 'Manual'}
             </button>
           ))}
         </div>
 
         {testMode === 'example' ? (
-          <select style={{ ...inputStyle, cursor: 'pointer' }} value={exampleIdx} onChange={e => setExampleIdx(Number(e.target.value))}>
+          <select
+            style={{ ...inputStyle, cursor: 'pointer' }}
+            value={exampleIdx}
+            onChange={(e) => setExampleIdx(Number(e.target.value))}
+          >
             {TEST_EXAMPLES.map((ex, i) => (
-              <option key={i} value={i}>{ex.label} — {ex.name} {ex.lastname} · {ex.document}</option>
+              <option key={i} value={i}>
+                {ex.label} — {ex.name} {ex.lastname} · {ex.document}
+              </option>
             ))}
           </select>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 8,
+            }}
+          >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={lbl}>Nombre</span>
-              <input style={inputStyle} value={testName} onChange={e => setTestName(e.target.value)} placeholder="Juan Carlos" />
+              <input
+                style={inputStyle}
+                value={testName}
+                onChange={(e) => setTestName(e.target.value)}
+                placeholder="Juan Carlos"
+              />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={lbl}>Apellido</span>
-              <input style={inputStyle} value={testLast} onChange={e => setTestLast(e.target.value)} placeholder="Pérez Gómez" />
+              <input
+                style={inputStyle}
+                value={testLast}
+                onChange={(e) => setTestLast(e.target.value)}
+                placeholder="Pérez Gómez"
+              />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={lbl}>Documento</span>
-              <input style={inputStyle} value={testDoc} onChange={e => setTestDoc(e.target.value)} placeholder="1234567890" />
+              <input
+                style={inputStyle}
+                value={testDoc}
+                onChange={(e) => setTestDoc(e.target.value)}
+                placeholder="1234567890"
+              />
             </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <button type="button" onClick={handleDownloadTest} disabled={downloading || !value.background}
-            style={btn('primary', { opacity: (downloading || !value.background) ? .55 : 1, cursor: (downloading || !value.background) ? 'not-allowed' : 'pointer', fontSize: 13, padding: '11px 20px' })}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleDownloadTest}
+            disabled={downloading || !value.background}
+            style={btn('primary', {
+              opacity: downloading || !value.background ? 0.55 : 1,
+              cursor:
+                downloading || !value.background ? 'not-allowed' : 'pointer',
+              fontSize: 13,
+              padding: '11px 20px',
+            })}
+          >
             {downloading ? 'Generando…' : `⬇ Descargar ${noun} de prueba`}
           </button>
-          {dlErr && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{dlErr}</span>}
+          {dlErr && (
+            <span style={{ color: '#ff6b6b', fontSize: 12 }}>{dlErr}</span>
+          )}
         </div>
       </div>
 
-      <p style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 11, color: MUTE }}>
-        La posición se ajusta visualmente (arrastre/flechas); tamaños y demás, con los campos. El preview es una guía: genera un {noun} de prueba para confirmar.
+      <p
+        style={{
+          margin: 0,
+          fontFamily: 'Space Grotesk, sans-serif',
+          fontSize: 11,
+          color: MUTE,
+        }}
+      >
+        La posición se ajusta visualmente (arrastre/flechas); tamaños y demás,
+        con los campos. El preview es una guía: genera un {noun} de prueba para
+        confirmar.
       </p>
     </div>
   );

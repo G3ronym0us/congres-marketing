@@ -11,7 +11,8 @@ export interface TicketTemplateTextEl {
   x: number;
   y: number;
   size: number;
-  align: 'left' | 'center';
+  // 'center' es heredado (boleto: hoja; certificado: caja si hay ancho máx).
+  align: 'left' | 'center' | 'center-box' | 'center-page' | 'right';
   color: number[]; // [r, g, b] en 0..1
   maxWidth?: number;
 }
